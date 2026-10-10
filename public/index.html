@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TachoGuard</title>
+<meta name="theme-color" content="#0b4f9c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TachoGuard">
+<meta name="description" content="Tachograph hours, break and rest tracker with walkaround checks for HGV drivers.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<script src="config.js"></script>
+<script src="signs.js"></script>
+<style>
+:root{--bg:#eef0f2;--card:#fff;--tx:#161a1f;--mut:#5f6b7a;--bd:#d9dee4;--ok:#17803f;--warn:#c77700;--bad:#c4281c;--acc:#0b4f9c;--onacc:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161b;--card:#1b2128;--tx:#eef1f5;--mut:#9aa6b5;--bd:#2c343e;--ok:#3ecf7b;--warn:#ffb020;--bad:#ff6b5e;--acc:#ffb020;--onacc:#1b1300}}
+:root[data-theme="dark"]{--bg:#12161b;--card:#1b2128;--tx:#eef1f5;--mut:#9aa6b5;--bd:#2c343e;--ok:#3ecf7b;--warn:#ffb020;--bad:#ff6b5e;--acc:#ffb020;--onacc:#1b1300}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:16px 16px 40px}
+h1,h2,.num{font-family:"Barlow Condensed","Roboto Condensed","sans-serif-condensed","Arial Narrow",Arial,sans-serif;font-weight:700;margin:0}
+h1{font-size:28px;letter-spacing:.01em}
+h2{font-size:20px;margin:28px 0 10px}
+.sub{color:var(--mut);margin:2px 0 16px;font-size:14px}
+.go{width:100%;border:0;border-radius:14px;padding:20px;font:700 30px "Barlow Condensed","Roboto Condensed","sans-serif-condensed","Arial Narrow",Arial,sans-serif;background:var(--acc);color:var(--onacc);cursor:pointer}
+.go.on{background:var(--bad);color:#fff}
+.go:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--tx);outline-offset:2px}
+.live{margin:10px 0 0;text-align:center;color:var(--mut);min-height:22px}
+.g{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;margin-top:12px}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.lbl{font-weight:600}
+.num{font-size:34px;line-height:1}
+.num small{font-size:18px;color:var(--mut);font-weight:500}
+.bar{height:10px;border-radius:5px;background:var(--bd);margin:10px 0 6px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:5px;background:var(--ok)}
+.note{color:var(--mut);font-size:14px}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:end}form>*{min-width:0}input[type=date],input[type=time]{min-width:0;max-width:100%;-webkit-appearance:none;appearance:none;height:42px}input[type=checkbox]{height:auto}
+label{font-size:13px;color:var(--mut);display:block}
+input,select{width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+.add{grid-column:1/-1;padding:12px;border:1px solid var(--acc);background:transparent;color:var(--tx);border-radius:10px;font:600 16px system-ui,sans-serif;cursor:pointer}
+.err{grid-column:1/-1;color:var(--bad);font-size:14px;min-height:0}
+.item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--bd)}
+.item:first-child{border-top:0}
+.del{border:0;background:none;color:var(--mut);font-size:14px;padding:8px;cursor:pointer;text-decoration:underline}
+a{color:var(--tx)}
+.acts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.act{border:2px solid var(--bd);background:var(--card);color:var(--tx);border-radius:12px;padding:8px 2px;font:700 15px "Barlow Condensed","Roboto Condensed","sans-serif-condensed","Arial Narrow",Arial,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;line-height:1.2}.act b{font-size:20px;font-weight:400}.act.on{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
+.qf{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.qf button{padding:12px;border:1px solid var(--acc);background:transparent;color:var(--tx);border-radius:10px;font:600 16px system-ui,sans-serif;cursor:pointer}
+.i{position:relative;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--mut);background:none;color:var(--mut);font:italic 700 13px Georgia,serif;padding:0;cursor:pointer;vertical-align:middle}.ex{margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--bg);font-size:14px}
+.alert{background:var(--bad);color:#fff;padding:12px 14px;border-radius:12px;margin-bottom:10px;font-weight:600;cursor:pointer}.alert[hidden]{display:none}.tg{white-space:nowrap;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:16px;padding:6px 14px;font:600 14px system-ui,sans-serif;cursor:pointer}.tr{display:flex;justify-content:space-between;align-items:center;gap:10px}.tr input{width:auto}.qf button:disabled{opacity:.35;cursor:not-allowed}
+[hidden]{display:none!important}
+#s1,#s2,#hrs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}#s1 .g,#s2 .g,#hrs .g{margin:0}
+.cd{padding:10px 12px}.cd.w{grid-column:1/-1}.cd .row{flex-direction:column;align-items:flex-start;gap:2px}.cd.w .row{flex-direction:row;align-items:baseline}
+.cd .num{font-size:26px}.cd .note{font-size:12px}.cd .bar{height:6px;margin:6px 0 4px}.cd .ex{font-size:13px}.qfc{display:flex;align-items:center;justify-content:space-between;gap:10px}.qfc .qf{margin:0;flex:1}
+#sheet{max-height:55vh;overflow:auto;position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:2px solid var(--acc);padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 20px rgba(0,0,0,.25);font-size:15px;z-index:9}
+.hd{display:flex;justify-content:space-between;align-items:center;gap:8px}.tab.gear{flex:none;padding:8px 12px;font-size:13px;border-radius:16px}
+.tabs{display:flex;gap:4px;margin:6px 0 14px}.tab{flex:1 1 auto;padding:9px 4px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font:600 13px system-ui,sans-serif;cursor:pointer}.act.lk{opacity:.4}.tab.on{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
+#auth{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px;z-index:30;overflow:auto}#auth .mb{border:1px solid var(--bd)}#auth input{margin-bottom:8px}
+#mo{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}.mb{background:var(--card);border-radius:14px;padding:18px;max-width:420px;width:100%;max-height:90vh;overflow:auto}.mb h3{margin:0 0 8px;font:700 24px "Barlow Condensed","Roboto Condensed","sans-serif-condensed","Arial Narrow",Arial,sans-serif}.mb p{margin:0 0 10px}.mb .big{display:block;width:100%;margin-top:8px;padding:12px;font-size:16px;white-space:normal}.mb label{flex:1}.mb .tr{gap:10px;margin-bottom:8px}
+.pls{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.pl{padding:8px 12px;border:1px solid var(--bd);border-radius:18px;background:var(--card);color:var(--tx);font:600 14px system-ui,sans-serif;cursor:pointer}.pl.on{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
+.bx{border:1px solid var(--bd);border-radius:10px;padding:9px 12px;margin:8px 0;background:rgba(127,127,127,.08)}.bt{font-weight:700;margin-bottom:2px}.st{font:700 22px "Barlow Condensed","Roboto Condensed","sans-serif-condensed","Arial Narrow",Arial,sans-serif;margin-bottom:2px}
+.cnt{display:inline-block;font:700 10px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.04em;background:var(--acc);color:var(--onacc);border-radius:8px;padding:2px 6px;margin-left:6px;vertical-align:middle}
+.dayb{text-align:left;color:var(--tx);font:inherit;cursor:pointer;display:block;width:100%}.dh{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;border:0;color:var(--tx);font:inherit;text-align:left;padding:0;cursor:pointer}.dh .note{display:block}.chev{font-size:12px;color:var(--mut)}
+.bx summary{min-height:44px;cursor:pointer;font-weight:700;list-style:none;display:flex;justify-content:space-between;align-items:center}.bx summary::-webkit-details-marker{display:none}.bx summary::after{content:'\25BC';font-size:11px;color:var(--mut);margin-left:8px}.bx[open] summary::after{content:'\25B2'}.dbody{margin-top:6px}
+.cd.on{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc)}.cd.off{opacity:.88}
+#s1 .cs,#s2 .cs{grid-column:1/-1;margin:8px 0 0}
+#ck .gl{display:grid;grid-template-columns:1fr 1fr;gap:8px}#ck .gl .cs{grid-column:1/-1;margin:12px 0 0;display:flex;justify-content:space-between;align-items:center}#ck .cs .pl{font-size:12px;padding:4px 10px;white-space:nowrap;flex:none;margin-left:8px}#ck .ci{border:1px solid var(--bd);border-radius:10px;padding:8px;display:flex;flex-direction:column;justify-content:space-between;gap:6px}#ck .ci.bd{grid-column:1/-1}#ck .ci .lbl{font-size:14px;line-height:1.2}#ck .cb{margin-top:0;gap:4px}#ck .cb button{padding:6px 2px;font-size:12px;border-radius:7px}#ck .pl{padding:6px 10px;font-size:13px}#ck .g2{margin-top:10px}
+.th{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--bd);cursor:pointer;background:var(--bd)}.ph{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}.ci .lbl .i{vertical-align:middle}.cs{font:700 20px "Barlow Condensed","Roboto Condensed","sans-serif-condensed","Arial Narrow",Arial,sans-serif;margin:16px 0 2px}.ci{padding:10px 0;border-top:1px solid var(--bd)}.ci .h{font-size:13px;color:var(--mut)}.cb{display:flex;gap:6px;margin-top:6px}.cb button{flex:1;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font:600 14px system-ui,sans-serif;cursor:pointer}.cb .ok.on{background:var(--ok);color:var(--okt,#fff);border-color:var(--ok)}.cb .bad.on{background:var(--bad);color:var(--okt,#fff);border-color:var(--bad)}.cb .na.on{background:var(--mut);color:var(--bg);border-color:var(--mut)}
+.dn{margin-top:8px}.dl{display:flex;gap:8px;align-items:center;margin-top:6px;font-size:14px;color:var(--tx)}.dl input{width:auto}.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.wkb{display:block;width:100%;text-align:left;border:1px solid var(--bd);border-left:6px solid var(--mut);border-radius:12px;background:var(--card);color:var(--tx);padding:10px 12px;margin-bottom:10px;font:inherit;cursor:pointer}.wkb b{display:block}.wkb span{display:block;font-size:13px;color:var(--mut)}.wkb.nb{border-left-color:var(--bad)}.wkb.dn2{border-left-color:var(--ok)}.wkb.wn{border-left-color:var(--warn)}
+.tab.dot::after{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--bad);margin-left:5px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--okt:#04130a}}:root[data-theme="dark"]{--okt:#04130a}
+.pl:disabled{opacity:.45;cursor:not-allowed}
+.pd{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);z-index:5;background:var(--card);border:2px solid var(--warn);box-shadow:0 4px 14px rgba(0,0,0,.25)}.pd .pdl{max-height:30vh;overflow:auto}#ck .pd .add,#ck .pd .pl{margin:0;border-radius:10px;padding:12px;font:600 16px system-ui,sans-serif}#ck .pd .add{background:var(--acc);color:var(--onacc)}
+#gd{font-size:24px}.sgc{display:flex;gap:12px;align-items:flex-start}.sgc svg{flex:none}#sgq{margin-bottom:6px}#sgf{margin-bottom:10px}
+.foot{margin-top:28px;color:var(--mut);font-size:13px}
+.i::after{content:'';position:absolute;inset:-11px}
+.tab{min-width:0}@media (max-width:360px){.tab{font-size:12px;padding:9px 1px}.tabs{gap:3px}}
+</style>
+</head>
+<body>
+<main>
+<div class="hd"><h1>TachoGuard <button class="i" data-i="about" aria-label="More info">i</button></h1><button class="tab gear" data-t="set" aria-label="Settings">&#9881; Settings</button></div>
+<div class="tabs"><button class="tab on" data-t="today">Today</button><button class="tab" data-t="check">Check</button><button class="tab" data-t="hours">Hours</button><button class="tab" data-t="tacho">Tacho</button><button class="tab" data-t="signs">Signs</button><button class="tab" data-t="log">Log</button></div>
+<p class="note" id="sync" style="margin:-6px 0 10px" role="status"></p>
+<section id="t-today">
+<p class="sub">Tap what you are doing now, as on the tachograph. To stop, change to another activity or tap End Shift. The cards below that are counting are outlined.</p><div class="alert" id="alert" hidden></div>
+<div id="wkb"></div>
+<div class="acts"><button class="act" data-a="d"><b>🚛</b>Driving</button><button class="act" data-a="w"><b>⚒</b>Work</button><button class="act" data-a="p"><b>◪</b>POA</button><button class="act" data-a="r"><b>🛏</b>Break</button></div>
+<div class="live" id="live"></div><div class="tr" id="es" style="margin-top:10px" hidden><label for="est" id="esl">Started At</label><input type="time" id="est"><button class="tg" id="esb">Change</button></div>
+<div id="s1"></div><div id="s2"></div><button class="tg" id="esh" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">End Shift</button><button class="tg" id="rd2" style="display:block;width:100%;margin-top:10px;padding:14px;font-size:16px;border-radius:12px">Reset Day</button><p class="note" style="text-align:center;margin:6px 0 0">Starts breaks, shift and working time again from now.</p><button class="tg" id="tlog" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">Today's Log</button><p class="note" style="text-align:center;margin:6px 0 0">See and edit today's driving, work, POA and breaks.</p></section><section id="t-tacho" hidden><h2>Tacho Downloads <button class="i" data-i="tac" aria-label="More info">i</button></h2><div id="tcx"></div><div class="g"><div class="tr"><label for="tc">Driver Card Downloaded</label><input type="date" id="tc"></div><div class="note" id="tcn"></div><div class="tr" style="margin-top:12px"><label for="tu">Vehicle Unit Downloaded</label><input type="date" id="tu"></div><div class="note" id="tun"></div></div>
+
+<div id="tacwhy">
+<details class="bx"><summary>If You Have Not Downloaded</summary><div class="dbody">The card only holds about 28 days, so anything older than that can be overwritten and lost for good. If you are overdue, tell your transport manager or operator now and get the card downloaded at the next chance. Do not delete, alter or swap anything to cover the gap. If days are already lost, keep any printouts and make a written note of the missing days and why, and give it to your operator. Gaps in your records are what DVSA looks for at a check.</div></details>
+<details class="bx"><summary>Your Obligation as a Driver</summary><div class="dbody">Carry your records for the current day and the previous 28 days, hand them over when an enforcement officer asks, let your operator download your card, and report a lost, damaged or faulty card straight away. Downloading the card on schedule is the operator duty, but you need to make the card available.</div></details>
+<details class="bx"><summary>Why Download the Data</summary><div class="dbody">Your driver card holds about 28 days of data. After that the oldest data is overwritten and lost for good, so a missed download can leave a gap you cannot fill. The data is also your proof that you followed the hours rules. An enforcement officer can check the current day and the previous 28 days, and DVSA can fine driver hours offences found in that period.</div></details>
+<details class="bx"><summary>Law</summary><div class="dbody">The operator must download driver cards at least every 28 days and the vehicle unit at least every 90 days, and keep the data for at least a year. As a driver you must carry your records for the current day and the previous 28 days, hand them over when asked, and let the operator download your card. If you employ yourself as an owner driver, the operator duties are yours.</div></details>
+<details class="bx"><summary>Company Policy</summary><div class="dbody">Anything stricter than the law, such as downloading weekly, handing your card in on set days, or checking your own cards. It is not the law, but your employer can act on it under your contract, for example with a disciplinary.</div></details>
+<details class="bx"><summary>Penalties in Court</summary><div class="dbody">Failing to use a tachograph, failing to install one, or failing to hand over records when an enforcement officer asks: a Level 5 fine, which is unlimited in England and Wales.<br>Failing to make or keep records: a Level 4 fine, up to £2,500.<br>Making a false entry or altering a record, or the tachograph seal, with intent to deceive: a Level 5 fine, and up to 2 years in prison if tried in the Crown Court.</div></details>
+<details class="bx"><summary>Penalties at the Roadside</summary><div class="dbody">DVSA can issue fixed penalties of £50 to £300 each for hours and tachograph offences, up to 5 at one check, including offences from the last 28 days. Unpaid ones go up by 50% in England and Wales. DVSA can also prohibit you from driving, immobilise the vehicle, or refer you or your operator to the Traffic Commissioner, who looks at whether you are fit to hold your licence.</div></details>
+<details class="bx"><summary>Points</summary><div class="dbody">Fixed penalties for hours and tachograph offences are non-endorsable, so they carry no points. Points apply to roadworthiness offences, such as 3 points for defective brakes on a goods vehicle.</div></details>
+<p class="note">Summary from gov.uk, DVSA guidance and legislation.gov.uk, checked in October 2026. Not legal advice. Check gov.uk for current rules and amounts.</p></div></section><section id="t-hours" hidden><h2>Working Time <button class="i" data-i="avg" aria-label="More info">i</button></h2><div id="hrs"></div></section><section id="t-log" hidden>
+<h2>Log Previous Days</h2>
+<div class="g">
+<form id="f">
+<div><label for="d">Date</label><input type="date" id="d" required></div>
+<div><label for="s">Start</label><input type="time" id="s" required></div>
+<div><label for="e">End</label><input type="time" id="e" required></div>
+<div style="grid-column:1/-1"><label for="t">Type</label><select id="t"><option value="d">Driving</option><option value="w">Other work</option><option value="p">POA</option><option value="r">Break</option></select></div><label style="grid-column:1/-1"><input type="checkbox" id="nd" style="width:auto"> Ends the Next Day</label><div class="err" id="err" role="alert"></div>
+<button class="add" type="submit">Add Activity</button>
+</form>
+</div>
+
+<h2>Days</h2>
+<div id="list"></div>
+
+</section>
+<section id="t-day" hidden><button class="tg" id="dback">&#8592; Back</button><h2 id="dtitle" style="margin-top:12px"></h2><div class="note" id="dsum"></div><div id="dayc" style="margin-top:8px"></div>
+<h2>Add Entry</h2><div class="g"><form id="dform"><div><label for="dt">Type</label><select id="dt"><option value="d">Driving</option><option value="w">Other work</option><option value="p">POA</option><option value="r">Break</option></select></div><div><label for="ds">Start</label><input type="time" id="ds" required></div><div><label for="de">End</label><input type="time" id="de" required></div><div class="err" id="derr" role="alert"></div><button class="add" type="submit">Add Activity</button></form></div></section>
+<section id="t-signs" hidden>
+<h2>Road Signs <button class="i" data-i="signs" aria-label="More info">i</button></h2>
+<input type="search" id="sgq" placeholder="Search signs" aria-label="Search signs" autocomplete="off">
+<div class="pls" id="sgf"></div>
+<div id="sgl"></div>
+</section>
+<section id="t-set" hidden>
+<h2>GPS</h2>
+<div class="g"><div class="tr"><span><span class="lbl">Distance Tracking</span><br><span class="note">Off by default. When on, it uses your location only while Driving is on, and the screen stays awake.</span></span><button class="tg" id="gp"></button></div><div class="row" style="margin-top:14px"><span class="lbl">Distance This Drive</span><span class="num" id="gd"></span></div><div class="note" id="gs"></div></div>
+<p class="note">Distance only updates while this page is open, so keep your phone unlocked. If location is blocked, allow it for this site in Chrome.</p>
+<h2>Settings</h2>
+<div class="g"><div class="tr"><span><span class="lbl">Alerts</span><br><span class="note">Sound and vibration at your limits. Alerts need the page open.</span></span><button class="tg" id="al"></button></div>
+<div class="tr" style="margin-top:14px"><span><span class="lbl">Reset Day</span><br><span class="note">Starts breaks, shift and working time again from now.</span></span><button class="tg" id="rd">Reset Day</button></div></div>
+<h2>Account</h2><div class="g"><div class="note" id="acn"></div><div class="tr" style="margin-top:10px"><button class="tg" id="acb"></button></div></div>
+<h2>Install</h2><div class="g" id="insg"><div class="note" id="inn"></div><div class="tr" style="margin-top:10px"><button class="tg" id="inb" hidden>Install TachoGuard</button></div></div>
+<h2>Backup</h2><div class="g"><div class="note">Your record is saved to your account when you are signed in and kept on this phone. You can also keep your own copy. Defect photos are not included.</div><div class="tr" style="margin-top:10px"><button class="tg" id="bc">Copy Backup</button></div><label for="bf" style="margin-top:12px">Import a Backup File</label><input type="file" id="bf" accept=".json,application/json"><textarea id="bt" placeholder="Or paste a copied backup here" style="width:100%;box-sizing:border-box;margin-top:8px;min-height:60px;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit"></textarea><div class="tr" style="margin-top:8px"><button class="tg" id="bi">Import</button></div><div class="note" id="bm" role="status"></div></div>
+</section>
+<section id="t-check" hidden>
+<h2>Walkaround Check <button class="i" data-i="walk" aria-label="More info">i</button></h2>
+<div id="ck"></div>
+<h2>Recent Checks</h2>
+<div id="ckh"></div>
+</section>
+</main>
+<div id="auth" hidden><div class="mb" id="authb"></div></div>
+<div id="sheet" hidden></div>
+<div id="mo" hidden></div>
+<script>
+const K='tachoguard.v1',H=3600000,M=60000;
+let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
+let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
+const u0=st.u||0;
+if(st.active&&!st.act)st.act='d';
+const lay=a=>{a=a.filter(x=>x.e>x.s).sort((x,y)=>x.s-y.s);let m=-Infinity,ov=false;for(const x of a){if(x.s<m){ov=true;break}m=Math.max(m,x.e)}if(!ov)return a;let o=[];a.forEach(x=>{const n=[];o.forEach(y=>{if(y.e<=x.s||y.s>=x.e){n.push(y);return}if(y.s<x.s)n.push(Object.assign({},y,{e:x.s}));if(y.e>x.e)n.push(Object.assign({},y,{s:x.e,d:0,a:null}))});n.push(x);o=n});return o.sort((x,y)=>x.s-y.s)};
+const mrg=l=>{const o=[];l.forEach(x=>{const p=o[o.length-1];if(p&&(p.t||'d')===(x.t||'d')&&x.s-p.e<M)o[o.length-1]=Object.assign({},p,{e:Math.max(p.e,x.e),d:((p.d||0)+(x.d||0))||p.d,z:x.z||p.z});else o.push(x)});return o};
+const fixOv=()=>{[x=>(x.t||'d')!=='r',x=>x.t==='r'].forEach(nr=>{const w=st.sessions.filter(nr),l=mrg(lay(w));if(l.length!==w.length||l.some(x=>!w.includes(x)))st.sessions=st.sessions.filter(x=>!nr(x)).concat(l)})};
+fixOv();
+let lsOk=true,cloud=null,cloudReady=false,pushT=0,pushing=null,pushAgain=false,lastPush=0,lastMain='',syncMsg='';const remW=new Map();
+const save=()=>{fixOv();st.u=Date.now();try{localStorage.setItem(K,JSON.stringify(st));lsOk=true}catch(e){lsOk=false}queuePush();syncNote()};
+const $=id=>document.getElementById(id);
+const set=(el,h)=>{if(el._h!==h){el.innerHTML=h;el._h=h}};
+const NM={d:'Driving',w:'Other work',p:'POA',r:'Break'},IC={d:'🚛',w:'⚒',p:'◪',r:'🛏'};
+const DHP=ex=>`<br><br><b>Is it law?</b> Yes. This is a legal driver hours rule, not company policy.<br><b>If you break it:</b> a DVSA fixed penalty of £50 to £300.${ex?` For example, going over the 4h 30m driving limit is £100 (under 1 hour over), £200 (1 to 2 hours over) or £300 (2 hours or more), and examiners usually allow 15 minutes of leeway.`:''} An examiner can issue up to 5 fixed penalties at one check, including for offences from the last 28 days, so £1,500 is possible. Unpaid penalties go up by 50% in England and Wales. Serious cases can be prosecuted (a Level 4 fine, up to £2,500) or referred to the Traffic Commissioner, and you can be prohibited from driving or have the vehicle immobilised.<br><b>Points:</b> driver hours fixed penalties are non-endorsable, so they carry no points. Points show up for roadworthiness offences, such as 3 points for defective brakes.<br><span class="note">Checked on gov.uk and DVSA guidance in October 2026. Amounts can change, so check gov.uk.</span>`;
+const WTP=`<br><br><b>Is it law?</b> Yes. These are working time laws, not company policy, and DVSA enforces them.<br><b>If you break it:</b> it is a criminal offence (Road Transport (Working Time) Regulations 2005, regulation 17). In a magistrates court the fine is up to the statutory maximum, and in the Crown Court there is no upper limit. Ignoring an improvement or prohibition notice from DVSA can mean up to 3 months in prison in a magistrates court, or up to 2 years in the Crown Court.<br><b>Points:</b> There are no fixed penalty amounts or penalty points set for working time breaches.<br><span class="note">Checked on legislation.gov.uk and gov.uk in October 2026.</span>`;
+const INFO={
+next:`The earliest you can legally drive again, worked out from your last activity and the break, rest and working time rules below. While you are driving it shows when you must stop.`+DHP(0),
+rest:`Daily rest is 11 hours in each 24 hours since your last rest. It can be cut to 9 hours up to 3 times between weekly rests. Weekly rest is 45 hours. Regulation 561/2006, Article 8. From November 2017 DVSA can fine up to £300 for taking regular weekly rest in the vehicle where it causes a problem.`+DHP(0),
+brk:`After 4h 30m of driving you need a 45 minute break. You can split it into 15 minutes first, then 30 minutes. Other work and POA do not count as a break. Regulation 561/2006, Article 7. A break under 15 minutes is not counted. After a 15 minute part, the next part only counts if it is 30 minutes or more. A full 45 minutes always counts. Break time over 45 minutes makes no difference, so the bar stops at 45.`+DHP(1),
+wrk:`The Road Transport (Working Time) Regulations 2005 say you cannot work more than 6 hours without a break. The break is 30 minutes if you work 6 to 9 hours and 45 minutes if you work more than 9 hours. It can be split into parts of at least 15 minutes. Working time is driving plus other work, and POA is not counted if you know how long it will last in advance. A wait of unknown length counts as work, so log it as Work. The weekly limit averages 48 hours over 17 weeks, with a 60 hour cap in any one week.`+WTP,
+day:`You can drive 9 hours between daily rests. Regulation 561/2006, Article 6. The app counts a shift from your last rest of 9 hours or more.`+DHP(1),
+ext:`You can extend a driving day to 10 hours twice in any week. Regulation 561/2006, Article 6.`+DHP(0),
+wk:`No more than 56 hours of driving in a week and 90 hours in any two weeks in a row. Regulation 561/2006, Article 6.`+DHP(0),
+ns:`After a shift you need a daily rest of 11 hours. You can cut it to 9 hours up to 3 times between weekly rests. The time shown is the earliest your next shift can start. Regulation 561/2006, Article 8.`+DHP(0),
+avg:`Your working time must average no more than 48 hours a week over a 17 week reference period, with a 60 hour cap in any one week. Road Transport (Working Time) Regulations 2005. Working time is driving plus other work. POA (known in advance) and breaks are not counted. A wait of unknown length counts as work. The average runs from your first logged week, and weeks of leave are not excluded. Records older than 365 days are archived into weekly totals so the average keeps working.`+WTP,
+walk:`The DVSA expects a daily walkaround check before each journey, by the driver, before the first drive of the day. The DVSA guide says the driver is legally responsible for the condition of the vehicle while it is in use. The gov.uk walkaround page does not describe the check itself as a legal requirement, but you can be stopped at the roadside, fined, or have the vehicle prohibited if it has defects. Traffic Commissioners can act against a driver who does not carry out an adequate check, including a driver conduct hearing, and the operator can face action too.<br><br><b>Defects:</b> report them in writing with the registration, date, details, your name and who you told, and record a nil report if there are none. Operators keep driver defect reports for at least 15 months. If a defect is dangerous, do not drive the vehicle until it is fixed. A walkaround counts as other work, so log it as Work.<br><br><b>If you break it:</b> using an HGV in a dangerous condition can bring an unlimited fine and a prison sentence. DVSA fixed penalties for roadworthiness offences run from £50 to £300 and some carry points, for example £100 and 3 points for defective brakes.<br><b>About These Checks</b> The HGV checks follow the DVSA daily walkaround check on gov.uk. Trailer, car and mobility items are common good practice, not an official list. Follow your employer and manufacturer checklists too. Tap the i on any item for why, how to check it and the penalties.<br><span class="note">Checked on gov.uk and DVSA guidance in October 2026.</span>`,
+tac:`Driver card data must be downloaded at least every 28 days and vehicle unit data at least every 90 days. Scroll down this page for why it matters, whether it is law or company policy, and the penalties.`};
+INFO.about=`TachoGuard is a planning aid. Your tachograph is always the legal record. Your hours and walkaround checks are saved on this phone and work with no signal. When you are signed in they are also saved to your account database, so they are kept if you change phone. The account copy is the master: every signed in copy of the app updates from it. Defect photos stay on the phone that took them.<br><b>Limits Used</b> 9h driving per shift (10h twice a week), 56h a week, 90h a fortnight, a 45 minute break after 4h 30m (15 then 30 also counts), 11h daily rest (9h reduced) and 45h weekly rest. Working time uses the 6 hour rule from the Road Transport (Working Time) Regulations 2005.<br><b>Not Tracked</b> Split daily rest (3h plus 9h). Weeks run Monday to Sunday. Only a break counts as rest, not other work or POA.<br><b>Distance</b> GPS is off by default. Turn it on in Settings. It only updates while this page is open, so keep your phone unlocked.`;
+INFO.signs=`Simplified drawings of common UK road signs with what each one means. The meanings follow the Highway Code and the Traffic Signs Manual, and the For HGV Drivers notes add what matters for a lorry. Real signs can differ in layout and colour, and plates under a sign can change its meaning, so always read the whole sign. Check the Highway Code on gov.uk for the full list.`;
+INFO.poa=`POA means Period of Availability. It is waiting time where you do not have to stay at your workstation, but you must be ready to start or carry on driving or other work, and you must know how long the wait will last in advance. Examples: waiting on a ferry, or waiting while others load or unload your vehicle.<br><b>Working Time</b> POA is not working time. It does not count towards the 48 hour average or the 6 hour rule. It is also not a break, so it does not count towards your 45 minutes or rest. On the tachograph it is the POA symbol.<br><b>Pay</b> The working time rules do not set pay. Whether you are paid for POA is a matter for your contract. Being paid for it does not turn it into working time, and being unpaid does not stop a wait being working time. So a company can pay for POA without it touching your 48 hour average.<br><b>Limits</b> You cannot call a wait POA if you did not know how long it would last. A wait of unknown length is working time, so log it as Work.<br><span class="note">Source: gov.uk drivers hours rules for goods vehicles, Annex 2, and the Road Transport (Working Time) Regulations 2005. Not legal advice.</span>`;
+let open=null;
+const sgState={q:'',g:''};
+function renderSigns(){const S=window.SIGNS||[],gs=[...new Set(S.map(x=>x.g))];
+ $('sgf').innerHTML=['All'].concat(gs).map(g=>`<button class="pl${(g==='All'&&!sgState.g)||sgState.g===g?' on':''}" data-sg="${g==='All'?'':g}">${g}</button>`).join('');
+ const q=sgState.q.trim().toLowerCase(),L=S.filter(x=>(!sgState.g||x.g===sgState.g)&&(!q||(x.n+' '+x.m+' '+x.h+' '+x.g).toLowerCase().includes(q)));
+ $('sgl').innerHTML=L.length?L.map(x=>`<div class="g sgc"><svg viewBox="0 0 100 100" width="72" height="72" role="img" aria-label="${x.n}">${x.s}</svg><div><div class="lbl">${x.n}</div><div class="note">${x.g}</div><div style="margin-top:4px">${x.m}</div>${x.h?`<div class="bx" style="margin:8px 0 0"><div class="bt">For HGV Drivers</div>${x.h}</div>`:''}</div></div>`).join(''):'<div class="g note">No signs match that search.</div>'}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-sg]');if(b){sgState.g=b.dataset.sg;renderSigns()}});
+document.addEventListener('input',e=>{if(e.target.id==='sgq'){sgState.q=e.target.value;renderSigns()}});
+const ib=k=>`<button class="i" data-i="${k}" aria-label="More info">i</button>`;
+const ex=k=>'';
+const fmt=ms=>{const m=Math.floor(Math.max(0,ms)/M);return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m'};
+const tl=x=>new Date(x).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const tt=x=>new Date(x).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'});
+const hm=x=>new Date(x).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+const mi=m=>(m/1609.34).toFixed(1)+' mi';
+const hav=(a,b)=>{const r=Math.PI/180,x=(b.lat-a.lat)*r,y=(b.lon-a.lon)*r,q=Math.sin(x/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(y/2)**2;return 12742000*Math.asin(Math.sqrt(q))};
+const all=()=>{const a=st.sessions.map(x=>Object.assign({t:'d'},x)).filter(x=>x.t!=='r');if(st.active&&st.act!=='r')a.push({s:st.active,e:Date.now(),t:st.act,live:1});return lay(a)};
+const sum=(a,f,t)=>a.reduce((n,x)=>n+Math.max(0,Math.min(x.e,t)-Math.max(x.s,f)),0);
+const sod=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x.getTime()};
+const mon=()=>{const x=new Date(sod(Date.now()));x.setDate(x.getDate()-((x.getDay()+6)%7));return x.getTime()};
+const wkS=ts=>{const d=new Date(ts);d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getTime()};
+const nwk=w=>{const d=new Date(w);d.setDate(d.getDate()+7);return d.getTime()};
+function archive(){const cut=Date.now()-365*864e5,keep=[];let ch=0;
+ st.sessions.forEach(x=>{if(x.e<cut){ch=1;const k=x.t||'d';if(k==='d'||k==='w'){let w=wkS(x.s);while(w<x.e){const g=Math.min(x.e,nwk(w))-Math.max(x.s,w);if(g>0){const a=st.arch[w]=st.arch[w]||{w:0,d:0};a.w+=g;if(k==='d')a.d+=g}w=nwk(w)}}}else keep.push(x)});
+ if(ch){st.sessions=keep;save()}}
+function totals(){const T={};Object.keys(st.arch).forEach(k=>{T[k]={w:st.arch[k].w,d:st.arch[k].d}});
+ all().forEach(x=>{if(x.t==='p')return;let w=wkS(x.s);while(w<x.e){const g=Math.min(x.e,nwk(w))-Math.max(x.s,w);if(g>0){const a=T[w]=T[w]||{w:0,d:0};a.w+=g;if(x.t==='d')a.d+=g}w=nwk(w)}});return T}
+function avg17(T){let w=wkS(Date.now());const ws=[];for(let i=0;i<17;i++){ws.push(w);const d=new Date(w);d.setDate(d.getDate()-7);w=d.getTime()}
+ const ks=Object.keys(T).map(Number),fw=ks.length?Math.min(...ks):Infinity,use=ws.filter(x=>x>=fw),s=use.reduce((n,x)=>n+(T[x]?T[x].w:0),0);return{avg:use.length?s/use.length:0,ws,cnt:use.length}}
+function cnt(a,T,f){let d=0,p=false,L=[];const step=g=>{if(g>=T*M||(p&&g>=(T-15)*M)){d=0;p=false;L=[]}else if(g>=15*M&&d>0)p=true};
+ a.forEach((x,i)=>{if(i)step(x.s-a[i-1].e);if(f(x)){d+=x.e-x.s;L.push(x)}});
+ const l=a[a.length-1],q=p;if(l&&!l.live)step(Date.now()-l.e);return{d,p,q,L}}
+function shiftStart(a){let i=a.length-1;while(i>0&&a[i].s-a[i-1].e<9*H)i--;return a[i].s}
+function shifts(a){const S=[];a.forEach((x,i)=>{if(!i||x.s-a[i-1].e>=9*H)S.push({s:x.s,d:0});if(x.t==='d')S[S.length-1].d+=x.e-x.s});return S}
+const CNT='';
+function brkInfo(a,ss){let p=false,k=0,d=0,last=0;if(!ss)return{k,last};const n=Date.now(),step=(g,e)=>{if(g>=45*M||(p&&g>=30*M)){if(d>0){k++;last=e}d=0;p=false}else if(g>=15*M&&d>0)p=true};
+ const s=a.filter(x=>x.s>=ss);s.forEach((x,i)=>{if(i)step(x.s-s[i-1].e,x.s);if(x.t==='d')d+=x.e-x.s});
+ const l=s[s.length-1];if(l&&!l.live)step(n-l.e,n);return{k,last}}
+function card(k,label,val,lim,t,over,soft,xtra,on){const c=val>=(soft||lim)?'bad':val/lim>=.8?'warn':'ok';
+ return `<div class="g cd${on===true?' on':on===false?' off':''}"><div class="row"><span class="lbl">${label} ${ib(k)}${on===true?CNT:''}</span><span class="num ${c}">${fmt(val)} <small>/ ${lim/H}h</small></span></div><div class="bar"><i style="width:${Math.round(Math.min(100,val/lim*100))}%;background:var(--${c})"></i></div><div class="note">${val>=lim?over:fmt(lim-val)+' left. '+t}</div>${xtra||''}${ex(k)}</div>`}
+let lock=false;let dArm=null,dT=0,lim=14,tab='today',esFor=0,ed=null,wid=null,last=null,gmsg='',wl=null,flash='',prog=0,ac=null,fired={};
+const beep=()=>{try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume();const o=ac.createOscillator();o.frequency.value=880;o.connect(ac.destination);o.start();o.stop(ac.currentTime+.4)}catch(e){}};
+async function wake(){if(!st.gps)return;try{if(navigator.wakeLock)wl=await navigator.wakeLock.request('screen')}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(st.act==='d'&&document.visibilityState==='visible')wake()});
+function gpsOn(){
+ if(!st.gps||wid!==null)return;
+ if(!navigator.geolocation){gmsg='GPS is not available in this browser.';return}
+ gmsg='Getting a GPS fix...';
+ wid=navigator.geolocation.watchPosition(p=>{
+  if(p.coords.accuracy>100){gmsg='GPS signal is weak.';return}
+  const c={lat:p.coords.latitude,lon:p.coords.longitude};gmsg='GPS on';
+  if(!st.as)st.as=c;
+  if(last){const d=hav(last,c);if(d>15){st.ad+=d;last=c}}else last=c;
+  st.ae=c;save();
+ },e=>{gmsg=e.code===1?'Location is blocked. Allow location for this site in Chrome to track distance.':'Waiting for a GPS signal...'},{enableHighAccuracy:true,maximumAge:5000});
+}
+function gpsOff(){if(wid!==null)navigator.geolocation.clearWatch(wid);wid=null;last=null;gmsg='';if(wl){wl.release().catch(()=>{});wl=null}}
+const rec=(t0,t1)=>st.act==='d'?{s:t0,e:t1,t:'d',d:Math.round(st.ad),a:st.as,z:st.ae||st.as}:{s:t0,e:t1,t:st.act};
+const MO=$('mo');
+let snap=null,mcb={},bu=[];
+const bsig=()=>st.sessions.length+'|'+st.sessions.reduce((q,x)=>q+x.s+x.e,0)+'|'+st.act+'|'+st.active+'|'+(st.rs||0);
+function unBreak(){const u=bu[bu.length-1];if(!u||u.g!==bsig()){bu=[];render();return}bu.pop();const o=JSON.parse(u.s);['sessions','active','ad','as','ae','rs','bdone'].forEach(k=>{if(k in o)st[k]=o[k];else delete st[k]});flash=u.n+' minutes removed from your break.';setTimeout(()=>{flash='';live()},6000);save();render()}
+const mo=h=>{MO.innerHTML='<div class="mb">'+h+'</div>';MO.hidden=false};
+const moX=()=>{MO.hidden=true;MO.innerHTML=''};
+MO.onclick=e=>{const k=e.target.dataset.k;if(k&&mcb[k])mcb[k](e.target)};
+const atT=(v,after)=>{const[h,m]=v.split(':').map(Number),d=new Date(after);d.setHours(h,m,0,0);if(d.getTime()<after)d.setDate(d.getDate()+1);return d.getTime()};
+const nearT=(v,ref)=>{const[h,m]=v.split(':').map(Number);let b=null;[-1,0,1].forEach(k=>{const d=new Date(ref);d.setDate(d.getDate()+k);d.setHours(h,m,0,0);const x=d.getTime();if(b===null||Math.abs(x-ref)<Math.abs(b-ref))b=x});return b};
+function commit(n){if(st.active){if(n-st.active>=20000)st.sessions.push(rec(st.active,n));if(st.act==='d')gpsOff();st.active=null;st.act=null;st.ad=0;st.as=st.ae=null}}
+let bd=0;
+function begin(t){moX();st.active=Date.now();st.act=t;if(bd){const x=bd;bd=0;st.sessions=st.sessions.filter(y=>!(y.e>x&&y.s>=x));st.sessions.forEach(y=>{if(y.e>x)y.e=x});st.active=x}if(t==='d'){gpsOn();wake()}save();render()}
+function undo(){moX();if(snap){st=JSON.parse(snap);snap=null}if(st.act==='d'){gpsOn();wake()}save();render()}
+function legalStart(){
+ const a0=all(),rs=st.rs||0,a=a0.filter(x=>x.e>rs).map(x=>x.s<rs?Object.assign({},x,{s:rs}):x),dr=a.filter(x=>x.t==='d'),dr0=a0.filter(x=>x.t==='d'),n=Date.now(),w=mon(),l=a[a.length-1];
+ if(!l)return{R:[],n};
+ const gap=n-l.e,ss=gap>=9*H?null:shiftStart(a),day=ss?sum(dr,ss,n+1):0,wkd=sum(dr0,w,n+1),fn=sum(dr0,w-7*864e5,n+1),sw=ss?sum(a.filter(x=>x.t!=='p'),ss,n+1):0;
+ const b=cnt(a,45,x=>x.t==='d'),wc=cnt(a,sw>9*H?45:30,x=>x.t!=='p');
+ const S=shifts(a0),cur=ss?S[S.length-1]:null,isx=z=>z.s>=w&&z.d>9*H+M,used=S.filter(isx).length,prev=used-(cur&&isx(cur)?1:0),extLeft=prev<2,e=l.e,R=[];
+ if(b.d>=270*M)R.push([e+(b.q?30:45)*M,'You have driven 4h 30m and need a '+(b.q?'30':'45')+' minute break first']);
+ if(wc.d>=6*H)R.push([e+(wc.q?(sw>9*H?30:15):(sw>9*H?45:30))*M,'You have worked 6 hours and need a working time break first']);
+ if(day>=(extLeft?10:9)*H)R.push([e+11*H,'You have reached your driving limit for this shift and need your daily rest (11 hours, or 9 hours if reduced)']);
+ else if(ss&&n>ss+24*H)R.push([e+9*H,'More than 24 hours have passed since your shift started, so your daily rest is due']);
+ if(wkd>=56*H||fn>=90*H)R.push([w+7*864e5,'You have reached your weekly or fortnight driving limit']);
+ return{R:R.filter(x=>x[0]>n).sort((x,y)=>y[0]-x[0]),l,ss,n}}
+function gapAsk(le,n,next){
+ mo(`<h3>Time since your last activity</h3><p>Your last activity ended ${tt(le)}, ${fmt(n-le)} ago. What were you doing?</p><button class="tg big" data-k="rest">Resting or a day off</button><button class="tg big" data-k="work">Working elsewhere</button><button class="tg big" data-k="skip">Not sure, leave it blank</button>`);
+ mcb={rest:()=>{st.sessions.push({s:le,e:n,t:'r'});st.gq=n;save();moX();next()},
+  skip:()=>{st.gq=n;moX();next()},
+  work:()=>{mo(`<h3>Working elsewhere</h3><p>When did you start and finish? Work for another employer counts as other work.</p><div class="tr"><label>Start<input type="time" id="w1" value="${hm(le)}"></label><label>End<input type="time" id="w2"></label></div><div class="note bad" id="werr"></div><button class="tg big" data-k="ok">Save</button><button class="tg big" data-k="bk">Back</button>`);
+   mcb={bk:()=>gapAsk(le,n,next),ok:()=>{
+    if(!$('w1').value||!$('w2').value){$('werr').textContent='Enter a start and end time.';return}
+    const s=atT($('w1').value,le-60000),e=atT($('w2').value,s+1);
+    if(e>n){$('werr').textContent='That finishes after now. Check the times.';return}
+    clear(s,e);st.sessions.push({s,e,t:'w'});st.gq=n;save();moX();next()}}}}}
+function warnAsk(t,L){
+ const u=L.R[0][0];
+ mo(`<h3>You cannot legally drive yet</h3><p>Earliest legal start: <b>${tt(u)}</b>, in ${fmt(u-L.n)}.</p><p>${L.R.map(x=>x[1]).join('. ')}.</p><p class="note">Driving early can break the rules. A DVSA fixed penalty is £50 to £300 per offence (no points), and serious cases can go to court or the Traffic Commissioner. Tap the i buttons for details.</p><button class="tg big" data-k="no">Do not start yet</button><button class="tg big" data-k="go">Start anyway</button>`);
+ mcb={no:undo,go:()=>truthAsk(t,L)}}
+function truthAsk(t,L){
+ mo(`<h3>Check your last shift</h3><p>The app has your last shift as ${hm(L.ss)} to ${hm(L.l.e)}. Starting early can mean a rest was cut short, so make sure these times are the true ones.</p><div class="tr"><label>Shift started<input type="time" id="t1" value="${hm(L.ss)}"></label><label>Shift ended<input type="time" id="t2" value="${hm(L.l.e)}"></label></div><div class="note bad" id="terr"></div><button class="tg big" data-k="ok">Update times and start driving</button><button class="tg big" data-k="same">Times are correct, start driving</button><button class="tg big" data-k="no">Cancel</button>`);
+ mcb={no:undo,same:()=>begin(t),ok:()=>{
+  if(!$('t1').value||!$('t2').value){$('terr').textContent='Enter both times.';return}
+  const ns=nearT($('t1').value,L.ss),ne=nearT($('t2').value,L.l.e);
+  if(!(ne>ns)){$('terr').textContent='The end must be after the start.';return}
+  if(ne>Date.now()){$('terr').textContent='The end time is in the future.';return}
+  const fi=()=>st.sessions.filter(x=>x.t!=='r'&&Math.abs(x.s-L.ss)<1000)[0];
+  if(ne<L.l.e)clear(ne,L.l.e);
+  const last=st.sessions.filter(x=>x.t!=='r').sort((x,y)=>y.e-x.e)[0];
+  if(ne>L.l.e&&last&&last.e===L.l.e)last.e=ne;
+  if(ns>L.ss)clear(L.ss,ns);
+  else if(ns<L.ss&&fi()){clear(ns,L.ss);const f=fi();if(f)f.s=ns}
+  save();begin(t)}}}
+function setAct(t){
+ if(t==='r'&&st.act!=='r'&&lock){flash='Break is locked. You have had your full break this shift. It unlocks when a break is due or you pass 9h driving.'+(st.act?' To stop '+NM[st.act]+', change to another activity or tap End Shift.':'');setTimeout(()=>{flash='';live()},8000);live();return}
+ if(st.act===t&&st.active){endAsk(1);return}
+ const n=Date.now(),was=st.act,ps=st.active;snap=JSON.stringify(st);bd=0;
+ commit(n);
+ if(was===t){snap=null;save();render();return}
+ const rs=st.rs||0,ends=st.sessions.filter(x=>x.e>rs).map(x=>x.e),le=ends.length?Math.max(...ends):0;
+ const chk=()=>{if(t==='d'){const L=legalStart();if(L.R.length){warnAsk(t,L);return}}begin(t)};
+ if(was&&ps)swapAsk(t,was,ps,n,chk);
+ else if(!was&&le&&n-le>=60*M&&(st.gq||0)<le)gapAsk(le,n,chk);else chk()}
+function swapAsk(t,was,ps,n,next){
+ const o=[5,10,15,30,60].filter(m=>n-m*M>ps);
+ mo(`<h3>When did ${NM[t]} start?</h3><p>You were on ${NM[was]} from ${hm(ps)}. If you changed a while ago, say when, and ${NM[was]} will end at that time. To correct what was logged before, tap Edit earlier entries.</p><button class="tg big" data-k="now">Skip, it started just now</button>${o.map(m=>`<button class="tg big" data-k="m${m}">${m===60?'1 hour':m+' minutes'} ago (${hm(n-m*M)})</button>`).join('')}<div class="tr" style="margin-top:12px"><label>Or at this time<input type="time" id="sw1"></label><button class="tg" data-k="at">Use time</button></div><div class="note bad" id="swerr"></div><button class="tg big" data-k="fx" id="swfx">Edit earlier entries</button><button class="tg big" data-k="no">Cancel, stay on ${NM[was]}</button>`);
+ mcb={no:undo,fx:()=>fixAsk(t,was,ps,n,next,$('sw1').value),now:()=>{moX();next()},at:()=>{const v=$('sw1').value;if(!v){$('swerr').textContent='Enter a time.';return}
+   const[h,m]=v.split(':').map(Number),q=new Date(n);q.setHours(h,m,0,0);let x=q.getTime();if(x>n)x-=864e5;
+   if(x<=ps){$('swerr').textContent='That is before '+NM[was]+' started ('+hm(ps)+'). Pick a later time, or tap Edit earlier entries to correct what was logged before.';$('swfx').hidden=false;return}
+   bd=x;moX();next()}};
+ o.forEach(m=>mcb['m'+m]=()=>{bd=n-m*M;moX();next()})}
+function fixAsk(t,was,ps,n,next,v){
+ const rows=st.sessions.filter(y=>y.e>Math.max(n-24*H,st.rs||0)).sort((a,b)=>a.s-b.s).slice(-5);
+ const V=rows.map(r=>({s:r.s,e:Math.min(r.e,n)})),Z={x:n};
+ if(v){const x0=Math.min(nearT(v,n),n);Z.x=x0;V.forEach(o=>{o.s=Math.min(o.s,x0);o.e=Math.min(o.e,x0)})}
+ const op=k=>Object.keys(NM).map(c=>`<option value="${c}"${c===k?' selected':''}>${NM[c]}</option>`).join('')+'<option value="x">Remove this entry</option>';
+ mo(`<h3>Edit earlier entries</h3><p>Correct anything that was logged wrong, for example a Break or Other work you forgot to swap off. Changing one time moves the time next to it to match, and a time cannot be set before the start of the entry it belongs to or follows. ${NM[t]} then starts at the time shown, and anything logged after that time is cut off there.</p><div class="tr"><label>${NM[t]} started<input type="time" id="fxx" value="${hm(Z.x)}"></label></div><div class="note" style="margin-bottom:8px">${NM[t]} will count from this time up to now and keep running. Leave it as now if ${NM[t]} is only just starting.</div>${rows.length?rows.map((r,i)=>`<div class="bx" id="fxb${i}"><div class="tr" style="margin:0"><select id="fxt${i}" aria-label="Activity for entry ${i+1}" style="flex:1;min-width:0">${op(r.t||'d')}</select><button type="button" class="del bad" id="fxd${i}" style="flex:none">Delete</button></div><div class="note" id="fxn${i}" hidden>This entry will be deleted when you save.</div><div class="tr" id="fxr${i}" style="margin:8px 0 0"><label>Start<input type="time" id="fxs${i}" value="${hm(V[i].s)}"></label><label>End<input type="time" id="fxe${i}" value="${hm(V[i].e)}"></label></div><div class="note warn" id="fxz${i}" hidden>No time is left in this entry, so it will be removed when you save.</div></div>`).join(''):'<p class="note">Nothing is logged in the last 24 hours.</p>'}<div class="note bad" id="fxerr"></div><button class="tg big" data-k="ok">Save and start ${NM[t]}</button><button class="tg big" data-k="bk">Back</button><button class="tg big" data-k="no">Cancel, stay on ${NM[was]}</button>`);
+ const gone=i=>$('fxt'+i).value==='x';
+ const draw=()=>{rows.forEach((r,i)=>{$('fxs'+i).value=hm(V[i].s);$('fxe'+i).value=hm(V[i].e);$('fxz'+i).hidden=gone(i)||V[i].e>V[i].s});$('fxx').value=hm(Z.x)};
+ const fix=(i,k,val)=>{const E=$('fxerr');E.textContent='';if(!val){draw();return}
+  const old=i<0?Z.x:V[i][k];let nv=nearT(val,old);
+  if(nv>n){nv=n;E.textContent='A time cannot be later than now, so it was set to now.'}
+  const F=[];rows.forEach((r,j)=>{if(!gone(j))F.push([V[j],'s'],[V[j],'e'])});F.push([Z,'x']);
+  const p=F.findIndex(f=>i<0?f[0]===Z:(f[0]===V[i]&&f[1]===k));
+  if(p<0){V[i][k]=nv;if(V[i].e<V[i].s)V[i].e=V[i].s;draw();return}
+  const get=q=>F[q][0][F[q][1]],put=(q,x)=>{F[q][0][F[q][1]]=x};
+  const lo=p%2?p-1:p-2;
+  if(lo>=0&&nv<get(lo)){nv=get(lo);E.textContent='That is before the entry started ('+hm(nv)+'), so it was set to that start time. Change the start of that entry first, or delete it.'}
+  put(p,nv);
+  if(p%2===0&&p>0&&(get(p-1)===old||get(p-1)>nv))put(p-1,nv);
+  if(p%2===1&&get(p+1)===old)put(p+1,nv);
+  for(let q=p+1;q<F.length;q++)if(get(q)<get(q-1))put(q,get(q-1));
+  draw()};
+ rows.forEach((r,i)=>{const S=$('fxt'+i),D=$('fxd'+i),up=()=>{const x=S.value==='x';D.textContent=x?'Undo delete':'Delete';$('fxn'+i).hidden=!x;$('fxr'+i).hidden=x;draw()};
+  S.onchange=()=>{if(S.value!=='x')S.dataset.p=S.value;up()};S.dataset.p=S.value;
+  D.onclick=e=>{e.stopPropagation();S.value=S.value==='x'?S.dataset.p:'x';up()};
+  $('fxs'+i).onchange=e=>fix(i,'s',e.target.value);$('fxe'+i).onchange=e=>fix(i,'e',e.target.value)});
+ $('fxx').onchange=e=>fix(-1,'x',e.target.value);draw();
+ mcb={no:undo,bk:()=>swapAsk(t,was,ps,n,next),ok:()=>{
+  const E=$('fxerr'),X=Z.x;if(X>n){E.textContent=NM[t]+' cannot start later than now.';return}
+  const out=[];
+  for(let i=0;i<rows.length;i++){if(gone(i))continue;const s=V[i].s,e=Math.min(V[i].e,X);if(!(e>s))continue;
+   out.push(Object.assign({},rows[i],{s,e,t:$('fxt'+i).value}))}
+  st.sessions=st.sessions.filter(y=>!rows.includes(y));
+  out.sort((a,b)=>a.s-b.s).forEach(r=>{clear(r.s,r.e,1);st.sessions.push(r)});
+  if(st.rs&&X<st.rs)st.rs=X;
+  bd=X;moX();next()}}}
+function clear(t0,t1,al){const out=[];st.sessions.forEach(x=>{if((!al&&(x.t||'d')==='r')||x.e<=t0||x.s>=t1){out.push(x);return}if(x.s<t0)out.push(Object.assign({},x,{e:t0}));if(x.e>t1)out.push(Object.assign({},x,{s:t1,d:0,a:null}))});st.sessions=out}
+function gstart(B){const rs=st.rs||0;let g=null;const u=x=>{x=Math.max(x,rs);g=g===null?x:Math.min(g,x)};
+ st.sessions.forEach(r=>{if(r.t==='r'&&r.e>rs&&r.s<B)u(r.s)});
+ if(st.act==='r'&&st.active<B)u(st.active);return g===null?B:g}
+let bgc=0,bp=false;
+function brkp(a){bgc=0;bp=false;const c0=cnt(a,45,x=>x.t==='d');if(c0.d===0&&a.some(x=>x.t==='d'))return 45*M;
+ const n=Date.now(),l=a[a.length-1],live=l&&l.live,B=live?l.s:n,prev=live?a[a.length-2]:l;
+ const gs=prev?Math.min(prev.e,B):gstart(B),gc=Math.max(0,B-gs);
+ const G=[];a.forEach((x,i)=>{if(i)G.push(x.s-a[i-1].e)});const E=live?G.slice(0,-1):G;
+ let q=false,dn=false;const sp=g=>{dn=false;if(g>=45*M||(q&&g>=30*M)){q=false;dn=true}else if(g>=15*M)q=true};E.forEach(sp);
+ if(live&&l.t==='d'){sp(gc);return dn&&(n-l.s<10*M||n-(st.bdone||0)<10*M)?45*M:(q?15*M:0)}
+ if(!live){bgc=gc;bp=q}
+ return q?(gc>=30*M?45*M:15*M):(gc>=45*M?45*M:gc>=15*M?15*M:0)}
+function ovTxt(t0,t1){let m=0;st.sessions.forEach(x=>{if((x.t||'d')!=='r')m+=Math.max(0,Math.min(x.e,t1)-Math.max(x.s,t0))});if(st.active&&st.act&&st.act!=='r')m+=Math.max(0,t1-Math.max(st.active,t0));return m>=M?'The '+fmt(m)+' of driving or work logged in that time now counts as break.':''}
+let ot='';
+function fillBreak(N){ot='';
+ if(lock||prog>=45*M||(N===15&&prog>=15*M))return;
+ if(bu.length&&bu[bu.length-1].g!==bsig())bu=[];
+ const u0=JSON.stringify(st);
+ const n=Date.now(),busy=st.act&&st.act!=='r',B=busy?st.active:n,full=N>=45||(prog>=15*M&&N>=30),rs=st.rs||0;
+ let k=null;st.sessions.forEach(x=>{if((x.t||'d')!=='r'&&x.e<=B&&x.e>rs&&(!k||x.e>k.e))k=x});
+ const g0=k?k.e:gstart(B),gp=B-g0;
+ let t0,t1;
+ if(!busy||(gp>0&&gp<45*M&&n-st.active<10*M)){t1=g0;t0=t1-N*M;ot=ovTxt(t0,t1);clear(t0,t1)}
+ else if(n-st.active<N*M){t1=st.active;t0=t1-N*M;ot=ovTxt(t0,t1);clear(t0,t1)}
+ else{t1=n;t0=n-N*M;ot=ovTxt(t0,t1);clear(t0,t1);if(st.active<t0)st.sessions.push(rec(st.active,t0));st.active=t1;st.ad=0;st.as=null}
+ if(rs&&t0<rs)st.rs=t0;
+ st.sessions.push({s:t0,e:t1,t:'r'});
+ if(full)st.bdone=Date.now();
+ fixOv();bu.push({s:u0,n:N,g:bsig()});
+ flash='+'+N+' minutes added to your break.'+(full?' Full 45 minute break done.':'')+(ot?' '+ot:'');setTimeout(()=>{flash='';live()},6000);
+ save();render();
+}
+function breakAsk(N){
+ if(lock||prog>=45*M||(N===15&&prog>=15*M))return;
+ const n=Date.now(),onB=st.act==='r'&&st.active,lim=onB?st.active:n;
+ mo(`<h3>When did you take this ${N} minute break?</h3><p>Enter the time the break started. It is put into your log at that time, and whatever was logged then is moved out of the way: the entry before it ends when the break starts, and the entry after it starts when the break ends.</p><div class="tr"><label>Break started<input type="time" id="bk1" value="${hm(lim-N*M)}"></label></div><div class="note" id="bkn" style="margin-bottom:8px"></div><div class="note bad" id="bkerr"></div><button class="tg big" data-k="ok">Add ${N} minute break</button><button class="tg big" data-k="auto">Not sure, put it before what I am doing now</button><button class="tg big" data-k="no">Cancel</button>`);
+ const at=()=>{const v=$('bk1').value;return v?nearT(v,lim-N*M):null};
+ const show=()=>{const t=at();$('bkerr').textContent='';$('bkn').textContent=t===null?'':'Break from '+hm(t)+' to '+hm(t+N*M)+(sod(t)!==sod(n)?' on '+dd(sod(t)):'')+'.'};
+ $('bk1').onchange=show;show();
+ mcb={no:moX,auto:()=>{moX();fillBreak(N)},ok:()=>{
+  const t0=at(),E=$('bkerr');if(t0===null){E.textContent='Enter the time the break started.';return}
+  const t1=t0+N*M;
+  if(t1>n){E.textContent='That break would finish at '+hm(t1)+', which is later than now. Pick an earlier start time.';return}
+  if(onB&&t1>st.active){E.textContent='You have been on Break since '+hm(st.active)+', so that time is already counted. Pick a time that finishes before then.';return}
+  moX();placeBreak(N,t0,t1)}}}
+function placeBreak(N,t0,t1){
+ if(bu.length&&bu[bu.length-1].g!==bsig())bu=[];
+ const u0=JSON.stringify(st),full=N>=45||(prog>=15*M&&N>=30),rs=st.rs||0;
+ ot=ovTxt(t0,t1);clear(t0,t1,1);
+ if(st.active&&st.act!=='r'&&st.active<t1){
+  if(st.active<t0){if(t0-st.active>=20000)st.sessions.push(rec(st.active,t0));st.ad=0;st.as=null}
+  st.active=t1}
+ if(rs&&t0<rs)st.rs=t0;
+ st.sessions.push({s:t0,e:t1,t:'r'});
+ if(full)st.bdone=Date.now();
+ fixOv();bu.push({s:u0,n:N,g:bsig()});
+ flash='+'+N+' minute break added from '+hm(t0)+' to '+hm(t1)+'.'+(full?' Full 45 minute break done.':'')+(ot?' '+ot:'');setTimeout(()=>{flash='';live()},6000);
+ save();render();
+}
+function fire(m){if(!st.alerts)return;$('alert').textContent=m+' (tap to dismiss)';$('alert').hidden=false;try{navigator.vibrate&&navigator.vibrate([400,200,400])}catch(e){}beep()}
+function tcs(v,days,el){const e=$(el);if(!v){e.textContent='Enter the date to track it.';e.className='note';return}
+ const d=Math.ceil((new Date(v+'T12:00').getTime()+days*864e5-Date.now())/864e5);
+ e.textContent=d<0?'Overdue by '+(-d)+' days.':d===0?'Due today.':'Next due in '+d+' days.';e.className='note '+(d<0?'bad':d<=7?'warn':'ok')}
+let SEG={};
+const SGH='<div class="note" style="text-decoration:underline;margin-top:4px">Tap to see the entries counted</div>';
+const sg=(k,h)=>h.replace('<div class="g cd','<div data-seg="'+k+'" role="button" tabindex="0" style="cursor:pointer" class="g cd');
+function segShow(k){const S=SEG[k];if(!S)return;const[ti,L,f,t,why]=S;
+ const R=L.map(x=>({s:Math.max(x.s,f),e:Math.min(x.e,t),x})).filter(r=>r.e>r.s),tot=R.reduce((q,r)=>q+r.e-r.s,0);
+ mo(`<h3>${ti}</h3><p class="note">${why}</p>${R.length?R.map(r=>`<div class="item"><div><div class="lbl">${IC[r.x.t]} ${NM[r.x.t]}${r.x.live?' (running now)':''}</div><div class="note">${tl(r.s)} to ${hm(r.e)}</div></div><div class="lbl">${fmt(r.e-r.s)}</div></div>`).join(''):'<p>Nothing is counted at the moment.</p>'}<div class="item"><div class="lbl">Total</div><div class="lbl">${fmt(tot)}</div></div><p class="note" style="margin-top:8px">Each line is rounded down to the minute, so the total can be a minute more than the lines added up. If an entry is wrong, edit or delete it in the Log tab.</p><button class="tg big" data-k="lg">Open the Log</button><button class="tg big" data-k="x">Close</button>`);
+ mcb={x:moX,lg:()=>{moX();showTab('log')}}}
+function live(){
+ if(pend&&MO.hidden){const[r,ru]=pend;pend=null;if(ru>(st.u||0))adopt(r,ru);else baseU=Math.max(baseU,ru)}
+ const a0=all(),rs=st.rs||0,a=a0.filter(x=>x.e>rs).map(x=>x.s<rs?Object.assign({},x,{s:rs}):x),dr=a.filter(x=>x.t==='d'),dr0=a0.filter(x=>x.t==='d'),n=Date.now(),w=mon(),act=st.act,busy=!!act&&act!=='r',l=a[a.length-1];
+ const gap=l&&!busy?n-l.e:0,fresh=!l||gap>=9*H,ss=fresh?null:shiftStart(a);
+ const day=ss?sum(dr,ss,n+1):0,wkd=sum(dr0,w,n+1),fn=sum(dr0,w-7*864e5,n+1),sw=ss?sum(a.filter(x=>x.t!=='p'),ss,n+1):0;
+ const b=cnt(a,45,x=>x.t==='d'),wc=cnt(a,sw>9*H?45:30,x=>x.t!=='p');
+ const T7=totals(),R17=avg17(T7),S=shifts(a0),cur=ss?S[S.length-1]:null,isx=z=>z.s>=w&&z.d>9*H+M,used=S.filter(isx).length,prev=used-(cur&&isx(cur)?1:0),extLeft=prev<2;
+ prog=brkp(a);
+ SEG={brk:['Driving Since Last Break',b.L,0,n,'Driving since your last full break (45 minutes, or 15 then 30 minutes). Other work and POA do not reset it.'],
+  wrk:['Working Time Since Last Break',wc.L,0,n,'Driving and other work since your last working time break. POA is not counted.'],
+  day:['Driving This Shift',ss?dr:[],ss||n,n,ss?'Driving since this shift started, '+tt(ss)+'. A shift carries on until you have a rest of 9 hours or more, or you tap Reset Day. So driving from earlier today or last night is included if there was no 9 hour rest after it.':'No shift is running.'],
+  wk:['Driving This Week',dr0,w,n,'Driving since Monday 00:00.'],
+  fn:['Driving This Fortnight',dr0,w-7*864e5,n,'Driving since Monday 00:00 of last week.']};
+ const bi=brkInfo(a,ss);lock=bi.k>0&&day<9*H&&b.d<270*M&&wc.d<6*H;
+ const dOn=act==='d',wOn=act==='d'||act==='w',bOn=!busy,so=(x,y)=>x?y:'';
+ document.querySelectorAll('.act').forEach(x=>{const o=x.dataset.a===act;x.classList.toggle('on',o);x.setAttribute('aria-pressed',o);x.classList.toggle('lk',x.dataset.a==='r'&&lock&&act!=='r')});
+ const qd=m=>lock||prog>=45*M||(m===15&&prog>=15*M);
+ $('al').textContent=st.alerts?'Alerts On':'Alerts Off';
+ const al=[['b15',act==='d'&&b.d>=255*M,'15 minutes until you need a 45 minute break.'],['b0',act==='d'&&b.d>=270*M,'4h 30m of driving reached. Take a break now.'],
+  ['w15',busy&&act!=='p'&&wc.d>=345*M,'15 minutes until your 6 hour working limit.'],['w0',busy&&act!=='p'&&wc.d>=6*H,'6 hours of work reached. Take a break now.'],
+  ['d15',act==='d'&&day>=9*H-15*M,'15 minutes until 9 hours driving this shift.'],['d0',act==='d'&&day>=9*H,extLeft?'9 hours reached. You can extend to 10 hours.':'9 hours reached. Stop driving.'],['e0',act==='d'&&extLeft&&day>=10*H,'10 hours reached. Stop driving.']];
+ al.forEach(([k,c,m])=>{if(c&&!fired[k])fire(m);fired[k]=c});
+ const L=[];
+ $('gp').textContent=st.gps?'GPS On':'GPS Off';$('gd').textContent=act==='d'&&st.gps?mi(st.ad):'Not tracking';$('gs').textContent=!st.gps?'GPS is off. Turn it on above to track distance.':act==='d'?(gmsg||'Starting GPS...'):'GPS is on and starts when you start driving.';
+ if(!act)L.push(l&&!fresh&&!(st.se&&st.se>=l.e)?'Nothing running. Only your break timer is counting. Tap End Shift to start your daily rest.':'Nothing running. Only your rest and break timers are counting.');
+ if(act==='p')L.push('POA is not counted as driving or working time.');
+ else if(act==='w')L.push('Counting as working time only, not driving.');
+ if(!busy&&l&&gap<9*H){if(gap<15*M)L.push('On a break. Under 15 minutes does not count.');
+  else if(!b.d&&dr.length)L.push('Break complete. Your 4h 30m has reset.');
+  else if(b.p)L.push('15 minutes counted. Keep resting to 45 minutes to reset, or take 30 minutes at your next stop.')}
+ L.push(flash);
+ set($('live'),L.filter(Boolean).join('<br>'));
+ let nx;
+ if(act==='d'){const c=[[270*M-b.d,'4h 30m break'],[6*H-wc.d,'6 hour working limit'],[9*H-day,'9 hour daily limit'],[56*H-wkd,'weekly limit'],[90*H-fn,'fortnight limit']].sort((x,y)=>x[0]-y[0])[0];
+  nx=['Stop Driving By',tt(n+Math.max(0,c[0])),'Because of your '+c[1]+'.'+(extLeft&&c[1]==='9 hour daily limit'?' You can extend to 10h.':'')]}
+ else{const R=[],e=l?l.e:n;
+  if(l){if(b.d>=270*M)R.push([e+(b.q?30:45)*M,'45 minute break']);
+   if(wc.d>=6*H)R.push([e+(wc.q?(sw>9*H?30:15):(sw>9*H?45:30))*M,'working time break']);
+   if(day>=(extLeft?10:9)*H)R.push([e+11*H,'daily rest (9h if reduced)'])}
+  if(wkd>=56*H||fn>=90*H)R.push([w+7*864e5,'weekly or fortnight limit']);
+  const r=R.filter(x=>x[0]>n).sort((x,y)=>y[0]-x[0]);
+  nx=r.length?['Next Legal Start',tt(r[0][0]),'Waiting on: '+r.map(x=>x[1]).join(', ')+'.']:['Next Legal Start','Now','Nothing is stopping you driving.']}
+ let h=`<div class="g cd w"><div class="row"><span class="lbl">${nx[0]} ${ib('next')}</span><span class="num">${nx[1]}</span></div><div class="note">${nx[2]}</div>${ex('next')}</div>`;
+ if(l){const dw=x=>{const d=Math.round((sod(x)-sod(n))/864e5);return (d<=0?'Today':d===1?'Tomorrow':new Date(x).toLocaleDateString('en-GB',{weekday:'long'}))+' '+hm(x)},le=l.live?n:l.e,
+  ns=gap>=11*H?['Now','Your daily rest is done.']:[dw(le+11*H),(busy?'If you stop now. ':'')+'Regular 11h rest. With a reduced 9h rest (max 3 per week): '+dw(le+9*H)+'.'];
+  h+=`<div class="g cd w"><div class="row"><span class="lbl">Next Shift Can Start ${ib('ns')}</span><span class="num">${ns[0]}</span></div><div class="note">${ns[1]}</div>${ex('ns')}</div>`}
+ if(!busy&&l){
+  const c=gap>=11*H?'ok':gap>=9*H?'warn':'acc';
+  let t=gap>=45*H?'Weekly rest done.':gap>=11*H?'Regular daily rest done. Weekly rest of 45h is at '+tt(l.e+45*H)+'.':gap>=9*H?'Reduced daily rest done (allowed 3 times between weekly rests). Regular 11h at '+tt(l.e+11*H)+'.':'Reduced 9h rest at '+tt(l.e+9*H)+', regular 11h at '+tt(l.e+11*H)+'.';
+  if(ss)t+=n>ss+24*H?' <span class="bad">Your 24h window has passed. Check your tachograph.</span>':' Take your daily rest by '+tt(ss+24*H)+'.';
+  const rOn=fresh||(st.se&&st.se>=l.e);
+  h+=rOn?`<div class="g cd w on"><div class="row"><span class="lbl">Rest Since Last Shift ${ib('rest')}${CNT}</span><span class="num">${fmt(gap)} <small>/ 11h</small></span></div><div class="bar"><i style="width:${Math.round(Math.min(100,gap/(11*H)*100))}%;background:var(--${c})"></i></div><div class="note">${t}</div>${ex('rest')}</div>`
+   :`<div class="g cd w off"><div class="row"><span class="lbl">Rest Since Last Shift ${ib('rest')}</span><span class="num">0h 00m <small>/ 11h</small></span></div><div class="bar"><i style="width:0"></i></div><div class="note">Not counting. Your shift is still running, so this is a break, not rest. It starts when you tap End Shift.</div>${ex('rest')}</div>`}
+ const pm=Math.floor(prog/M),pc=pm>=45?'ok':'acc';
+ const room=270*M-b.d,bx=`<div class="note" style="margin-top:6px"><b>Breaks this shift:</b> ${bi.k?bi.k+' full break'+(bi.k>1?'s':'')+', last finished '+hm(bi.last):'no full break yet'}.<br><b>Still required:</b> ${b.d>=270*M?(b.q?'30':'45')+' minutes, due now.':bi.k&&9*H-day<=room?'nothing more for a 9h day. A break is needed if you drive another '+fmt(room)+'.':!busy&&bgc>0&&prog<45*M?Math.ceil(((bp?30:45)*M-bgc)/M)+' more minutes of this break'+(bp?'':', or stop at 15 and take 30 or more later')+'.':(b.p?'30 minutes (15 minute part done)':'45 minutes')+', within '+fmt(room)+' of driving.'}${lock?'<br>Break and +min buttons are locked until a break is due or you pass 9h driving.':''}</div>`;
+ h+='<div class="cs">Breaks</div>'+sg('brk',card('brk','Driving Since Last Break',b.d,270*M,b.q?'Next break must be 30 min or more.':'Take 45 min, or 15 then 30.',b.q?'Take 30 minutes now.':'Take 45 minutes now.',0,bx+SGH,dOn).replace('g cd','g cd w'));
+ h+=`<div class="g cd w${bOn?' on':' off'}"><div class="row"><span class="lbl">Break Time Taken${so(bOn,CNT)}</span><span class="num">${pm} <small>/ 45 min</small></span></div><div class="bar"><i style="width:${Math.round(prog/(45*M)*100)}%;background:var(--${pc})"></i></div><div class="note">${pm>=45?'Full break done.':lock?'Locked. You have had your full break this shift.':(pm?'15 minute part counted. The next part only counts if it is 30 minutes or more.':'Nothing counted yet. A break under 15 minutes does not count.')+(!busy&&bgc>=M?' This break: '+Math.floor(bgc/M)+' min so far'+(bp?(bgc<30*M?', counts at 30.':'.'):(bgc<15*M?', counts at 15.':', full break at 45.')):'')+' Add break you took without logging it:'}</div><div class="qf">${[15,30,45].map(m=>`<button data-m="${m}"${qd(m)?' disabled':''}>+${m} min</button>`).join('')}</div>${bu.length&&bu[bu.length-1].g===bsig()?`<button class="tg" data-ub="1" style="display:block;width:100%;margin-top:10px;padding:12px;font-size:16px;border-radius:10px;border-color:var(--bad)">Undo +${bu[bu.length-1].n} min</button>`:''}</div>`;
+ set($('s1'),h);
+ const dt=extLeft?'You can extend to 10h ('+(2-prev)+' left this week).':'No 10h extensions left this week.';
+ const td=sod(n),poaD=sum(a0.filter(x=>x.t==='p'),td,n+1),poaW=sum(a0.filter(x=>x.t==='p'),w,n+1),paidD=sum(a0.filter(x=>x.t!=='r'),td,n+1);
+ set($('s2'),`<div class="g cd w${act==='p'?' on':act?' off':''}"><div class="row"><span class="lbl">POA ${ib('poa')}</span><span class="num">${fmt(poaD)}</span></div><div class="note">Today. ${fmt(poaW)} this week. All paid time today, with driving and work: ${fmt(paidD)}.</div></div>`+'<div class="cs">Working Time</div>'+sg('wrk',card('wrk','Working Time Since Last Break',wc.d,6*H,'Then take a '+(sw>9*H?45:30)+' minute break.','Take a break now.',0,SGH,wOn))+card('avg','Average Working Week',R17.avg,48*H,'Limit is 48h a week over 17 weeks.','Over the 48h average.',0,'<div class="note" style="text-decoration:underline;margin-top:4px">Tap to see the days this comes from</div>',wOn).replace('<div class="g cd','<div data-go="avg" role="button" tabindex="0" style="cursor:pointer" class="g cd')+'<div class="cs">Driving Limits</div>'+
+  sg('day',card('day','Driving This Shift',day,9*H,dt,extLeft&&day<10*H?'Over 9h, so this uses one of your 2 extensions. Stop by 10h.':extLeft?'10h limit reached.':'9h reached. No extensions left this week.',extLeft?10*H:0,SGH,dOn))+
+  `<div class="g cd"><div class="row"><span class="lbl">10h Days Used ${ib('ext')}</span><span class="num">${used} <small>/ 2</small></span></div>${ex('ext')}</div>`+
+  sg('wk',card('wk','Driving This Week',wkd,56*H,'Monday to Sunday.','No more driving this week.',0,SGH,dOn))+sg('fn',card('wk','Driving This Fortnight',fn,90*H,'This week plus last week.','No more driving this fortnight.',0,SGH,dOn)));
+ if(tab==='hours'){const T=dayTot();let cs='';for(let i=0;i<7;i++){const q=new Date(sod(n));q.setDate(q.getDate()-i);const w2=q.getTime(),o=T[w2]||{d:0,w:0},tot=o.d+o.w;
+  cs+=`<button class="g cd dayb" data-day="${w2}"><div class="lbl">${i?q.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}):'Today'}</div><div class="num ${tot>13*H?'bad':''}">${fmt(tot)}</div><div class="note">${fmt(o.d)} driving, ${fmt(o.w)} work</div></button>`}
+  let wk='';R17.ws.slice(0,R17.cnt).forEach(w3=>{const tw=T7[w3]?T7[w3].w:0;let ds='';for(let j=0;j<7;j++){const q=new Date(w3);q.setDate(q.getDate()+j);const o=T[q.getTime()],tot=o?o.d+o.w:0;if(tot>0)ds+=`<button class="pl" data-day="${q.getTime()}">${q.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} &middot; ${fmt(tot)}</button>`}
+   wk+=`<div class="g cd w"><div class="row"><span class="lbl">Week of ${new Date(w3).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</span><span class="num ${tw>60*H?'bad':''}" style="font-size:22px">${fmt(tw)}</span></div>${ds?'<div class="pls">'+ds+'</div>':'<div class="note">No work logged this week. It still counts in the average.</div>'}</div>`});
+  set($('hrs'),card('avg','17 Week Average',R17.avg,48*H,'Limit is 48h a week.','Over the 48h average.').replace('g cd','g cd w')+'<div class="cs" style="grid-column:1/-1">Last 7 Days</div>'+cs+`<div class="note" style="grid-column:1/-1">Tap a day to see and edit its activities. Driving plus other work. ${R17.cnt} of 17 weeks counted so far.</div><div class="cs" id="wkc" style="grid-column:1/-1">Weeks Counted in the Average</div>`+(wk||'<div class="note" style="grid-column:1/-1">Nothing logged yet.</div>')+(R17.cnt?`<div class="note" style="grid-column:1/-1">The average is these ${R17.cnt} week totals added up and divided by ${R17.cnt}. Tap a day to see and edit what was logged.</div>`:''))}
+ const bs=busy?0:(l&&gap<9*H?l.e:0)||st.active||0,ek=busy?st.active:-bs;$('es').hidden=!ek;$('esl').textContent=busy?'Started At':'Break Started At';$('esh').hidden=!act&&fresh;if(ek&&esFor!==ek){$('est').value=hm(busy?st.active:bs);esFor=ek}
+ set($('tcx'),ex('tac'));tcs(st.tc.c,28,'tcn');tcs(st.tc.u,90,'tun');
+ wkUpdate();
+}
+const nxd=w=>{const d=new Date(w);d.setDate(d.getDate()+1);return d.getTime()};
+function dayTot(){const D={};all().forEach(x=>{const k=x.t||'d';let w=sod(x.s);while(w<x.e){const n2=nxd(w),s=Math.max(x.s,w),e=Math.min(x.e,n2);if(e>s){const o=D[w]=D[w]||{d:0,w:0,p:0,r:0};o[k]+=e-s}w=n2}});return D}
+const od={};
+const dd=w=>new Date(w).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'}),ymd=w=>{const q=new Date(w);return q.getFullYear()+'-'+pad(q.getMonth()+1)+'-'+pad(q.getDate())};
+const lk=(p,t)=>p?` <a href="https://www.google.com/maps?q=${p.lat},${p.lon}" target="_blank" rel="noopener">${t}</a>`:'';
+const emptyD=()=>({T:{d:0,w:0,p:0,r:0},I:[],m:0});
+let dayView=null;
+function buildD(){const D={};const SS=st.sessions.slice();if(st.active&&st.act&&Date.now()>st.active)SS.push({s:st.active,e:Date.now(),t:st.act,live:1});SS.forEach(x=>{const k=x.t||'d';let w=sod(x.s);while(w<x.e){const n2=nxd(w),s=Math.max(x.s,w),e=Math.min(x.e,n2);if(e>s){const o=D[w]=D[w]||emptyD();o.T[k]+=e-s;if(x.s>=w)o.m+=x.d||0;o.I.push({x,s,e,c:x.s<w})}w=n2}});return D}
+function rowsOf(o){return o.I.sort((a,b)=>a.s-b.s).map(({x,s,e,c})=>{const t=x.t||'d';
+   if(!c&&x.s===ed)return `<div class="item" style="display:block"><div class="lbl">${IC[t]} ${NM[t]}</div><div class="tr" style="margin:8px 0"><input type="time" id="e1" value="${hm(x.s)}"><input type="time" id="e2" value="${hm(x.e)}"></div><select id="e3" style="margin-bottom:8px">${['d','w','p','r'].map(k=>`<option value="${k}"${k===t?' selected':''}>${NM[k]}</option>`).join('')}</select><br><button class="tg" data-sv="${x.s}">Save</button> <button class="tg" data-cn="1">Cancel</button><div class="note bad" id="eerr"></div></div>`;
+   if(x.live)return `<div class="item"><div><div class="lbl">${IC[t]} ${NM[t]} (Running Now)</div><div class="note">${hm(s)} to now (${fmt(e-s)}). Change activity or end your shift on the Today tab to edit it.</div></div></div>`;
+   return `<div class="item"><div><div class="lbl">${IC[t]} ${NM[t]}${c?' (from the day before)':''}</div><div class="note">${hm(s)} to ${hm(e)} (${fmt(e-s)}${x.d&&!c?', '+mi(x.d):''})${c?'':lk(x.a,'Start map')+lk(x.z,'End map')}</div></div>${c?'':`<div><button class="del" data-ed="${x.s}">Edit</button><button class="del${dArm===String(x.s)?' bad':''}" data-s="${x.s}">${dArm===String(x.s)?'Tap Again to Delete':'Delete'}</button></div>`}</div>`}).join('')}
+function list(){
+ if(tab==='log'){
+ const D=buildD();
+ const ks=Object.keys(D).map(Number).sort((a,b)=>b-a);
+ if(!ks.length)$('list').innerHTML='<div class="g note">Nothing logged yet. Tap an activity on the Today tab, or add one above.</div>';
+ else $('list').innerHTML=ks.slice(0,lim).map(w=>{const o=D[w],T=o.T,op=!!od[w],rows=op?rowsOf(o):'';
+  return `<div class="g" style="margin-top:10px"><button class="dh" data-od="${w}" aria-expanded="${op}"><span><span class="lbl">${dd(w)}</span><span class="note">${fmt(T.d+T.w)} worked, ${fmt(T.d)} driving${o.m?', '+mi(o.m):''}</span></span><span class="chev">${op?'&#9650;':'&#9660;'}</span></button>${op?`<div class="note" style="margin:8px 0 6px">${fmt(T.d)} driving, ${fmt(T.w)} work, ${fmt(T.p)} POA, ${fmt(T.r)} break</div>${rows}<button class="del" data-add="${ymd(w)}" style="margin-top:6px">Add Entry</button>`:''}</div>`}).join('')+(ks.length>lim?'<button class="tg" data-more="1" style="margin-top:10px">Show More Days</button>':'');}
+ dayPage()}
+function dayPage(){if(dayView==null)return;const o=buildD()[dayView]||emptyD(),T=o.T;
+ $('dtitle').textContent=dd(dayView);
+ $('dsum').innerHTML=`${fmt(T.d+T.w)} worked. ${fmt(T.d)} driving, ${fmt(T.w)} work, ${fmt(T.p)} POA, ${fmt(T.r)} break${o.m?', '+mi(o.m):''}`;
+ $('dayc').innerHTML=rowsOf(o)||'<div class="g note">Nothing logged this day.</div>'}
+let dayFrom='hours';function openDay(ts,from){dayFrom=from||'hours';dayView=ts;['today','check','log','hours','tacho','signs','set'].forEach(x=>$('t-'+x).hidden=true);$('t-day').hidden=false;ed=null;dayPage();window.scrollTo(0,0)}
+const render=()=>{live();list()};
+function showTab(k){tab=k;dayView=null;ed=null;$('t-day').hidden=true;['today','check','log','hours','tacho','signs','set'].forEach(x=>{$('t-'+x).hidden=x!==k});document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===k));if(k==='check')ckRender();if(k==='signs')renderSigns();render()}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+document.querySelectorAll('.act').forEach(b=>b.onclick=()=>setAct(b.dataset.a));
+$('s1').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(b&&!b.disabled)breakAsk(+b.dataset.m);else if(e.target.closest('[data-ub]'))unBreak()});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-i]'),s=$('sheet');if(b){const k=b.dataset.i;if(open===k){open=null;s.hidden=true}else{open=k;s.innerHTML=(k.startsWith('c:')?infoCk(k.slice(2)):boxify(INFO[k]))+'<div class="note" style="margin-top:6px">Tap to close.</div>';s.hidden=false}}else if(!s.hidden){open=null;s.hidden=true}});
+const goAvg=e=>{if(e.target.closest('[data-i]')||!e.target.closest('[data-go]'))return;if(e.type==='keydown'&&e.key!=='Enter')return;showTab('hours');const el=$('wkc');if(el)el.scrollIntoView({block:'start'})};$('s2').addEventListener('click',goAvg);$('s2').addEventListener('keydown',goAvg);
+const segClick=e=>{if(e.target.closest('button,a,input'))return;const c=e.target.closest('[data-seg]');if(!c||(e.type==='keydown'&&e.key!=='Enter'))return;segShow(c.dataset.seg)};['s1','s2'].forEach(i=>{$(i).addEventListener('click',segClick);$(i).addEventListener('keydown',segClick)});
+const edFix=e=>{if(e.target.id!=='e1'&&e.target.id!=='e2')return;const x=st.sessions.find(y=>y.s===ed),a=$('e1'),b=$('e2');if(x&&a&&b&&a.value&&b.value&&sod(x.s)===sod(x.e)&&b.value<a.value){b.value=a.value;$('eerr').textContent='The end cannot be before the start, so it was set to the start time.'}};$('list').addEventListener('change',edFix);$('dayc').addEventListener('change',edFix);
+$('hrs').onclick=e=>{const b=e.target.closest('[data-day]');if(!b)return;openDay(+b.dataset.day)};
+$('alert').onclick=()=>{$('alert').hidden=true};
+let rdT=0;
+const rdF=b=>()=>{if(!rdT){b.textContent='Tap Again to Confirm';rdT=setTimeout(()=>{rdT=0;b.textContent='Reset Day'},4000);return}clearTimeout(rdT);rdT=0;b.textContent='Reset Day';st.rs=Date.now();st.bdone=0;fired={};flash='Day reset. Breaks, shift and working time start again from now.';setTimeout(()=>{flash='';live()},8000);save();showTab('today')};$('rd').onclick=rdF($('rd'));$('rd2').onclick=rdF($('rd2'));
+const endAsk=same=>{const n=Date.now(),a=all(),z=a[a.length-1],base=z?(z.live?n:z.e):n;
+ mo(`<h3>End your shift?</h3><p>${same===1&&st.act?NM[st.act]+' is already running and cannot be switched off on its own. To change activity, tap Cancel and then tap the new one. ':''}${st.act?(same===1?'If you end your shift, '+NM[st.act]+' will stop. ':NM[st.act]+' will stop. '):''}Your daily rest counts from ${hm(base)}.</p><p class="note">Earliest next start: ${tt(base+11*H)} after a regular 11h rest, or ${tt(base+9*H)} with a reduced 9h rest. Your shift limits start fresh once that rest is done.</p><button class="tg big" data-k="ok">End Shift</button><button class="tg big" data-k="no">Cancel</button>`);
+ mcb={no:moX,ok:()=>{moX();const e=Date.now();commit(e);st.se=e;save();flash='Shift ended at '+hm(e)+'. Daily rest is counting.';setTimeout(()=>{flash='';live()},8000);render()}}};
+$('esh').onclick=()=>endAsk();
+$('gp').onclick=()=>{st.gps=!st.gps;if(st.gps){if(st.act==='d'){gpsOn();wake()}}else gpsOff();save();live()};
+$('al').onclick=()=>{st.alerts=!st.alerts;if(st.alerts){beep();try{navigator.vibrate&&navigator.vibrate(200)}catch(e){}}save();live()};
+$('tc').value=st.tc.c;$('tu').value=st.tc.u;
+$('tc').onchange=()=>{st.tc.c=$('tc').value;save();live()};$('tu').onchange=()=>{st.tc.u=$('tu').value;save();live()};
+const listClick=e=>{
+ const bt=e.target.closest('[data-od]');if(bt){od[bt.dataset.od]=!od[bt.dataset.od];list();return}
+ const d=e.target.dataset;
+ if(d.add){$('d').value=d.add;$('f').scrollIntoView({behavior:'smooth'});return}
+ if(d.more){lim+=14;list();return}
+ if(d.ed){ed=+d.ed;list();return}
+ if(d.cn){ed=null;list();return}
+ if(d.sv){const x=st.sessions.find(y=>String(y.s)===d.sv),f=(ts,v)=>{const q=new Date(ts),[h,m]=v.split(':').map(Number);q.setHours(h,m,0,0);return q.getTime()};
+  if(!x||!$('e1').value||!$('e2').value)return;
+  const s2=f(x.s,$('e1').value),e2=f(x.e,$('e2').value);
+  if(!(e2>s2)){$('eerr').textContent='The end time must be after the start time.';return}
+  const nt=$('e3').value;st.sessions=st.sessions.filter(y=>y!==x);clear(s2,e2,1);x.s=s2;x.e=e2;x.t=nt;st.sessions.push(x);ed=null;save();render();return}
+ if(d.s){if(dArm!==d.s){dArm=d.s;clearTimeout(dT);dT=setTimeout(()=>{dArm=null;render()},4000);render();return}dArm=null;clearTimeout(dT);st.sessions=st.sessions.filter(x=>String(x.s)!==d.s);save();render()}
+};
+$('list').onclick=listClick;$('dayc').onclick=listClick;
+$('dback').onclick=()=>showTab(dayFrom);$('tlog').onclick=()=>openDay(sod(Date.now()),'today');
+$('dform').onsubmit=e=>{e.preventDefault();const dv=ymd(dayView),s=new Date(dv+'T'+$('ds').value).getTime(),en=new Date(dv+'T'+$('de').value).getTime();if(!(en>s)){$('derr').textContent='The end time must be after the start time, on the same day. For an overnight entry, use the Log tab.';return}$('derr').textContent='';clear(s,en,1);st.sessions.push({s,e:en,t:$('dt').value});save();$('ds').value='';$('de').value='';render()};
+$('esb').onclick=()=>{const v=$('est').value;if(!v)return;const[h,m]=v.split(':').map(Number),q=new Date(),n=Date.now();q.setHours(h,m,0,0);let x=q.getTime();if(x>n)x-=864e5;const say=t=>{flash=t;setTimeout(()=>{flash='';live()},6000);esFor=0;save();render()};if(n-x>12*H){say('That time is later than now. Pick a time before now.');return}if(st.active&&st.act!=='r'){if(x<st.active)clear(x,st.active);st.active=x;if(st.rs&&x<st.rs)st.rs=x;say(NM[st.act]+' start changed to '+hm(x)+'.');return}const rs=st.rs||0;let k=null;st.sessions.forEach(y=>{if((y.t||'d')!=='r'&&y.e>rs&&(!k||y.e>k.e))k=y});if(k&&n-k.e>=9*H)k=null;if(k){if(x<=k.s){say('Pick a time after your last activity started ('+hm(k.s)+') and before now.');return}k.e=x;if(rs&&x<=rs)st.rs=Math.max(k.s,x-1)}else if(!st.active)return;if(st.active)st.active=x;say('Break start changed to '+hm(x)+'.')};
+const pad=n=>String(n).padStart(2,'0'),now=new Date();
+$('d').value=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+$('f').onsubmit=e=>{
+ e.preventDefault();
+ const s=new Date($('d').value+'T'+$('s').value).getTime(),en=new Date($('d').value+'T'+$('e').value).getTime()+($('nd').checked?864e5:0);
+ if(!(en>s)){$('err').textContent='The end time must be after the start time.';return}
+ $('err').textContent='';
+ clear(s,en,1);st.sessions.push({s,e:en,t:$('t').value});save();render();
+ $('s').value='';$('e').value='';$('nd').checked=false;
+};
+
+const bm=t=>{$('bm').textContent=t};
+const bkJ=()=>{const o=Object.assign({},st);delete o.u;return JSON.stringify(o)};
+$('bc').onclick=()=>{const t=bkJ();const ok=()=>bm('Backup copied. Paste it into a note or message to yourself.');if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,()=>{$('bt').value=t;$('bt').select();bm('Copy was blocked. The backup is in the box below: select all and copy it.')});else{$('bt').value=t;$('bt').select();bm('The backup is in the box below: select all and copy it.')}};
+let bArm=0;
+const doImport=txt=>{let p;try{p=JSON.parse(txt)}catch(e){bm('That is not a valid backup.');return}if(!p||!Array.isArray(p.sessions)){bm('That is not a valid backup.');return}if(!bArm){bArm=1;$('bi').textContent='Tap Again to Replace Data';bm('This replaces your logged activity with the backup ('+p.sessions.length+' entries).');setTimeout(()=>{bArm=0;$('bi').textContent='Import'},5000);return}bArm=0;$('bi').textContent='Import';delete p.u;Object.assign(st,{sessions:[],active:null,act:null,arch:{}},p);if(st.active&&!st.act)st.act='d';gpsOff();fixOv();save();esFor=0;$('tc').value=(st.tc||{}).c||'';$('tu').value=(st.tc||{}).u||'';render();bm('Backup imported.')};
+$('bi').onclick=()=>{const f=$('bf').files[0],t=$('bt').value.trim();if(t)doImport(t);else if(f){const r=new FileReader();r.onload=()=>doImport(r.result);r.readAsText(f)}else bm('Choose a file or paste a backup first.')};
+const KN={hgv:'HGV Tractor Unit and Trailer',rigid:'HGV Rigid',van:'7.5t Box Van or Fridge',car:'Car or Small Van',wav:'Mobility Vehicle'};
+const BN={curtain:'Curtainsider',box:'Box or Van Body',flat:'Flatbed',skel:'Skeletal or Container',tip:'Tipper',tank:'Tanker',fridge:'Refrigerated',cart:'Car Transporter'};
+/* Penalty snippets. Sources: Sentencing Council magistrates guidelines, gov.uk DVSA pages, legislation.gov.uk. */
+const P={
+B:"Goods vehicle over 3.5 tonnes: the vehicle can be prohibited, and a court can fine without limit (Level 5) with 3 penalty points per offence. A car or small van can also get a court fine and penalty points.",
+T:"Goods vehicle over 3.5 tonnes: prohibition, and a court can fine without limit (Level 5) with 3 penalty points, counted per tyre. Car or small van: up to £2,500 (Level 4) and 3 penalty points per tyre.",
+X:"At a DVSA check the vehicle can be prohibited and you can be given a fixed penalty of £50 to £300 depending on the offence, or it can go to court. If the defect makes the vehicle dangerous, that is an offence on its own: unlimited fine (Level 5) and 3 penalty points for a goods vehicle.",
+L:"Goods vehicle: an insecure or dangerous load is a Level 5 offence (unlimited fine) with 3 penalty points, and the vehicle can be prohibited. If a load falls and hurts someone, the charges are far more serious.",
+H:"Lifting equipment is covered by LOLER and enforced by the HSE, which can issue improvement or prohibition notices and prosecute (unlimited fine in the Crown Court).",
+N:""
+};
+function boxify(h){return h.split(/(?:<br>\s*)+/).filter(x=>x.trim()).map(c=>{c=c.trim();if(c.startsWith('<span class="note">'))return '<div class="note">'+c.replace(/<\/?span[^>]*>/g,'')+'</div>';const m=c.match(/^<b>([^<]+?)<\/b>\s*([\s\S]*)$/);return m&&m[2]?`<div class="bx"><div class="bt">${m[1].replace(/:$/,'')}</div>${m[2]}</div>`:`<div class="bx">${c}</div>`}).join('')}
+/* T[title]=[hint, why check it, how to check, penalties, good to know] */
+const TP='Failing to use a tachograph or to hand over records: Level 5, which is unlimited in England and Wales. Failing to make or keep records: Level 4, up to £2,500. DVSA can also issue fixed penalties of £50 to £300 for hours and tachograph offences.';
+const STOP='You need two working stop lamps, one on each side. A centre or top-mounted brake light does not count towards that, so if only the top one works the vehicle still has a defect. If both stop lamps fail, treat it as dangerous.';
+const T={
+'Engine Oil':['Between the marks, no milky or gritty oil','Low or dirty oil can wreck an engine and make it seize while you are driving.','Pull the dipstick, wipe it, push it back in, pull it out and read the level between the marks. The oil should not look milky or gritty.','',''],
+'Coolant':['Between min and max with the engine cold, cap fitted','Low coolant makes the engine overheat, which can wreck it and leave you stranded.','With the engine cold, look at the expansion tank and check the level is between min and max. Never open the cap on a hot engine.','',''],
+'Power Steering Fluid':['Between the marks, no leaks','Low fluid makes the steering heavy and can damage the pump. A leak can mean you lose assistance while driving.','Check the level on the dipstick or reservoir marks and look around the pump and hoses for wet.',P.B,''],
+'Brake Fluid':['Between min and max, no leaks','Low brake fluid can mean worn pads or a leak, and the brakes can fail.','Look at the reservoir and check the level is between min and max. A level that keeps falling means a leak or worn brakes.',P.B,''],
+'Clutch Fluid':['Between min and max, no leaks','Low fluid can mean a leak and a clutch that stops working, which can leave you stuck in gear or unable to stop the vehicle moving.','Look at the clutch reservoir and check the level is between min and max. Many vehicles share one reservoir with the brakes.',P.X,'Where the clutch is not hydraulic, mark this N/A.'],
+'Screen Wash':['Topped up','You must be able to clean the screen to see. It runs dry quickly in spray and winter.','Look at the reservoir and top it up if it is low.',P.X,''],
+'AdBlue':['Enough for your shift, warning light off','Running out of AdBlue can cut engine power and the vehicle may not restart.','Check the gauge and warning light in the cab, then look at the AdBlue tank and cap.','Tampering with or removing an emissions system is a serious offence.',''],
+'Fuel Level':['Enough for the journey','Running out of fuel can leave you stranded in a dangerous place.','Read the gauge and compare it with your planned route.','',''],
+'Fuel Cap':['Fitted and locked','A missing or loose cap can spill fuel on the road, which is a fire and skid risk.','Look at the cap and check it is on and locked.',P.X,''],
+'Battery':['Secure and not leaking','A loose or leaking battery can short out and start a fire.','Try to move the battery by hand. It should be held down firmly. Look for corrosion or wet around the terminals.',P.X,''],
+'Drive Belts':['Not cracked, frayed or loose','A snapped belt can stop the water pump, alternator and power steering.','Look along each belt for cracks and fraying and press it to check it is not loose.','',''],
+'Hoses':['Not split, bulging or rubbing','A split hose can lose coolant or air.','Look along the hoses for splits, bulges and wet patches. Check clips are in place.','',''],
+'Fuel Leaks':['Nothing dripping or wet underneath','Leaking fuel is a fire and spillage risk.','Look under the tanks and engine for drips or wet patches. Look again once the engine is running.',P.X,'A fuel leak that is more than a drip can be treated as dangerous.'],
+'Oil Leaks':['Nothing dripping or wet underneath','Leaking oil can reach the road and the brakes, and the engine can run low.','Look under the engine and gearbox for drips or wet patches. Look again once the engine is running.',P.X,''],
+'High Voltage Cut-Off':['Where fitted: you know where it is and it works','You need to find and use the cut-off in an emergency, and a faulty high voltage system is dangerous to you and to rescuers.','Find the switch or service disconnect and check nothing blocks it. Look for damaged orange cables.','',''],
+'Alternative Fuel System':['Where fitted: you know where the isolation switch is, no leaks','Gas and hydrogen systems leak invisibly and can ignite. You need the isolation valve in an emergency.','Locate the isolation valve or switch. Smell for gas and look at the pipework for damage.','',''],
+'Cab Doors':['Open, close and latch properly','A door that does not latch can swing open while you drive.','Open and close each door and check it latches.',P.X,''],
+'Cab Steps and Handles':['Secure, not worn or slippery','Slippery or loose steps are a common cause of driver falls.','Pull the grab handle and press each step with your foot. Look for loose or cracked steps.',P.X,'Use three points of contact when climbing in and out.'],
+'Cab Mountings and Tilt Lock':['Cab secure, tilt locked','A cab that is not locked down can tip or shift under braking.','Look at the cab mountings and check the tilt lock indicator shows locked.',P.X,''],
+'Seatbelts':['No cuts or fraying, latch and retract properly','Your belt is your main protection in a crash and DVSA checks it. A cut, frayed or non-latching belt will not hold.','Pull the belt out fully and look along the webbing for cuts and fraying. Click it in, then let go and check it winds back.',P.X,''],
+'Tachograph':['Works, no fault message','The tachograph is your legal record. It must work and have your card in.','Turn the ignition on and check the unit starts with no fault message and your card is in.',TP,''],
+'Printer Paper':['Enough for the shift','You may need a printout if the unit or card fails, and an enforcement officer can ask for one.','Open the printer and check there is a roll with enough paper left.','',''],
+'Dashboard Warning Lights':['Come on then go out, none left on','Lights for ABS, EBS, brakes, airbags and the engine warn you of faults you cannot see. They should light up when you turn the ignition on, then go out.','Turn the ignition on and watch the lights come on, then start the engine and check they go out.',P.X,'An ABS or EBS light that stays on is a brake system defect, and brake defects carry the highest penalties on goods vehicles.'],
+'Steering':['Moves freely, no excessive play','Excessive play, stiffness or a failing power assist can make the vehicle impossible to control.','With the engine running, turn the wheel a little each way. The road wheels should respond straight away. Turn lock to lock and listen for groans.',P.B,'Test with the engine running, because power steering only works then.'],
+'Horn':['Works and you can reach it','It is your warning to other road users.','Give it one short press.',P.X,''],
+'Windscreen':['Clear, no cracks in your view','You must have a clear view of the road. Cracks in your line of sight are a prohibitable defect.','Sit in the seat and look for cracks and chips in the wiped area.',P.X,''],
+'Mirrors':['Present, secure, adjusted, cameras working','You must see beside and behind you. Missing or loose mirrors are defects.','Sit in the driving seat and adjust each mirror. Check the glass is not cracked and tug each arm to check it holds.',P.X,'Mirrors you cannot see in because of load or damage count as defective.'],
+'Wipers':['Work, blades not worn','You cannot drive safely in rain or spray if the wipers smear.','Run the wipers. The blades should clear the glass in one pass with no streaks.',P.X,'Check the blades for splits.'],
+'Washers':['Jets work and hit the screen','You need to be able to clear the screen on the move.','Run the washers and check the jets hit the screen.',P.X,''],
+'Warning Triangle':['Present and in good condition','You need it if you break down, especially on a motorway.','Check it is in the vehicle and not damaged.','',''],
+'Hi-Vis Clothing':['Present and in good condition','You need to be seen if you leave the vehicle at the roadside.','Check it is in the vehicle and clean.','',''],
+'Headlights':['Dipped beam works, lenses clean','You must see and be seen.','Switch on dipped beam, walk to the front and check both lamps and the lenses for cracks and moisture.',P.X,''],
+'Main Beam':['Works on both sides','You need it on unlit roads.','Switch on main beam and check both lamps.',P.X,''],
+'Sidelights':['Work on both sides','Other drivers use them to judge your width at night.','Switch on sidelights and check both front lamps.',P.X,''],
+'Front Indicators':['Both work','They tell other drivers what you are about to do.','Operate each indicator and check the front lamp on that side.',P.X,''],
+'Hazard Lights':['Work front and rear','You use them in a breakdown or hazard.','Switch them on and check all the indicator lamps flash together.',P.X,''],
+'Marker Lights':['All work, none missing','They show your length in the dark.','With the lights on, walk the length of the vehicle and count each marker.',P.X,'Missing or non-working side marker lamps on a vehicle that needs them are defects.'],
+'Reflectors':['None missing, broken or covered','They show the vehicle when lit by other headlights.','Look along the vehicle for missing or cracked reflectors.',P.X,''],
+'Rear Lights':['Work on both sides','Other drivers rely on them to see you at night.','Check each rear lamp lights. On an artic, check the trailer lamps.',P.X,''],
+'Stop Lamps':['Two working, one each side','Other drivers rely on your stop lamps to know you are braking. A failed lamp means a following driver may not react in time.','Ask someone to press the brake pedal while you look at the back. Alone, reverse close to a wall or window and check the glow on both sides.',P.X,STOP+' On an artic, the trailer stop lamps are worked by the tractor unit service brake, so check them after you couple up.'],
+'Rear Indicators':['Both work','They tell following drivers what you are about to do.','Operate each indicator and check the rear lamp on that side.',P.X,''],
+'Reversing Light':['Works with reverse selected','It warns people behind you and lights the area.','Select reverse and check the lamp and any reversing alarm.',P.X,''],
+'Rear Fog Light':['Works','It makes you visible in poor visibility.','Switch it on and check it lights.',P.X,''],
+'Number Plate Lights':['Light the plate','The plate must be readable at night.','With the lights on, look at the plate lamp and check the plate is lit.',P.X,''],
+'Tyres':['Tread, cuts, bulges and pressure','Tyres are the only contact with the road. Cuts, bulges or low pressure can cause a blowout.','Walk each wheel. Look at the tread and sidewalls for cuts and bulges and check the pressure.',P.T,'Goods vehicles over 3.5t need at least 1mm of tread across the central three quarters and the whole circumference. Cars need 1.6mm. Check between twin tyres for stones.'],
+'Wheels and Nuts':['Nuts tight, indicators not moved, no cracks','A loose wheel nut can lead to a wheel coming off.','Look at each wheel for cracks and rust streaks from the nuts. Check wheel nut indicators have not moved.',P.X,''],
+'Springs and Air Bags':['Not cracked or shifted, air bags inflated','A broken spring or flat air bag affects braking, steering and stability.','Look at each spring for cracks or shifting. Air bags should be inflated and free of cracks.',P.X,''],
+'Shock Absorbers':['Not leaking, secure','Failed shock absorbers reduce grip and increase braking distance.','Look for oil running down the shock absorbers and check the mountings are tight.',P.X,''],
+'Body Panels and Wings':['Secure, not damaged','Loose panels can fall off and sharp edges are dangerous.','Run a hand along panels and wings and pull gently. Nothing should move.',P.X,''],
+'Sideguards':['Fitted and undamaged','They stop cyclists and pedestrians going under the vehicle.','Look along the sideguards for bends or missing sections and pull gently to check they are secure.',P.X,'Required on most goods vehicles.'],
+'Spray Suppression':['Flaps fitted, secure, not clogged','Flaps cut spray in the wet, which helps drivers behind you see.','Look at each flap behind the wheels. They should hang down, be fixed on and not be caked in mud.','Missing or damaged spray suppression on a vehicle that needs it is a defect and can lead to a prohibition or a fixed penalty.',''],
+'Rear Underrun Guard':['Fitted, secure and undamaged','It stops cars running under the back of the vehicle in a rear-end collision.','Push the bar to check it is solid and not bent, and that the ends are in place.',P.X,''],
+'Front Number Plate':['Complete, clean and legible','Number plates identify the vehicle and cameras rely on them being readable.','Wipe it if dirty. Check every character is visible and the plate is not bent or cracked.',P.X,''],
+'Rear Number Plate':['Complete, clean and legible','Number plates identify the vehicle and cameras rely on them being readable.','Wipe it if dirty. Check every character is visible and the plate is not bent or cracked.',P.X,'On an artic, the trailer plate is the rear plate.'],
+'Rear Markings':['Visible and correct','Rear markings show other road users the vehicle length.','Look at the rear markings. They should be clean and in place.',P.X,''],
+'Hazard Panels':['Where carrying dangerous goods: correct and visible','Emergency services use them to identify the load.','Check the orange panels match your load.','Breaches of the dangerous goods rules can be prosecuted.','Mark N/A if you are not carrying dangerous goods.'],
+'Exhaust Smoke':['No excessive smoke','Heavy smoke can mean an engine or emissions fault.','With the engine running, look at the exhaust from the side. A light haze is normal when cold. Thick black, blue or white smoke is not.','Emissions faults can be tested at the roadside and the vehicle can be prohibited.',''],
+'Fifth Wheel Coupling':['Trailer correctly located and locked','An improperly coupled trailer can come off the tractor unit.','Look through the gap after coupling: the jaws should be closed round the kingpin and the release handle locked. Do a tug test by pulling forward gently with the trailer brake on.',P.B,'Check the secondary locking device is in position.'],
+'Landing Legs':['Raised and secure','A leg that is not fully raised can catch the road or other vehicles.','Check they are fully wound up, the handle is stowed and the feet are not bent.',P.X,''],
+'Air Lines and Couplings':['Fitted, no leaks, not rubbed','Trailer brakes depend on the air lines and couplings. A leaking line loses braking.','Look at the air lines and check the couplings are fitted with good seals. Hoses should not be rubbed or hanging low.',P.B,''],
+'Trailer Parking Brake':['Holds, releases correctly','The trailer must stay put when parked and release when you pull away.','Release the trailer parking brake and watch the air gauge. Apply it and check the trailer stays put.',P.B,''],
+'Trailer Electrical Lead':['Plugged in, cable undamaged, ABS or EBS lamp out','The trailer lights, ABS and EBS are powered through this lead.','Check the lead is plugged in, the cover is closed and the cable is not cut. On the dash, check the trailer ABS or EBS lamp goes out.',P.X,'The ABS or EBS lead must be connected.'],
+'Trailer Tyres':['Tread, cuts, bulges and pressure','A failed trailer tyre can cause a loss of control.','Walk each trailer wheel. Look at the tread and sidewalls for cuts and bulges and check the pressure.',P.T,'Tread at least 1mm across the central three quarters.'],
+'Trailer Wheels and Nuts':['Nuts tight, indicators not moved','A loose wheel can come off.','Look at each wheel for cracks and rust streaks. Check wheel nut indicators have not moved.',P.X,''],
+'Trailer Marker Lights':['All work, none missing','They show your length in the dark.','Walk down the trailer side with the lights on and check each marker lamp shows.',P.X,''],
+'Trailer Reflectors':['None missing or broken','They show the trailer when lit by other headlights.','Look along the trailer for missing or cracked reflectors.',P.X,''],
+'Curtains':['Not torn, secure','Torn or loose curtains let the load shift or flap into traffic.','Pull along the curtain for tears and check it is closed and tight.',P.L,''],
+'Buckles and Straps':['Done up evenly','Loose buckles let the curtain open.','Check every buckle and strap is done up.',P.L,''],
+'Posts':['Straight, not damaged, locked in','Posts hold the load in a curtainsider.','Look along the posts for bends and check each is locked in.',P.L,''],
+'Rave Rails':['Straight and secure','They hold the curtain and the load.','Look along the rails for bends or damage.',P.L,''],
+'Roof':['No holes or damage','A damaged roof can leak onto the load or let it shift.','Look at the roof from a step or the side for holes, sagging or damage.',P.X,''],
+'Load Restraint Kit':['Straps, ratchets and bars sound','Damaged straps, ratchets and bars will fail when the load shifts.','Look over each strap, ratchet and bar for cuts, fraying and rust. Wind a ratchet to test it.',P.L,'Replace straps with cuts, fraying or damaged stitching.'],
+'Doors and Hinges':['Close and seal, hinges not cracked','Doors that open in transit can drop the load.','Open and close the doors and look at the hinges for cracks.',P.X,''],
+'Door Locks':['Lock securely','A door that is not locked can open in transit.','Lock each door and tug it to check it holds.',P.X,''],
+'Floor':['No holes, floor sound','A weak floor can let the load shift or fall.','Press the floor for soft spots and look for holes.',P.X,''],
+'Internal Load Restraint':['Load locks and tracks work','Load locks and tracks hold the load in place inside the box.','Slide each load lock along its track and check it locks.',P.L,''],
+'Bed':['No damage','A damaged bed can fail under load.','Look at the bed for cracks and damage.',P.X,''],
+'Headboard':['Secure','The headboard protects the cab if the load moves forward under braking.','Push the headboard to check it is solid.',P.L,''],
+'Chains':['No damaged links','Damaged chains fail under load.','Look along each chain for damaged or stretched links.',P.L,''],
+'Load Straps':['No cuts or fraying','Damaged straps fail under load.','Look over each strap for cuts and fraying.',P.L,''],
+'Ratchets':['Work and hold','A ratchet that does not hold will let the strap slacken.','Wind each ratchet a few clicks and check it holds.',P.L,''],
+'Sheets':['No tears','A torn sheet lets the load blow out.','Check sheets for tears.',P.L,''],
+'Dunnage':['Present and in good condition','It protects the load and keeps it in place.','Check it is there and sound.','',''],
+'Twist Locks':['All lock and indicators show locked','The twist locks are the only thing holding a container on a skeletal trailer. If one is not locked, the container can come off.','Look at each twist lock handle or indicator and check it shows locked. Check all four corners.',P.L,''],
+'Container':['Seated and locked, corners undamaged','A container that is not seated and locked can come off in a bend.','Check all corners are seated on the locks and the container does not rock.',P.L,''],
+'Container Doors':['Closed and latched','Open container doors can drop the load.','Check both doors are shut and latched.',P.X,''],
+'Container Seal':['Intact and matches the paperwork','A broken or wrong seal can be a customs problem.','Check the seal is intact and the number matches the paperwork.','',''],
+'Tipper Body':['Undamaged, sits flat','A damaged body can fail when tipped.','Look at the body for cracks and check it sits flat on the chassis.',P.X,''],
+'Tailgate Catches':['Fully closed and secure','Catches that fail can drop the load on the road.','Check the tailgate catches are fully closed.',P.L,''],
+'Tipping Ram':['Works smoothly, no leaks','A failing ram can drop a raised body.','Raise the body a little and lower it, watching for jerks.',P.H,''],
+'Hydraulic Hoses':['No leaks or rubbing','A burst hose can drop a raised body.','Look at the hoses and fittings for oil and rubbing.',P.X,''],
+'Hydraulic Oil Level':['Between the marks','Low hydraulic oil means the ram or lift can fail or drop its load.','Look at the sight glass or dipstick and check the level is between the marks.','',''],
+'Body Prop':['Present and works','The prop holds the body up if you work under it. A body that falls can kill.','Check the prop is there, stowed and not bent.',P.H,''],
+'Tipper Sheet':['Works and not torn','An unsheeted or torn sheet lets the load blow out.','Run the sheeting gear and check the tarp is not torn and covers the load.',P.L,''],
+'Tank':['No leaks, undamaged','Leaks can spill liquids onto the road or cause fires.','Walk round the tank and look for drips under the outlets.','Spillages can be an environmental offence with large fines.',''],
+'Valves and Caps':['Closed and secure','Open valves can spill the load.','Check the valves are closed and caps secure.','Breaches of the dangerous goods rules can be prosecuted.',''],
+'Tanker Hoses':['In good condition and stowed','Damaged hoses leak under pressure.','Look along each hose for cracks.',P.X,''],
+'Tanker Couplings':['Fitted and capped','Open couplings can leak.','Check couplings and caps are fitted.',P.X,''],
+'Spill Kit':['Present and in date','You need to be able to deal with a spill.','Open the kit and check the contents are in date.','',''],
+'PPE':['Present and complete','You need to protect yourself during a spill or transfer.','Check the PPE is complete and in good condition.','',''],
+'Dangerous Goods Equipment':['If carrying ADR loads: documents and kit present','ADR loads need the right documents, extinguishers and equipment, and emergency services rely on them.','Check the written instructions, extinguishers, signs and kit match your load.','Breaches of the dangerous goods rules can be prosecuted.',''],
+'Fridge Unit':['Starts, set correctly, no alarms','A fridge unit that fails can spoil the load and can leak refrigerant.','Start the unit, set the temperature and check for alarms.','',''],
+'Fridge Fuel':['Enough for the journey','Running out of fuel means the load will spoil.','Read the fridge fuel gauge and check there is enough for the journey.','',''],
+'Door Seals':['Undamaged','Damaged seals let the cold out.','Run your hand around the seals and look for splits.','',''],
+'Temperature Recorder':['Works','Food and pharma loads need a temperature record.','Check it is on, showing a reading and recording.','',''],
+'Ramps':['Move, lock, undamaged','Ramps that do not lock can collapse.','Move each ramp and check it locks. Look for damage.',P.H,''],
+'Decks':['Move, lock, undamaged','Moving decks that fail can drop a car.','Move each deck and check it locks. Look for damage.',P.H,''],
+'Hydraulics':['No leaks, hoses sound','Hydraulic leaks mean decks can lower when loaded.','Look at the hoses and fittings for oil and rubbing.',P.X,''],
+'Vehicle Straps':['Present and not cut','Cars on a transporter must be strapped to the deck.','Check the straps and wheel straps are there and none are cut.',P.L,''],
+'Wheel Chocks':['Present','Unrestrained cars can roll off.','Check the chocks are there.',P.L,''],
+'Tail Lift Operation':['Platform and controls work, stows and locks, no leaks','A tail lift that fails can drop a load or crush a hand or foot.','Lower, raise and stow the lift without a load. It should move smoothly with no leaks and lock when stowed.',P.H,'The lift must stow and lock properly so it cannot drop while you drive.'],
+'Tail Lift Markings and Flaps':['In place','Markings and flaps warn people around the lift.','Check the markings and any flaps are in place.',P.H,''],
+'Tail Lift Examination':['Thorough examination in date','Lifting equipment needs a thorough examination every 6 months under LOLER.','Check the examination certificate or sticker is in date.',P.H,''],
+'Load Security':['Will not move, right securing system used','An unsecured load can shift and cause the vehicle to roll over, or fall off and kill someone. The driver is responsible for the load being safe.','Walk round the load. Check each strap or chain is tight and the load does not move when pushed. Check again after the first few miles.',P.L,'Use the right restraint for the load.'],
+'Other Equipment':['Anything specific to this vehicle or load','Anything extra that needs to work, for example a crane or loose items.','Check anything extra is secured and working.',P.X,''],
+'Air Pressure and Warning':['Air builds, warning buzzer works, no leaks','The brakes depend on the air supply.','Watch the air gauge climb to full. Switch off and check it does not drop quickly.',P.B,'Let the air build before you move.'],
+'Footbrake':['Pedal firm, brakes respond','Your brakes are the most important safety system on the vehicle.','Press the footbrake and check the pedal is firm and does not sink. Check the drop in air is small.',P.B,''],
+'Parking Brake':['Holds against the drive','If it does not hold, the vehicle can roll away.','Apply the parking brake and gently try to pull against it. It should hold.',P.B,''],
+'Height Marker':['Shows the right height for the load now on board','A wrong height setting leads to bridge strikes, which cause serious injury and big costs.','Compare the height set in the cab with the vehicle height on the trailer or in the paperwork.','Bridge strikes can lead to prosecution, a loss of your licence and a bill for the damage.','Check it again after loading, after changing trailer and after changing vehicle.'],
+'Fuel or Charge':['Enough for the journey','Running out of fuel or charge on the road, especially a motorway, is dangerous.','Read the gauge and check it covers the journey.','',''],
+'Documents':['Licence and paperwork with you','You need your licence, and the vehicle needs valid insurance, MOT and tax.','Check your licence and paperwork are with you.','Driving without insurance: a £300 fixed penalty and 6 points, or a larger court fine. No valid MOT: a fine of up to £1,000.',''],
+'Breakdown Kit':['Breakdown kit and first aid if carried','A warning triangle and first aid kit help in a breakdown.','Check the kit is in the vehicle.','',''],
+'Indicators':['All four work','They tell other drivers what you are about to do.','Operate each indicator and check the front and rear lamp on that side.',P.X,''],
+'Brake Lights':['Two working, one each side','Other drivers rely on your brake lights. If they are out, someone behind you may not realise you are slowing.','Ask someone to press the brake pedal while you look at the back. Alone, reverse close to a wall or window and check the glow on both sides.',P.X,STOP],
+'Number Plates':['Front and rear: clean and legible','Number plates identify the vehicle and cameras rely on them being readable.','Look at both plates. Wipe them if dirty and check every character is visible.','A plate that is obscured or unreadable can mean a fine of up to £1,000 and an MOT failure.',''],
+'Bodywork':['No new damage','New damage can show a recent impact.','Walk round for new dents or scrapes.',P.X,''],
+'Handbrake':['Holds','If it does not hold, the vehicle can roll away.','Apply the handbrake and try to pull away gently. It should hold.',P.B,''],
+'Ramp or Lift Operation':['Deploys, stows and locks smoothly, no damage','A failing ramp or lift can drop a passenger or a wheelchair.','Deploy and stow the ramp or lift once without a passenger. Watch for jerky movement or noise and check it locks when stowed.',P.H+' Platform lifts carrying people are normally examined every 6 months under LOLER.',''],
+'Ramp or Lift Surface':['Anti-slip surface clean, edge markings visible','A slippery surface or hidden edge can cause a wheelchair to slip off.','Look at the surface for dirt and wear on the anti-slip, and check the edge markings are visible.','',''],
+'Ramp Alarm':['Sounds when deployed','It warns people the lift is moving.','Deploy it and check the alarm sounds.',P.H,''],
+'Handbrake Interlock':['Stops the vehicle moving while the lift is out','It stops the vehicle moving while a passenger is on the lift.','With the lift out, check the interlock prevents the vehicle moving.',P.H,'Mark N/A if not fitted.'],
+'Manual Override':['Emergency handle present and you know how to use it','If the power fails with a passenger on the lift, you need to bring them down safely by hand.','Find the emergency handle, check it is in place and know where it fits.','',''],
+'Rear Door':['Opens, holds open, closes securely','A door that does not hold open or shut can hit someone or open in transit.','Open the door and check it holds open, then close and latch it.',P.X,''],
+'Winch Operation':['Pulls in and pays out smoothly, controls work','A winch that jams or runs away can drag a wheelchair or a passenger.','Run the winch in and out a short way using the remote and the in-vehicle control.','',''],
+'Winch Strap or Rope':['No cuts, fraying, kinks or flat spots','A damaged strap or rope can snap under the weight of a wheelchair.','Pay it out and run your hands along it, feeling for cuts, fraying and flat spots.','',''],
+'Winch Hook':['Not bent','A bent hook can let go.','Look at the hook for bending or cracks.','',''],
+'Winch Latch':['Closes and holds','A latch that does not close can let go.','Close the latch and check it holds.','',''],
+'Winch Mounting':['Bolts and bracket secure, no cracks','If the bolts or bracket fail, the winch pulls out under load.','Try to move the winch by hand. Check the bolts are tight and look for cracks.','',''],
+'Winch Emergency Release':['Manual release works','You must be able to free a passenger quickly if the winch fails.','Find the manual release and check you can reach and operate it.','',''],
+'Wheelchair Tie-Downs':['Webbing not cut or frayed, ratchets work, hooks not bent','Tie-downs hold the wheelchair in a crash. Frayed webbing and damaged hooks may fail.','Pull out each strap and check the webbing and stitching. Close each hook, then ratchet and release it to see it work.','Securing passengers badly can lead to action by the licensing authority, and in a crash to much more serious charges.','Four-point tie-downs should be tight and the wheelchair brakes should be on.'],
+'Floor Tracks':['Clean, undamaged','The tie-downs fasten to the tracks.','Look along the tracks for dirt and damage.','',''],
+'Anchor Points':['Undamaged, locking pins work','If the anchors are damaged the whole system fails.','Slide each fitting along the track and check it locks.','',''],
+'Occupant Seatbelt':['Lap and diagonal belt fitted, buckle works','The wheelchair user needs a lap and diagonal belt as well as the tie-downs.','Pull the belt out fully and look for cuts and fraying. Click it in and check it winds back.','','The belt should fit over the shoulder and the pelvis, not the wheelchair armrest.'],
+'Wheelchair Clamps':['Where fitted: lock and release properly','A clamp or docking system that does not lock will not hold in a crash.','Lock and release each clamp and check it holds.','','Mark N/A if not fitted.'],
+'Spare Restraints':['Present and in good condition','You may need a spare set if one gets damaged.','Check the spare set is in the vehicle.','',''],
+'Belt Cutter':['Present and easy to reach','You may need to cut a belt in an emergency.','Check the belt cutter is in the vehicle and where you can reach it.','',''],
+'Passenger Seats':['Secure','Loose seats can move in a crash.','Press each seat to check it is secure.',P.X,''],
+'Passenger Seatbelts':['Undamaged, latch and retract','Belts protect passengers in a crash.','Check each belt as you would your own.',P.X,''],
+'Handrails':['Secure','Passengers rely on them getting in and out.','Pull each rail to check it is secure.','',''],
+'Grab Handles':['Secure','Passengers rely on them during travel.','Pull each handle to check it is secure.','',''],
+'Interior Lights':['Work','Passengers can trip in the dark.','Switch them on and check they light.','',''],
+'Step Lights':['Work','Passengers can fall in the dark on the step.','Switch them on and check they light.','',''],
+'Fire Extinguisher':['Present, in date and secure','Needed to tackle a small fire quickly and keep the way out clear.','Check the gauge is in the green, the pin and seal are in place and it is held in its bracket.','',''],
+'First Aid Kit':['Present, in date and sealed','First aid is needed for anyone who is hurt or unwell.','Open it and check the seal and expiry dates.','',''],
+'Hand Controls':['Where fitted: work smoothly','If fitted, hand controls replace the foot pedals.','Operate each control and check it moves smoothly and returns.',P.B,'Mark N/A if not fitted.']
+};
+const TC={'Engine Oil':'Between the marks','Coolant':'Between the marks, engine cold','Tyres':'Tread at least 1.6mm, no cuts or bulges, correct pressure','Footbrake':'Pedal firm and does not sink','Power Steering Fluid':'Where fitted: between the marks','Brake Fluid':'Between min and max','Fuel Leaks':'Nothing dripping or wet underneath','Oil Leaks':'Nothing dripping or wet underneath','Horn':'Works','Steering':'No excessive play, no noises','Wheels and Nuts':'No cracks, nuts tight','Seatbelts':'No cuts or fraying, latch and retract'};
+const sec=(n,a)=>[n,a];
+const FLU=['Fluids (Engine Off)',['Engine Oil','Coolant','Power Steering Fluid','Brake Fluid','Clutch Fluid','Screen Wash','AdBlue']];
+const ENG=['Engine Bay and Fuel (Engine Off)',['Fuel Level','Fuel Cap','Battery','Drive Belts','Hoses','Fuel Leaks','Oil Leaks','High Voltage Cut-Off','Alternative Fuel System']];
+const CABE=['Cab Entry',['Cab Doors','Cab Steps and Handles','Cab Mountings and Tilt Lock','Seatbelts']];
+const DASH=['Dashboard and Controls (Engine On)',['Tachograph','Printer Paper','Dashboard Warning Lights','Steering','Horn']];
+const VIS=['Windscreen, Mirrors and Wipers',['Windscreen','Mirrors','Wipers','Washers']];
+const KIT=['Safety Kit',['Warning Triangle','Hi-Vis Clothing']];
+const LITH=['Lights (Switch All On)',['Headlights','Main Beam','Sidelights','Front Indicators','Hazard Lights','Marker Lights','Reflectors','Rear Lights','Stop Lamps','Rear Indicators','Reversing Light','Rear Fog Light','Number Plate Lights']];
+const WHH=['Wheels and Suspension',['Tyres','Wheels and Nuts','Springs and Air Bags','Shock Absorbers']];
+const BODH=['Body and Markings',['Body Panels and Wings','Sideguards','Spray Suppression','Rear Underrun Guard','Front Number Plate','Rear Number Plate','Rear Markings','Hazard Panels','Exhaust Smoke']];
+const TRLS=['Trailer and Coupling',['Fifth Wheel Coupling','Landing Legs','Air Lines and Couplings','Trailer Parking Brake','Trailer Electrical Lead','Trailer Tyres','Trailer Wheels and Nuts','Trailer Marker Lights','Trailer Reflectors']];
+const TAILS=['Tail Lift',['Tail Lift Operation','Tail Lift Markings and Flaps','Tail Lift Examination']];
+const LOADS=['Load and Equipment',['Load Security','Other Equipment']];
+const BACK=['Before You Move Off',['Air Pressure and Warning','Footbrake','Parking Brake','Height Marker']];
+const BODY={curtain:['Curtainsider',['Curtains','Buckles and Straps','Posts','Rave Rails','Roof','Load Restraint Kit']],
+box:['Box or Van Body',['Doors and Hinges','Door Locks','Roof','Floor','Internal Load Restraint']],
+flat:['Flatbed',['Bed','Headboard','Chains','Load Straps','Ratchets','Sheets','Dunnage']],
+skel:['Skeletal or Container',['Twist Locks','Container','Container Doors','Container Seal']],
+tip:['Tipper',['Tipper Body','Tailgate Catches','Tipping Ram','Hydraulic Hoses','Hydraulic Oil Level','Body Prop','Tipper Sheet']],
+tank:['Tanker',['Tank','Valves and Caps','Tanker Hoses','Tanker Couplings','Spill Kit','PPE','Dangerous Goods Equipment']],
+fridge:['Refrigerated',['Fridge Unit','Fridge Fuel','Door Seals','Temperature Recorder']],
+cart:['Car Transporter',['Ramps','Decks','Hydraulics','Hydraulic Oil Level','Vehicle Straps','Wheel Chocks']]};
+const CFLU=['Fluids (Engine Off)',['Engine Oil','Coolant','Brake Fluid','Power Steering Fluid','Screen Wash']];
+const CENG=['Engine Bay (Engine Off)',['Battery','Drive Belts','Hoses']];
+const CIN=['Inside (Engine On)',['Seatbelts','Dashboard Warning Lights','Horn','Fuel or Charge','Documents','Breakdown Kit']];
+const CLIT=['Lights (Switch All On)',['Headlights','Main Beam','Sidelights','Indicators','Hazard Lights','Brake Lights','Rear Lights','Reversing Light','Rear Fog Light','Number Plate Lights']];
+const CWHL=['Wheels and Body',['Tyres','Wheels and Nuts','Number Plates','Bodywork','Oil Leaks','Fuel Leaks']];
+const CGO=['Before You Drive Off',['Footbrake','Handbrake','Steering']];
+const CARL=[CFLU,CENG,CIN,VIS,CLIT,CWHL,CGO];
+const WAVL=[CFLU,CENG,CIN,VIS,CLIT,CWHL,
+['Ramp or Lift',['Ramp or Lift Operation','Ramp or Lift Surface','Ramp Alarm','Handbrake Interlock','Manual Override','Rear Door']],
+['Winch',['Winch Operation','Winch Strap or Rope','Winch Hook','Winch Latch','Winch Mounting','Winch Emergency Release']],
+['Wheelchair Restraint',['Wheelchair Tie-Downs','Floor Tracks','Anchor Points','Occupant Seatbelt','Wheelchair Clamps','Spare Restraints','Belt Cutter']],
+['Passenger Area',['Passenger Seats','Passenger Seatbelts','Handrails','Grab Handles','Interior Lights','Step Lights','Fire Extinguisher','First Aid Kit']],
+['Before You Drive Off',['Footbrake','Handbrake','Steering','Hand Controls']]];
+const isC=w=>w.k==='car'||w.k==='wav';
+const hintFor=(t,w)=>(isC(w)&&TC[t])||(T[t]?T[t][0]:'');
+function buildList(w){
+ let S;
+ if(w.k==='car')S=CARL;else if(w.k==='wav')S=WAVL;
+ else{S=[FLU,ENG,CABE,DASH,VIS,KIT,LITH,WHH,BODH];
+  if(w.k==='hgv')S.push(TRLS);
+  if(w.k==='van'&&w.b==='fridge')S.push(BODY.box);
+  if(w.b&&BODY[w.b])S.push(BODY[w.b]);
+  if(w.tl)S.push(TAILS);
+  S.push(LOADS,BACK)}
+ return S.map(([n,a])=>[n,a.map(t=>[t,hintFor(t,w)])])}
+function infoCk(t){const c=T[t];if(!c)return '<div class="st">'+t+'</div>';
+ const w=st.wd||wdef();let h='<b>Why Check It</b> '+c[1];
+ const hn=hintFor(t,w);if(hn)h+='<br><b>What to Look For</b> '+hn+'.';
+ if(c[2])h+='<br><b>How to Check</b> '+c[2];
+ if(c[3]&&c[3].trim())h+='<br><b>Penalties</b> '+c[3].trim();
+ if(c[4])h+='<br><b>Good to Know</b> '+c[4];
+ return '<div class="st">'+t+'</div>'+boxify(h)}
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const wdef=()=>({k:'hgv',b:'',tl:false,reg:'',trl:'',odo:'',it:{}});
+let delArm=0,newArm=0;
+const SN={ok:'OK',bad:'Defect',na:'N/A'};
+const recPh=r=>{const o=new Set();r.D.forEach(x=>(x.p||[]).forEach(i=>o.add(i)));Object.values(r.it||{}).forEach(x=>(x.p||[]).forEach(i=>o.add(i)));return [...o]};
+function ckRec(){const w=st.wd;return w&&w.rt?(st.walks||[]).find(x=>x.t===w.rt)||null:null}
+function ckD(w,f){return f.filter(([s,t])=>w.it[t]&&w.it[t].s==='bad').map(([s,t])=>({s,i:t,n:w.it[t].n||'',d:!!w.it[t].d,p:(w.it[t].p||[]).slice()}))}
+function ckSync(ap){const w=st.wd,r=ckRec();if(!r)return [];let R=r.it;if(!R){R={};(r.D||[]).forEach(x=>{R[x.i]={s:'bad',n:x.n||'',d:!!x.d,p:(x.p||[]).slice()}})}
+ const n=Date.now(),ct=w.ct||{},nc={},out=[],lg=(i,c)=>{const k=i+'|'+c;nc[k]=ct[k]||n;out.push({t:nc[k],i,c})};
+ [['reg','Registration'],['trl','Trailer number'],['odo','Odometer'],['gw','Gross weight']].forEach(([k,nm])=>{let v=String(w[k]||'').trim();if(k==='reg'||k==='trl')v=v.toUpperCase();if(k==='reg'&&!v)return;if(v!==(r[k]||'')){lg(nm,(r[k]||'blank')+' changed to '+(v||'blank'));if(ap)r[k]=v}});
+ const f=ckFlat(w);f.forEach(([s,t])=>{const a=w.it[t]||{},b=R[t]||{};if(!a.s)return;
+  if(a.s!==b.s)lg(t,(SN[b.s]||'Not answered')+' changed to '+SN[a.s]);
+  if(a.s==='bad'){const wb=b.s==='bad',an=(a.n||'').trim(),bn=wb?(b.n||'').trim():'',ap2=a.p||[],bp=wb?(b.p||[]):[];
+   if(an!==bn)lg(t,bn?(an?'Note changed from "'+bn+'" to "'+an+'"':'Note removed (was "'+bn+'")'):'Note added: "'+an+'"');
+   if(!!a.d!==(wb&&!!b.d))lg(t,a.d?'Marked dangerous':'No longer marked dangerous');
+   const ad=ap2.filter(x=>!bp.includes(x)).length,rm=bp.filter(x=>!ap2.includes(x)).length;
+   if(ad)lg(t,ad+' photo'+(ad>1?'s':'')+' added');if(rm)lg(t,rm+' photo'+(rm>1?'s':'')+' removed')}
+  if(ap&&r.it)R[t]={s:a.s,n:a.s==='bad'?(a.n||''):'',d:a.s==='bad'&&!!a.d,p:a.s==='bad'?(a.p||[]).slice():[]}});
+ if(ap){if(out.length){const o=new Set(recPh(r));out.sort((x,y)=>x.t-y.t);r.h=(r.h||[]).concat(out);r.D=ckD(w,f);if(r.it)r.n=f.length;const k=new Set(recPh(r));o.forEach(id=>{if(!k.has(id))phDel(id)})}delete w.ct}
+ else if(out.length)w.ct=nc;else delete w.ct;
+ return out}
+function ckFill(r){const it={};if(r.it)Object.keys(r.it).forEach(k=>{const x=r.it[k];it[k]={s:x.s,n:x.n||'',d:!!x.d,p:(x.p||[]).slice()}});
+ else (r.D||[]).forEach(x=>{it[x.i]={s:'bad',n:x.n||'',d:!!x.d,p:(x.p||[]).slice()}});
+ return {k:r.k,b:r.b||'',tl:!!r.tl,reg:r.reg||'',trl:r.trl||'',odo:r.odo||'',gw:r.gw||'',it,rt:r.t}}
+function ckDrop(){const w=st.wd,r=ckRec();if(!r)return;const k=new Set(recPh(r));Object.values(w.it||{}).forEach(x=>(x&&x.p||[]).forEach(id=>{if(!k.has(id))phDel(id)}));const op=w.op;st.wd=ckFill(r);if(op)st.wd.op=1}
+function ckPend(){const el=$('ckp');if(!el)return;const c=ckSync();el.hidden=!c.length;
+ el.innerHTML=c.length?`<div class="bt warn">${c.length} change${c.length>1?'s':''} not saved yet</div><div class="pdl">${c.map(x=>`<div class="note"><b>${hm(x.t)}</b> ${esc(x.i)}: ${esc(x.c)}</div>`).join('')}</div><div class="g2" style="margin-top:8px"><button class="add" data-act="conf">Confirm Changes</button><button class="pl" data-act="disc">Discard</button></div>`:''}
+/* Photo storage in IndexedDB */
+let _db;const idb=()=>_db||(_db=new Promise((res,rej)=>{try{const q=indexedDB.open('hgvph',1);q.onupgradeneeded=()=>q.result.createObjectStore('p');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)}catch(e){rej(e)}}));
+const idbp=(m,f)=>idb().then(db=>new Promise((res,rej)=>{const t=db.transaction('p',m),r=f(t.objectStore('p'));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error)}));
+const phPut=(id,b)=>idbp('readwrite',s=>s.put(b,id)),phGet=id=>idbp('readonly',s=>s.get(id)),phDel=id=>idbp('readwrite',s=>s.delete(id)).catch(()=>{});
+function phShrink(f){return new Promise((res,rej)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{const m=1280,s=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>b?res(b):rej(new Error('x')),'image/jpeg',.72)};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('x'))};im.src=u})}
+async function phThumbs(root){for(const im of root.querySelectorAll('img[data-ph]')){try{const b=await phGet(im.dataset.ph);if(b)im.src=URL.createObjectURL(b);else im.style.display='none'}catch(e){im.style.display='none'}}}
+const phs=(ids,k,own)=>(ids||[]).map(id=>`<img class="th" data-ph="${id}" data-pv="${id}"${own?` data-pk="${k}"`:''} alt="Defect photo">`).join('');
+async function phView(id,own,key){let b;try{b=await phGet(id)}catch(e){}
+ if(!b)return;mo(`<h3>Defect Photo</h3><img id="pvimg" style="width:100%;border-radius:8px;margin-bottom:10px" alt="Defect photo">${own?'<button class="tg big" data-k="rm">Remove Photo</button>':''}<button class="tg big" data-k="x">Close</button>`);
+ document.getElementById('pvimg').src=URL.createObjectURL(b);
+ mcb={x:moX,rm:()=>{const w=st.wd,r=w&&w.it[key];if(r&&r.p)r.p=r.p.filter(x=>x!==id);if(!ckRec())phDel(id);save();moX();ckRender()}}}
+function ckRender(){
+ const w=st.wd=st.wd||wdef();w.it=w.it||{};
+ if(w.rt){const cur=walkStatus();if(!ckRec()||(!w.op&&(!cur||cur.t!==w.rt)&&!ckSync().length)){ckBack();save();return ckRender()}}
+ const sr=ckRec(),sv=!!sr,dis=sv?' disabled':'';
+ let h=`<div class="g" style="margin-top:0"><div class="lbl">Vehicle</div><div class="pls">${Object.keys(KN).map(k=>`<button class="pl${w.k===k?' on':''}" data-k="${k}"${dis}>${KN[k]}</button>`).join('')}</div>`;
+ if(w.k==='hgv'||w.k==='rigid'||w.k==='van')h+=`<div class="lbl" style="margin-top:12px">${w.k==='hgv'?'Trailer Type':'Body Type'}</div><div class="pls">${w.k==='van'?'':`<button class="pl${w.b===''?' on':''}" data-b=""${dis}>Other or None</button>`}${(w.k==='van'?['box','fridge']:Object.keys(BN)).map(k=>`<button class="pl${w.b===k?' on':''}" data-b="${k}"${dis}>${BN[k]}</button>`).join('')}</div><div class="pls"><button class="pl${w.tl?' on':''}" data-tl="1"${dis}>Tail Lift Fitted</button></div>`;
+ if(sv)h+='<div class="note" style="margin-top:8px">Vehicle type is fixed for a saved check. Start a new check to change it.</div>';
+ h+=`<div class="g2"><label>Registration<input data-f="reg" value="${esc(w.reg)}" autocapitalize="characters"></label>${w.k==='hgv'?`<label>Trailer Number<input data-f="trl" value="${esc(w.trl||'')}" autocapitalize="characters"></label>`:`<label>Odometer (Optional)<input data-f="odo" value="${esc(w.odo||'')}" inputmode="numeric"></label>`}<label>Gross Weight (Optional)<input data-f="gw" value="${esc(w.gw||'')}" inputmode="decimal" placeholder="${w.k==='van'?'e.g. 7500 kg':'e.g. 38000 kg'}"></label></div></div>`;
+ const L=buildList(w);let tot=0,done=0,body='';
+ L.forEach(([sn,items],si)=>{body+=`<div class="cs"><span>${sn}</span>${sv?'':`<button class="pl" data-sec="${si}">All OK</button>`}</div>`+items.map(([ti,hi])=>{tot++;const r=w.it[ti]||{},k=esc(ti);if(r.s)done++;
+  return `<div class="ci${r.s==='bad'?' bd':''}"><div class="lbl">${ti} ${ib('c:'+ti)}</div><div class="cb"><button class="ok${r.s==='ok'?' on':''}" data-ck="ok" data-key="${k}">OK</button><button class="bad${r.s==='bad'?' on':''}" data-ck="bad" data-key="${k}">Defect</button><button class="na${r.s==='na'?' on':''}" data-ck="na" data-key="${k}">N/A</button></div>${r.s==='bad'?`<input type="text" class="dn" data-nk="${k}" placeholder="What is wrong?" value="${esc(r.n||'')}"><label class="dl"><input type="checkbox" data-dk="${k}"${r.d?' checked':''}> Dangerous, do not drive</label><div class="ph">${phs(r.p,k,1)}<label class="pl">Take Photo<input type="file" accept="image/*" capture="environment" hidden data-pf="${k}"></label><label class="pl">From Gallery<input type="file" accept="image/*" multiple hidden data-pf="${k}"></label></div>`:''}</div>`}).join('')});
+ h+=`<div class="g"><div class="row"><span class="lbl">Checklist</span><span class="note">${done} of ${tot} done</span></div><div class="bar"><i style="width:${Math.round(done/tot*100)}%;background:var(--acc)"></i></div>${sv?`<div class="bx"><div class="bt ok">${w.op?'Opened from Recent Checks. ':''}Saved ${w.op?new Date(sr.t).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' ':''}${hm(sr.t)}${(sr.h||[]).length?', edited '+hm(sr.h[sr.h.length-1].t):''}</div>${Object.keys(sr.it||{}).length>=(sr.n||0)?'':'This check was saved before full records were kept, so only its defects are filled in. '}Your answers are kept. You can still change any of them, add a defect, a note or a photo. Nothing is saved until you tap Confirm Changes. Confirmed changes go in the edit history of this check, under Recent Checks, with the date and time of each one.</div>`:''}<div class="gl">${body}</div>${w.k==='wav'?'<p class="note">Before each passenger journey: wheelchair brakes on, tie-downs tight, belt fitted and adjusted.</p>':''}<div class="err" id="ckerr" role="alert" style="margin-top:10px"></div>${sv?`<div class="bx pd" id="ckp" hidden></div><button class="add" style="width:100%;margin-top:10px" data-act="new">${st.wds?(newArm?'Tap Again to Go Back':'Back to the Check in Progress'):(newArm?'Tap Again to Start a New Check':'Start a New Check')}</button><p class="note" style="margin:6px 0 0">The saved check stays in Recent Checks.</p>`:`<div class="pls" style="margin-top:10px"><button class="pl" data-act="allok">Mark the Rest OK</button><button class="pl" data-act="clr">Clear Answers</button></div><button class="add" style="width:100%;margin-top:10px" data-act="save">Save Walkaround</button>`}</div>`;
+ $('ck').innerHTML=h;phThumbs($('ck'));ckPend();ckHist()}
+function ckBack(){const d=st.wds;delete st.wds;if(d){st.wd=d}else{const w=st.wd;w.it={};w.rt=null;delete w.op}}
+function ckOpen(t){const r=(st.walks||[]).find(x=>String(x.t)===String(t));if(!r)return;const c=st.wd||wdef();
+ if(c.rt===r.t){showCk();return}
+ if(!c.rt&&(Object.values(c.it||{}).some(x=>x&&x.s)||(c.reg||'').trim()))st.wds=c;
+ if(c.rt&&ckSync().length){showCk();const el=$('ckerr');if(el)el.textContent='Confirm or discard your changes to this check before opening another one.';return}
+ st.wd=ckFill(r);st.wd.op=1;newArm=0;save();ckRender();showCk()}
+function showCk(){try{$('ck').scrollIntoView({block:'start'})}catch(e){}}
+function ckFlat(w){const f=[];buildList(w).forEach(([s,a])=>a.forEach(([t])=>f.push([s,t])));return f}
+$('ck').onclick=e=>{const im=e.target.closest('img[data-pv]');if(im){phView(im.dataset.pv,!!im.dataset.pk,im.dataset.pk);return}
+ const b=e.target.closest('button');if(!b||b.classList.contains('i'))return;const d=b.dataset,w=st.wd=st.wd||wdef(),sv=!!ckRec();
+ if(d.act==='conf'){ckSync(1);save();ckRender();wkUpdate();live();return}
+ else if(d.act==='disc'){ckDrop();save();ckRender();return}
+ else if(d.act==='new'){if(ckSync().length){$('ckerr').textContent='Confirm or discard your changes first.';return}if(!newArm){newArm=1;setTimeout(()=>{if(newArm){newArm=0;ckRender()}},4000);ckRender();return}newArm=0;ckBack()}
+ else if(sv&&(d.k||d.b!==undefined||d.tl||d.sec!==undefined||d.act))return;
+ else if(d.k){w.k=d.k;if(d.k==='van'&&w.b!=='fridge')w.b='box'}
+ else if(d.b!==undefined){w.b=d.b}
+ else if(d.tl){w.tl=!w.tl}
+ else if(d.sec!==undefined){buildList(w)[+d.sec][1].forEach(([t])=>{const r=w.it[t]=w.it[t]||{};if(!r.s)r.s='ok'})}
+ else if(d.ck){const r=w.it[d.key]=w.it[d.key]||{};if(sv&&r.s===d.ck)return;r.s=r.s===d.ck?null:d.ck}
+ else if(d.act==='allok'){ckFlat(w).forEach(([s,t])=>{const r=w.it[t]=w.it[t]||{};if(!r.s)r.s='ok'})}
+ else if(d.act==='clr'){Object.values(w.it).forEach(r=>(r.p||[]).forEach(phDel));w.it={}}
+ else if(d.act==='save'){ckSave();return}
+ else return;
+ save();ckRender()};
+$('ck').oninput=e=>{const t=e.target,w=st.wd;if(!w)return;if(t.dataset.f)w[t.dataset.f]=t.value;else if(t.dataset.nk){const r=w.it[t.dataset.nk]=w.it[t.dataset.nk]||{};r.n=t.value}save()};
+$('ck').onchange=async e=>{const t=e.target,w=st.wd;
+ if(t.dataset.dk&&w){const r=w.it[t.dataset.dk]=w.it[t.dataset.dk]||{};r.d=t.checked;save()}
+ if((t.dataset.dk||t.dataset.f||t.dataset.nk)&&w&&ckRec()){ckPend();save()}
+ else if(t.dataset.pf&&w){const key=t.dataset.pf,r=w.it[key]=w.it[key]||{},fs=[...t.files];let bad=0;
+  for(const f of fs){try{const b=await phShrink(f),id='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);await phPut(id,b);(r.p=r.p||[]).push(id)}catch(x){bad++}}
+  save();ckRender();if(bad){const el=$('ckerr');if(el)el.textContent=bad+' photo'+(bad>1?'s':'')+' could not be saved on this device.'}}};
+function ckText(r,full){const dt=new Date(r.t).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+ return 'VEHICLE DEFECT REPORT\nDate: '+dt+'\nVehicle: '+r.reg+' ('+KN[r.k]+(r.b&&BN[r.b]?', '+BN[r.b]:'')+')'+(r.trl?'\nTrailer: '+r.trl:'')+(r.odo?'\nOdometer: '+r.odo:'')+(r.gw?'\nGross weight: '+r.gw:'')+'\n\nDefects:\n'+(r.D.length?r.D.map((x,i)=>(i+1)+'. '+x.i+(x.n?': '+x.n:'')+(x.d?' (DANGEROUS, vehicle not to be used)':'')+((x.p||[]).length?' ['+x.p.length+' photo'+(x.p.length>1?'s':'')+' taken]':'')).join('\n'):'Nil, no defects found')+((r.h||[]).length?'\n\nChanged after saving:\n'+r.h.map(x=>tl(x.t)+' '+x.i+': '+x.c).join('\n'):'')+(full&&r.it?'\n\nAll items checked ('+Object.keys(r.it).length+'):\n'+Object.keys(r.it).map(t=>t+': '+SN[r.it[t].s]+(r.it[t].s==='bad'&&r.it[t].n?' ('+r.it[t].n+')':'')).join('\n'):'')+'\n\nDriver: ____________\nReported to: ____________'}
+async function ckCopy(r,el,full){const tx=ckText(r,full);try{await navigator.clipboard.writeText(tx);el.textContent='Copied'}catch(e){try{const a=document.createElement('textarea');a.value=tx;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();el.textContent='Copied'}catch(_){el.textContent='Could not copy'}}}
+async function ckShare(r,el){const fs=[];let n=0;for(const x of r.D)for(const id of(x.p||[])){try{const b=await phGet(id);if(b)fs.push(new File([b],r.reg+'-'+(++n)+'.jpg',{type:'image/jpeg'}))}catch(e){}}
+ try{if(fs.length&&navigator.canShare&&navigator.canShare({files:fs}))await navigator.share({files:fs,text:ckText(r)});else el.textContent='Sharing not supported here'}catch(e){}}
+function ckSave(){
+ const w=st.wd,f=ckFlat(w),left=f.filter(([s,t])=>!(w.it[t]&&w.it[t].s));
+ if(left.length){$('ckerr').textContent=left.length+' items left. Mark each one OK, Defect or N/A.';return}
+ if(!w.reg.trim()){$('ckerr').textContent='Enter the vehicle registration.';return}
+ const D=ckD(w,f);
+ const keep=new Set();D.forEach(x=>x.p.forEach(id=>keep.add(id)));Object.values(w.it).forEach(r=>{(r.p||[]).forEach(id=>{if(!keep.has(id))phDel(id)});if(r.s!=='bad'){r.p=[];r.n='';r.d=false}});
+ const it={};f.forEach(([s,t])=>{const a=w.it[t];it[t]={s:a.s,n:a.n||'',d:!!a.d,p:(a.p||[]).slice()}});
+ const r={t:Date.now(),k:w.k,b:w.b,tl:w.tl,reg:w.reg.trim().toUpperCase(),trl:(w.trl||'').trim().toUpperCase(),odo:w.odo||'',gw:(w.gw||'').trim(),n:f.length,D,it,h:[]};
+ const old=(st.walks||[]).filter(x=>x.t<=Date.now()-490*864e5);old.forEach(x=>recPh(x).forEach(phDel));
+ st.walks=(st.walks||[]).filter(x=>x.t>Date.now()-490*864e5);st.walks.push(r);w.rt=r.t;save();ckRender();live();
+ const dg=D.some(x=>x.d);
+ if(D.length){mo(`<h3>${dg?'Dangerous Defect Recorded':'Defects Recorded'}</h3><p>${dg?'Do not drive this vehicle until it is fixed. ':''}Your answers stay on the Check tab. Later changes need confirming and are then logged with the time. Report ${D.length===1?'it':'them'} in writing to whoever deals with vehicle defects, with the registration, date, details and your name.</p><button class="tg big" data-k="cp">Copy Defect Report</button><button class="tg big" data-k="x">Close</button>`);mcb={cp:el=>ckCopy(r,el),x:moX}}
+ else{mo(`<h3>Walkaround Saved</h3><p>No defects found. It is recorded as a nil report. Your answers stay on the Check tab and you can still change them. Changes need confirming and are then logged with the time.</p><button class="tg big" data-k="x">Close</button>`);mcb={x:moX}}}
+function ckHist(){
+ const a=(st.walks||[]).slice().sort((x,y)=>y.t-x.t).slice(0,20);
+ if(!a.length){$('ckh').innerHTML='<div class="g note">No walkarounds saved yet.</div>';return}
+ $('ckh').innerHTML=a.map(r=>{const dg=r.D.some(x=>x.d),np=r.D.reduce((s,x)=>s+(x.p||[]).length,0),dt=new Date(r.t).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+  return `<div class="g" style="margin-top:10px${st.wd&&st.wd.rt===r.t?';border-color:var(--acc)':''}"><div class="row" data-open="${r.t}" style="cursor:pointer"><span class="lbl">${dt} ${hm(r.t)}</span><span class="${r.D.length?(dg?'bad':'warn'):'ok'}">${r.D.length?r.D.length+' defect'+(r.D.length>1?'s':'')+(dg?', dangerous':''):'No defects'}</span></div><div class="note">${KN[r.k]}${r.b&&BN[r.b]?', '+BN[r.b]:''}, ${esc(r.reg)}${r.trl?' / '+esc(r.trl):''}${r.gw?', '+esc(r.gw):''}</div>${r.D.map(x=>`<div class="note">${x.d?'<b class="bad">Dangerous:</b> ':''}${esc(x.i)}${x.n?': '+esc(x.n):''}</div>${(x.p||[]).length?`<div class="ph">${phs(x.p,'',0)}</div>`:''}`).join('')}${(r.h||[]).length?`<details class="bx"><summary>Edit History (${r.h.length})</summary><div class="dbody">${r.h.map(x=>`<div class="note"><b>${tl(x.t)}</b> ${esc(x.i)}: ${esc(x.c)}</div>`).join('')}</div></details>`:''}${r.it?`<details class="bx"><summary>Full Record (${Object.keys(r.it).length} Items)</summary><div class="dbody">${Object.keys(r.it).map(t=>{const x=r.it[t];return `<div class="note">${esc(t)}: <b class="${x.s==='bad'?'bad':x.s==='ok'?'ok':''}">${SN[x.s]}</b>${x.s==='bad'&&x.n?' ('+esc(x.n)+')':''}</div>`}).join('')}</div></details>`:''}<div><button class="del" data-open="${r.t}">${st.wd&&st.wd.rt===r.t?'Showing Above':'Open'}</button><button class="del" data-rep="${r.t}">Copy Report</button>${r.it?`<button class="del" data-full="${r.t}">Copy Full Record</button>`:''}${np?`<button class="del" data-shr="${r.t}">Share Photos</button>`:''}<button class="del" data-wdel="${r.t}">${delArm===r.t?'Tap Again to Delete':'Delete'}</button></div></div>`}).join('');
+ phThumbs($('ckh'))}
+$('ckh').onclick=e=>{const im=e.target.closest('img[data-pv]');if(im){phView(im.dataset.pv,false);return}const d=e.target.dataset,op=e.target.closest('[data-open]');
+ if(op){ckOpen(op.dataset.open)}
+ else if(d.rep){const r=st.walks.find(x=>String(x.t)===d.rep);if(r)ckCopy(r,e.target)}
+ else if(d.shr){const r=st.walks.find(x=>String(x.t)===d.shr);if(r)ckShare(r,e.target)}
+ else if(d.full){const r=st.walks.find(x=>String(x.t)===d.full);if(r)ckCopy(r,e.target,true)}
+ else if(d.wdel){const v=+d.wdel;if(delArm===v){const r=st.walks.find(x=>x.t===v);if(r)recPh(r).forEach(phDel);st.walks=st.walks.filter(x=>x.t!==v);st.wx=(st.wx||[]).concat(v).slice(-300);delArm=0;save();ckRender();live()}else{delArm=v;ckHist()}}};
+function walkStatus(){const a0=all(),n=Date.now(),l=a0[a0.length-1];let since=sod(n);
+ if(l){const busy=!!st.active&&st.act!=='r',gap=busy?0:n-l.e;since=gap>=9*H?l.e:shiftStart(a0)-2*H}
+ return (st.walks||[]).filter(x=>x.t>=since).sort((x,y)=>y.t-x.t)[0]||null}
+function wkUpdate(){
+ const w=walkStatus(),act=st.act;let h;
+ if(!w)h=`<button class="wkb nb"><b>Walkaround not done</b><span>${act==='d'?'You are driving and no walkaround is recorded for this shift.':'Do it before you drive. The DVSA expects it before the first drive of the day.'} Tap to start.</span></button>`;
+ else{const n=w.D.length,dg=w.D.some(x=>x.d);
+  h=n?`<button class="wkb wn"><b>Walkaround done ${hm(w.t)}, ${n} defect${n>1?'s':''}</b><span>${dg?'A dangerous defect is recorded. Do not drive until it is fixed.':'Make sure they are reported in writing.'}</span></button>`
+   :`<button class="wkb dn2"><b>Walkaround done ${hm(w.t)}</b><span>No defects, ${esc(w.reg)}</span></button>`}
+ set($('wkb'),h);document.querySelector('.tab[data-t="check"]').classList.toggle('dot',!w)}
+$('wkb').onclick=()=>showTab('check');
+/* Account storage: the record is kept in the page's database, private to the signed-in driver. The phone copy is a fallback. */
+function syncNote(){const el=$('sync');if(!el)return;const m=syncMsg||(cloudReady?'Saved to your account. Your record is kept when you close or reopen this page.':lsOk?'':'Could not save on this phone.');if(el.textContent!==m)el.textContent=m}
+const mainJ=()=>{const o=Object.assign({},st);delete o.walks;delete o.u;return JSON.stringify(o)};
+let baseU=0,pend=null;
+function adopt(r,ru,lost){if(!MO.hidden){pend=[r,ru];return}
+ const lw=st.walks||[],wx=[...new Set([...(st.wx||[]),...(r.wx||[])])];
+ Object.keys(st).forEach(k=>{if(!(k in r)&&k!=='walks')delete st[k]});Object.assign(st,r);st.walks=lw;st.wx=wx;st.u=ru;baseU=ru;
+ if(!st.tc)st.tc={c:'',u:''};if(!st.arch)st.arch={};if(st.active&&!st.act)st.act='d';fixOv();lastMain=mainJ();
+ try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}
+ if(st.act==='d'){gpsOn();wake()}else gpsOff();
+ snap=null;bu=[];esFor=0;ed=null;$('tc').value=st.tc.c;$('tu').value=st.tc.u;
+ if(lost){flash='Updated from your account record, which had changed. The change you just made on this screen was not kept, so check it and do it again.';setTimeout(()=>{flash='';live()},12000)}
+ render()}
+function fromAcc(s){try{if(!s||!s.exists)return;const d=s.data(),ru=d.u||0;if(ru<=baseU)return;
+  if(d.j===lastMain){baseU=ru;return}
+  if(ru>(st.u||0)){const r=JSON.parse(d.j);if(r&&Array.isArray(r.sessions))adopt(r,ru)}}catch(e){}}
+function queuePush(now){if(!cloudReady)return;clearTimeout(pushT);pushT=setTimeout(doPush,now?0:Math.max(1200,15000-(Date.now()-lastPush)))}
+function doPush(){if(!cloudReady)return;if(pushing){pushAgain=true;return}
+ pushing=(async()=>{try{lastPush=Date.now();
+   const j=mainJ(),u=st.u||0;if(j!==lastMain){const cur=await cloud.main.get(),cd=cur.exists?cur.data():null,cu=cd?(cd.u||0):0;let r=null;
+    if(cd&&cu>baseU&&cd.j!==lastMain){try{r=JSON.parse(cd.j)}catch(e){}}
+    if(r&&Array.isArray(r.sessions)&&MO.hidden){adopt(r,cu,1);pushing=null;pushAgain=false;syncNote();return}
+    await cloud.main.set({v:1,u,j});lastMain=j;baseU=u}
+   const have=new Set();
+   for(const r of(st.walks||[]).slice()){const id=String(r.t),wj=JSON.stringify(r);have.add(id);if(remW.get(id)!==wj){await cloud.walks.doc(id).set({v:1,t:r.t,j:wj});remW.set(id,wj)}}
+   for(const id of[...remW.keys()])if(!have.has(id)){await cloud.walks.doc(id).delete();remW.delete(id)}
+   syncMsg=''}
+  catch(e){const c=e&&e.code;syncMsg=c==='quota_exceeded'?'Account storage is full. Delete old checks to keep saving. Kept on this phone for now.':(c==='invalid_argument'||c==='revoked'||c==='not_granted')?'You are signed out. Sign in again in Settings to keep saving to your account. Kept on this phone for now.':'Could not reach your account just now. Kept on this phone and will retry.';
+   if(c==='invalid_argument'||c==='revoked'||c==='not_granted')cloudReady=false;else if(c!=='quota_exceeded')setTimeout(()=>queuePush(),20000)}
+  pushing=null;syncNote();if(pushAgain){pushAgain=false;queuePush()}})()}
+/* Accounts and database: this talks to the Supabase Auth and REST APIs directly with fetch, so there is no library to download or cache. */
+const CFG=window.TG_CONFIG||{},SBU=String(CFG.url||'').replace(/\/+$/,''),SBK=CFG.key||'',AK='tachoguard.auth.v1',LK='tachoguard.local.v1';
+let sess=null;try{sess=JSON.parse(localStorage.getItem(AK)||'null')}catch(e){}
+const saveSess=v=>{sess=v;try{v?localStorage.setItem(AK,JSON.stringify(v)):localStorage.removeItem(AK)}catch(e){}};
+const sbErr=(r,d)=>{const e=new Error((d&&(d.msg||d.error_description||d.message))||('Error '+r.status));e.status=r.status;e.code=(r.status===401||r.status===403)?'not_granted':((d&&(d.error_code||d.code))||r.status);return e};
+async function authReq(path,body,method,tok){const r=await fetch(SBU+'/auth/v1/'+path,{method:method||'POST',headers:Object.assign({apikey:SBK,'Content-Type':'application/json'},tok?{Authorization:'Bearer '+tok}:{}),body:body?JSON.stringify(body):undefined});const d=await r.json().catch(()=>({}));if(!r.ok)throw sbErr(r,d);return d}
+const setS=d=>{if(!d||!d.access_token)return false;saveSess({at:d.access_token,rt:d.refresh_token,exp:Date.now()+(d.expires_in||3600)*1000-60000,uid:(d.user&&d.user.id)||(sess&&sess.uid),email:(d.user&&d.user.email)||(sess&&sess.email)});return true};
+let refreshing=null;
+async function token(){if(!sess){const e=new Error('Signed out');e.code='revoked';throw e}
+ if(Date.now()<sess.exp)return sess.at;
+ if(!refreshing)refreshing=authReq('token?grant_type=refresh_token',{refresh_token:sess.rt}).then(d=>{setS(d)}).finally(()=>{refreshing=null});
+ try{await refreshing}catch(e){if(e.status===400||e.status===401||e.status===403){saveSess(null);cloudReady=false;cloud=null;acctUi();const x=new Error('Signed out');x.code='revoked';throw x}throw e}
+ return sess.at}
+async function rest(method,path,body,prefer){const t=await token();const r=await fetch(SBU+'/rest/v1/'+path,{method,headers:Object.assign({apikey:SBK,Authorization:'Bearer '+t,'Content-Type':'application/json'},prefer?{Prefer:prefer}:{}),body:body?JSON.stringify(body):undefined});
+ if(!r.ok){if(r.status===401&&sess){sess.exp=0}const d=await r.json().catch(()=>({}));throw sbErr(r,d)}
+ return r.status===204?null:await r.json().catch(()=>null)}
+function mkCloud(uid){const q='user_id=eq.'+uid,M='resolution=merge-duplicates,return=minimal';
+ return{main:{get:async()=>{const a=await rest('GET','tg_state?'+q+'&select=u,j'),d=a&&a[0];return{exists:!!d,data:()=>({u:Number(d.u),j:d.j})}},
+   set:async o=>{await rest('POST','tg_state?on_conflict=user_id',[{user_id:uid,u:o.u,j:o.j,updated_at:new Date().toISOString()}],M)}},
+  walks:{limit:()=>({get:async()=>{const a=await rest('GET','tg_walks?'+q+'&select=id,j&limit=1000');return{docs:(a||[]).map(x=>({id:x.id,data:()=>({j:x.j})}))}}}),
+   doc:id=>({set:async o=>{let w={};try{w=JSON.parse(o.j)}catch(e){}const D=w.D||[];await rest('POST','tg_walks?on_conflict=user_id,id',[{user_id:uid,id:String(id),checked_at:new Date(o.t||w.t||Date.now()).toISOString(),reg:w.reg||null,vehicle:w.k||null,defects:D.length,dangerous:D.some(x=>x.d),j:o.j,updated_at:new Date().toISOString()}],M)},
+    delete:async()=>{await rest('DELETE','tg_walks?'+q+'&id=eq.'+encodeURIComponent(id),null,'return=minimal')}})}}}
+const freshSt=()=>({sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null});
+let booting=false;
+async function bootCloud(){
+ if(booting||cloudReady||!SBU||!sess)return;booting=true;
+ try{
+  const uid=sess.uid;cloud=mkCloud(uid);
+  if(st.owner&&st.owner!==uid){const o=freshSt();Object.keys(st).forEach(k=>delete st[k]);Object.assign(st,o);hadLocal=false;lastMain='';remW.clear()}
+  const main=cloud.main,[ms,ws]=await Promise.all([main.get(),cloud.walks.limit(1000).get()]);
+  let remote=null;if(ms.exists){try{remote=JSON.parse(ms.data().j);remote.u=ms.data().u||0}catch(e){}}
+  const hasLocal=hadLocal||st.sessions.length>0||(st.walks||[]).length>0,lu=st.u||0;
+  const lw=st.walks||[];let changed=false;
+  if(remote&&Array.isArray(remote.sessions)&&(!hasLocal||(remote.u||0)>lu)){
+   const wx=[...new Set([...(st.wx||[]),...(remote.wx||[])])];Object.assign(st,remote);st.walks=lw;st.wx=wx;changed=true}
+  const gone=new Set((st.wx||[]).map(String)),mine=new Set(lw.map(x=>String(x.t)));
+  ws.docs.forEach(d=>{let r=null;try{r=JSON.parse(d.data().j)}catch(e){}remW.set(d.id,r?d.data().j:'');
+   if(r&&typeof r.t==='number'&&Array.isArray(r.D)){if(!mine.has(d.id)){if(!gone.has(d.id)){st.walks.push(r);changed=true}}
+    else if(!hasLocal||(remote&&(remote.u||0)>lu)){const i=st.walks.findIndex(x=>String(x.t)===d.id);if(JSON.stringify(st.walks[i])!==d.data().j){st.walks[i]=r;changed=true}}}});
+  if(remote)baseU=remote.u||0;
+  st.owner=uid;cloudReady=true;syncMsg='';
+  if(changed){if(st.active&&!st.act)st.act='d';fixOv();try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}archive();if(st.act==='d'){gpsOn();wake()}$('tc').value=st.tc.c;$('tu').value=st.tc.u;render();const ae=document.activeElement;if(tab==='check'&&!(ae&&$('ck').contains(ae)&&ae.tagName==='INPUT'))ckRender();live()}
+  save();queuePush(true);syncNote()}
+ catch(e){cloud=null;cloudReady=false;syncMsg=e&&e.code==='revoked'?'You are signed out. Sign in again in Settings to save to your account. Kept on this phone for now.':'Saved on this phone only. It will save to your account when you are online.';syncNote()}
+ booting=false}
+/* Sign in screen */
+const AU=$('auth'),AB=$('authb');
+const closeAuth=()=>{AU.hidden=true;AB.innerHTML=''};
+const ampMsg=(t,bad)=>{const m=$('amsg');if(m){m.textContent=t;m.className='note'+(bad?' bad':'')}};
+function showAuth(msg,mode){const rec=mode==='recover';
+ AB.innerHTML=`<h3>${rec?'Set a New Password':'TachoGuard'}</h3><p>${rec?'Enter a new password for your account.':'Sign in to save your hours and walkaround checks to your account, so they are kept if you change phone. The app still works with no signal.'}</p>${rec?'':'<label for="aem">Email</label><input type="email" id="aem" autocomplete="username" inputmode="email">'}<label for="apw">${rec?'New Password':'Password'}</label><input type="password" id="apw" autocomplete="${rec?'new-password':'current-password'}"><div class="note${msg&&msg.bad?' bad':''}" id="amsg" role="alert" style="margin-bottom:8px">${msg?msg.t:''}</div>${rec?'<button class="tg big" data-a="ok">Save Password</button>':'<button class="tg big" data-a="in">Sign In</button><button class="tg big" data-a="up">Create Account</button><button class="tg big" data-a="fg">Forgot Password</button><button class="tg big" data-a="lo">Use on This Phone Only</button>'}`;
+ AU.hidden=false}
+const aErr=e=>/Failed to fetch|NetworkError|Load failed/i.test(e.message||'')||e instanceof TypeError?'You need a signal to do this. Try again when you are online.':(e.message||'Something went wrong.');
+AB.onclick=async e=>{const b=e.target.closest('[data-a]');if(!b)return;const k=b.dataset.a,em=($('aem')||{}).value,pw=($('apw')||{}).value,red='redirect_to='+encodeURIComponent(location.origin+'/');
+ try{
+  if(k==='lo'){try{localStorage.setItem(LK,'1')}catch(x){}closeAuth();return}
+  if(k==='ok'){if(!pw||pw.length<6){ampMsg('Use at least 6 characters.',1);return}await authReq('user',{password:pw},'PUT',sess&&sess.at);closeAuth();acctUi();bootCloud();return}
+  if(!em||!/^\S+@\S+\.\S+$/.test(em.trim())){ampMsg('Enter your email address.',1);return}
+  if(k==='fg'){await authReq('recover?'+red,{email:em.trim()});ampMsg('If that email has an account, a reset link is on its way. Open it on this phone.');return}
+  if(!pw||pw.length<6){ampMsg('Use a password of at least 6 characters.',1);return}
+  ampMsg('Please wait...');
+  if(k==='in'){const d=await authReq('token?grant_type=password',{email:em.trim(),password:pw});setS(d);closeAuth();acctUi();bootCloud()}
+  else if(k==='up'){const d=await authReq('signup?'+red,{email:em.trim(),password:pw});if(setS(d)){closeAuth();acctUi();bootCloud()}else ampMsg('Account created. Check your email and tap the link to confirm it, then sign in here.')}
+ }catch(x){ampMsg(/invalid login/i.test(x.message||'')?'That email and password do not match.':aErr(x),1)}};
+(function(){const h=location.hash.replace(/^#/,'');if(!h)return;const p=new URLSearchParams(h);
+ if(p.get('error_description')){history.replaceState(null,'',location.pathname+location.search);showAuth({t:p.get('error_description').replace(/\+/g,' ')+'. Sign in or ask for a new link.',bad:1});return}
+ const at=p.get('access_token');if(!at)return;history.replaceState(null,'',location.pathname+location.search);
+ const base={at,rt:p.get('refresh_token'),exp:Date.now()+(+p.get('expires_in')||3600)*1000-60000};
+ authReq('user',null,'GET',at).then(u=>{saveSess(Object.assign(base,{uid:u.id,email:u.email}));acctUi();if(p.get('type')==='recovery')showAuth(null,'recover');else{closeAuth();bootCloud()}}).catch(()=>showAuth({t:'That link did not work. Sign in with your email and password.',bad:1}))})();
+/* Account card in Settings */
+let outArm=0;
+function acctUi(){const n=$('acn'),b=$('acb');
+ if(!SBU){n.textContent='Account saving is not set up in this copy of the app. Your record is saved on this phone only.';b.hidden=true;return}
+ b.hidden=false;if(sess){n.textContent='Signed in as '+(sess.email||'your account')+'. Your record is saved to your account and kept on this phone.';b.textContent=outArm?'Tap Again to Sign Out':'Sign Out'}else{n.textContent='Not signed in. Your record is saved on this phone only.';b.textContent='Sign In'}}
+$('acb').onclick=()=>{if(!sess){showAuth();return}
+ if(!outArm){outArm=1;acctUi();setTimeout(()=>{outArm=0;acctUi()},4000);return}
+ outArm=0;clearTimeout(pushT);saveSess(null);cloudReady=false;cloud=null;syncMsg='You are signed out. Your record is still on this phone.';syncNote();acctUi()};
+/* Install card in Settings */
+let dip=null;
+function instUi(){const sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;$('inb').hidden=!dip||!!sa;$('inn').textContent=sa?'TachoGuard is installed on this phone.':dip?'Install TachoGuard to open it like an app, full screen, with no signal needed.':'To install, open the Chrome menu and tap Install app or Add to Home screen.'}
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dip=e;instUi()});window.addEventListener('appinstalled',()=>{dip=null;instUi()});
+$('inb').onclick=async()=>{if(!dip)return;dip.prompt();try{await dip.userChoice}catch(e){}dip=null;instUi()};
+acctUi();instUi();
+if(!SBU){syncMsg='Saved on this phone only.';syncNote()}
+else if(!sess){syncMsg='Saved on this phone only. Sign in to keep your record in your account.';syncNote();let lo=false;try{lo=!!localStorage.getItem(LK)}catch(e){}if(!lo&&AU.hidden)showAuth()}
+else bootCloud();
+setInterval(()=>{if(SBU&&sess&&!cloudReady)bootCloud();else if(cloudReady&&document.visibilityState==='visible')cloud.main.get().then(fromAcc).catch(()=>{})},30000);
+window.addEventListener('online',()=>{if(cloudReady)queuePush(true);else bootCloud()});
+document.addEventListener('visibilitychange',()=>{if(!cloudReady)return;if(document.visibilityState==='hidden'){clearTimeout(pushT);doPush()}else cloud.main.get().then(fromAcc).catch(()=>{})});
+
+archive();
+if(st.act==='d'){gpsOn();wake()}
+render();setInterval(live,1000);
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
