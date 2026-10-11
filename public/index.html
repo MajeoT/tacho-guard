@@ -76,6 +76,16 @@ a{color:var(--tx)}
 .pl:disabled{opacity:.45;cursor:not-allowed}
 .pd{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);z-index:5;background:var(--card);border:2px solid var(--warn);box-shadow:0 4px 14px rgba(0,0,0,.25)}.pd .pdl{max-height:30vh;overflow:auto}#ck .pd .add,#ck .pd .pl{margin:0;border-radius:10px;padding:12px;font:600 16px system-ui,sans-serif}#ck .pd .add{background:var(--acc);color:var(--onacc)}
 #gd{font-size:24px}.sgc{display:flex;gap:12px;align-items:flex-start}.sgc svg{flex:none}#sgq{margin-bottom:6px}#sgf{margin-bottom:10px}
+.cp #t-today .sub,.cp #t-today>p.note,.cp .wkb span,.cp .cd .ex{display:none}
+.cp #s1 .cd:not(.kp) .note,.cp #s2 .cd .note{display:none}
+.cp .wkb{padding:6px 10px;margin-bottom:6px}
+.cp .acts{gap:6px}.cp .acts .act{padding:5px 2px}.cp .acts .act b{font-size:17px}
+.cp .live{min-height:0;margin:6px 0 0}.cp .live:empty{display:none}
+.cp #s1,.cp #s2{gap:6px;margin-top:6px}
+.cp .cd{padding:6px 10px}.cp .cd .num{font-size:22px}.cp .cd .num small{font-size:14px}.cp .cd .bar{height:5px;margin:4px 0 0}
+.cp #s1 .cs,.cp #s2 .cs{font-size:13px;margin:4px 0 0;color:var(--mut)}
+.cp .qf{margin-top:6px}.cp .qf button{padding:8px 4px;font-size:14px}
+.cp #esh,.cp #rd2,.cp #tlog{padding:10px!important;margin-top:8px!important;font-size:14px!important}
 .foot{margin-top:28px;color:var(--mut);font-size:13px}
 .i::after{content:'';position:absolute;inset:-11px}
 .tab{min-width:0}@media (max-width:360px){.tab{font-size:12px;padding:9px 1px}.tabs{gap:3px}}
@@ -87,6 +97,7 @@ a{color:var(--tx)}
 <div class="tabs"><button class="tab on" data-t="today">Today</button><button class="tab" data-t="check">Check</button><button class="tab" data-t="hours">Hours</button><button class="tab" data-t="tacho">Tacho</button><button class="tab" data-t="signs">Signs</button><button class="tab" data-t="log">Log</button></div>
 <p class="note" id="sync" style="margin:-6px 0 10px" role="status"></p>
 <section id="t-today">
+<div class="tr" style="justify-content:flex-end;margin:0 0 8px"><button class="tg" id="cpb">Compact View</button></div>
 <p class="sub">Tap what you are doing now, as on the tachograph. To stop, change to another activity or tap End Shift. The cards below that are counting are outlined.</p><div class="alert" id="alert" hidden></div>
 <div id="wkb"></div>
 <div class="acts"><button class="act" data-a="d"><b>🚛</b>Driving</button><button class="act" data-a="w"><b>⚒</b>Work</button><button class="act" data-a="p"><b>◪</b>POA</button><button class="act" data-a="r"><b>🛏</b>Break</button></div>
@@ -180,6 +191,9 @@ INFO.about=`TachoGuard is a planning aid. Your tachograph is always the legal re
 INFO.signs=`Simplified drawings of common UK road signs with what each one means. The meanings follow the Highway Code and the Traffic Signs Manual, and the For HGV Drivers notes add what matters for a lorry. Real signs can differ in layout and colour, and plates under a sign can change its meaning, so always read the whole sign. Check the Highway Code on gov.uk for the full list.`;
 INFO.poa=`POA means Period of Availability. It is waiting time where you do not have to stay at your workstation, but you must be ready to start or carry on driving or other work, and you must know how long the wait will last in advance. Examples: waiting on a ferry, or waiting while others load or unload your vehicle.<br><b>Working Time</b> POA is not working time. It does not count towards the 48 hour average or the 6 hour rule. It is also not a break, so it does not count towards your 45 minutes or rest. On the tachograph it is the POA symbol.<br><b>Pay</b> The working time rules do not set pay. Whether you are paid for POA is a matter for your contract. Being paid for it does not turn it into working time, and being unpaid does not stop a wait being working time. So a company can pay for POA without it touching your 48 hour average.<br><b>Limits</b> You cannot call a wait POA if you did not know how long it would last. A wait of unknown length is working time, so log it as Work.<br><span class="note">Source: gov.uk drivers hours rules for goods vehicles, Annex 2, and the Road Transport (Working Time) Regulations 2005. Not legal advice.</span>`;
 let open=null;
+let cp=false;try{cp=localStorage.getItem('tachoguard.compact')==='1'}catch(e){}
+const cpUi=()=>{document.body.classList.toggle('cp',cp);$('cpb').textContent=cp?'Full View':'Compact View'};
+$('cpb').onclick=()=>{cp=!cp;try{localStorage.setItem('tachoguard.compact',cp?'1':'0')}catch(e){}cpUi()};cpUi();
 const sgState={q:'',g:''};
 function renderSigns(){const S=window.SIGNS||[],gs=[...new Set(S.map(x=>x.g))];
  $('sgf').innerHTML=['All'].concat(gs).map(g=>`<button class="pl${(g==='All'&&!sgState.g)||sgState.g===g?' on':''}" data-sg="${g==='All'?'':g}">${g}</button>`).join('');
@@ -457,17 +471,17 @@ function live(){
   if(wkd>=56*H||fn>=90*H)R.push([w+7*864e5,'weekly or fortnight limit']);
   const r=R.filter(x=>x[0]>n).sort((x,y)=>y[0]-x[0]);
   nx=r.length?['Next Legal Start',tt(r[0][0]),'Waiting on: '+r.map(x=>x[1]).join(', ')+'.']:['Next Legal Start','Now','Nothing is stopping you driving.']}
- let h=`<div class="g cd w"><div class="row"><span class="lbl">${nx[0]} ${ib('next')}</span><span class="num">${nx[1]}</span></div><div class="note">${nx[2]}</div>${ex('next')}</div>`;
+ let h=`<div class="g cd w kp"><div class="row"><span class="lbl">${nx[0]} ${ib('next')}</span><span class="num">${nx[1]}</span></div><div class="note">${nx[2]}</div>${ex('next')}</div>`;
  if(l){const dw=x=>{const d=Math.round((sod(x)-sod(n))/864e5);return (d<=0?'Today':d===1?'Tomorrow':new Date(x).toLocaleDateString('en-GB',{weekday:'long'}))+' '+hm(x)},le=l.live?n:l.e,
   ns=gap>=11*H?['Now','Your daily rest is done.']:[dw(le+11*H),(busy?'If you stop now. ':'')+'Regular 11h rest. With a reduced 9h rest (max 3 per week): '+dw(le+9*H)+'.'];
-  h+=`<div class="g cd w"><div class="row"><span class="lbl">Next Shift Can Start ${ib('ns')}</span><span class="num">${ns[0]}</span></div><div class="note">${ns[1]}</div>${ex('ns')}</div>`}
+  h+=`<div class="g cd w kp"><div class="row"><span class="lbl">Next Shift Can Start ${ib('ns')}</span><span class="num">${ns[0]}</span></div><div class="note">${ns[1]}</div>${ex('ns')}</div>`}
  if(!busy&&l){
   const c=gap>=11*H?'ok':gap>=9*H?'warn':'acc';
   let t=gap>=45*H?'Weekly rest done.':gap>=11*H?'Regular daily rest done. Weekly rest of 45h is at '+tt(l.e+45*H)+'.':gap>=9*H?'Reduced daily rest done (allowed 3 times between weekly rests). Regular 11h at '+tt(l.e+11*H)+'.':'Reduced 9h rest at '+tt(l.e+9*H)+', regular 11h at '+tt(l.e+11*H)+'.';
   if(ss)t+=n>ss+24*H?' <span class="bad">Your 24h window has passed. Check your tachograph.</span>':' Take your daily rest by '+tt(ss+24*H)+'.';
   const rOn=fresh||(st.se&&st.se>=l.e);
-  h+=rOn?`<div class="g cd w on"><div class="row"><span class="lbl">Rest Since Last Shift ${ib('rest')}${CNT}</span><span class="num">${fmt(gap)} <small>/ 11h</small></span></div><div class="bar"><i style="width:${Math.round(Math.min(100,gap/(11*H)*100))}%;background:var(--${c})"></i></div><div class="note">${t}</div>${ex('rest')}</div>`
-   :`<div class="g cd w off"><div class="row"><span class="lbl">Rest Since Last Shift ${ib('rest')}</span><span class="num">0h 00m <small>/ 11h</small></span></div><div class="bar"><i style="width:0"></i></div><div class="note">Not counting. Your shift is still running, so this is a break, not rest. It starts when you tap End Shift.</div>${ex('rest')}</div>`}
+  h+=rOn?`<div class="g cd w on kp"><div class="row"><span class="lbl">Rest Since Last Shift ${ib('rest')}${CNT}</span><span class="num">${fmt(gap)} <small>/ 11h</small></span></div><div class="bar"><i style="width:${Math.round(Math.min(100,gap/(11*H)*100))}%;background:var(--${c})"></i></div><div class="note">${t}</div>${ex('rest')}</div>`
+   :`<div class="g cd w off kp"><div class="row"><span class="lbl">Rest Since Last Shift ${ib('rest')}</span><span class="num">0h 00m <small>/ 11h</small></span></div><div class="bar"><i style="width:0"></i></div><div class="note">Not counting. Your shift is still running, so this is a break, not rest. It starts when you tap End Shift.</div>${ex('rest')}</div>`}
  const pm=Math.floor(prog/M),pc=pm>=45?'ok':'acc';
  const room=270*M-b.d,bx=`<div class="note" style="margin-top:6px"><b>Breaks this shift:</b> ${bi.k?bi.k+' full break'+(bi.k>1?'s':'')+', last finished '+hm(bi.last):'no full break yet'}.<br><b>Still required:</b> ${b.d>=270*M?(b.q?'30':'45')+' minutes, due now.':bi.k&&9*H-day<=room?'nothing more for a 9h day. A break is needed if you drive another '+fmt(room)+'.':!busy&&bgc>0&&prog<45*M?Math.ceil(((bp?30:45)*M-bgc)/M)+' more minutes of this break'+(bp?'':', or stop at 15 and take 30 or more later')+'.':(b.p?'30 minutes (15 minute part done)':'45 minutes')+', within '+fmt(room)+' of driving.'}${lock?'<br>Break and +min buttons are locked until a break is due or you pass 9h driving.':''}</div>`;
  h+='<div class="cs">Breaks</div>'+sg('brk',card('brk','Driving Since Last Break',b.d,270*M,b.q?'Next break must be 30 min or more.':'Take 45 min, or 15 then 30.',b.q?'Take 30 minutes now.':'Take 45 minutes now.',0,bx+SGH,dOn).replace('g cd','g cd w'));
