@@ -144,8 +144,7 @@ input,select{border:1px solid var(--bd);border-radius:12px}
 h1{font-weight:800;letter-spacing:-.02em}
 body{letter-spacing:-.003em}
 .num small,.cd .num small,.cp .cd .num small{font-size:inherit!important;font-weight:inherit!important;color:var(--mut)}
-.cd:not(.w) .num{font-size:20px}
-@media (max-width:340px){.cd:not(.w) .num{font-size:17px}}
+.cd .num,.cd.w .num,.cp .cd .num{font-size:18px!important;font-weight:700}
 /* clinical: square, flat, hairline */
 :root{--bd2:#c7ced6}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bd2:#3a4553}}:root[data-theme="dark"]{--bd2:#3a4553}
