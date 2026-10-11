@@ -218,5 +218,48 @@ const RM=[["Lorry Limits", "No Lorries (HGV Ban)"], ["Lorry Limits", "Low Bridge
 RM.forEach(([g,n])=>{const i=S.findIndex(x=>x.g===g&&x.n===n);if(i>=0)S.splice(i,1)});
 OV.forEach(o=>{const x=S.find(y=>y.n===o.n&&(!o.g||y.g===o.g));if(x){x.img=o.img;if(o.f)x.f=1;if(o.rn)x.n=o.rn}});
 NW.forEach(o=>S.push({g:o.g,n:o.n,s:'',img:o.img,m:o.m,h:o.h,l:o.l}));
+/* Accuracy review against the Highway Code (2025 text). w = warning shown to the driver where something could not be verified. */
+const FIX={
+'National Speed Limit':{h:'Goods vehicle up to 7.5 tonnes: 50 mph single carriageway, 60 dual carriageway, 70 motorway (60 on a motorway if articulated or towing a trailer). Goods vehicle over 7.5 tonnes: 50 / 60 / 60 in England and Wales, and 40 / 50 / 60 in Scotland. Vehicles towing a trailer or caravan have their own limits. Check the Highway Code speed limit table (Rule 124) if unsure.'},
+'Roundabout':{h:'Long vehicles may need to take a different position on a roundabout from the normal one, and should signal their intention clearly and keep a watch for other traffic (Rule 187). Do not cut across other lanes.'},
+'Queues Likely':{h:'Do not rely on the traffic ahead being able to stop quickly. Leave extra room. You may use hazard lights briefly to warn drivers behind of a queue only on a motorway or unrestricted dual carriageway (Rule 116), never elsewhere while moving.'},
+'Weight Limit':{m:'No vehicles over the maximum gross weight (mgw) shown. This picture is a weak bridge sign.',h:'Do not use the road if your vehicle is over the limit.',w:'Orders differ on whether the limit means the plated weight or the actual laden weight, and a plate can allow access. If you are not sure, do not use the road and plan another route.'},
+'Goods Vehicles Over Weight':{h:'Plan the whole route before you leave and read the plate. A plate may allow access for loading and unloading only.',w:'Check the exact wording of the plate and the local order. If you are not sure it allows you in, do not enter.'},
+'Length Limit':{w:'Orders can define length differently (for example including a trailer). If your combination is close to the limit, find another route.'},
+'Mini Roundabout':{h:'Avoid driving over the centre of a mini-roundabout. If you cannot avoid it with a long vehicle, check there is nobody close to your nearside first (Rule 188).'},
+'Hump Bridge':{h:'Long and low vehicles can ground out on the crest. Slow down and check you can see the road beyond.'},
+'Advisory Route for Lorries':{m:'A recommended route for lorries. It is advisory, not a legal requirement.',h:'Use it as a guide. Check your own vehicle height and weight against any limits on the route.',w:'An advisory route is not guaranteed to be free of low bridges or weight limits. Check for yourself.'},
+'Advisory Speed Limit':{h:'Follow it where you can. You can still be prosecuted for driving too fast for the conditions.'},
+'Lane Control Green Arrow':{w:'Not shown in the Highway Code as a standard motorway signal. Treat it as a guide to which lane is open, and follow the signs on the day.'},
+'Lane Control Move Over':{w:'Not verified. The standard motorway signal for a lane closed ahead is a flashing amber arrow or lane closure sign. Follow the signs on the day.'},
+'Slip Road Priority':{m:'A sign about the lanes at a slip road junction.',h:'Take care at joining slip roads. Check the sign layout.',w:'Not verified against the Highway Code. Do not rely on this entry for who has priority.'},
+'Slow-moving Works Vehicle Blocking a Lane':{l:'warn',m:'A slow-moving or stationary works vehicle is blocking a lane. The arrow shows which way to pass.',w:'Not verified as a legal order. Treat it as a warning and take care.'},
+'Double White Lines':{h:'If the solid line is the one nearest you, you must not cross it, apart from the exceptions on the Solid Line Nearest You entry. You must not stop on a road with double white lines, even where a broken line is on your side, except to pick up or set down passengers or to load or unload goods (Rule 240).'},
+'Double White Lines (Solid Line Nearest You)':{h:'Rule 129 lets you cross, only if the road is clear, to: pass a stationary vehicle (parked or stopped); overtake a pedal cycle, horse or road maintenance vehicle travelling at 10 mph or less; or enter or leave a side road or adjoining property. It does not cover other slow traffic, so a tractor, a slow lorry or a queue of moving vehicles does not count, even at under 10 mph. Never cross if it is not safe. You must not stop on the road except to pick up or set down passengers or to load or unload goods (Rule 240).'},
+'Solid White Edge Line':{l:'info',m:'A solid white line along the edge of the carriageway marks the edge of the road. On a motorway it separates the hard shoulder.',h:'Do not stop or drive on a motorway hard shoulder except in an emergency.',w:'Not verified as an offence on ordinary roads. Stay on the carriageway.'},
+'Red Route: Double Red Lines':{m:'No stopping at any time, unless signs say otherwise (Rule 240). Applies on red routes.',h:'Do not stop to load or unload on a double red line. Use a marked loading bay, if there is one.',w:'Exemptions (for example for Blue Badge holders or taxis) vary by route and are shown on signs. Read them.'},
+'Red Route Loading Boxes':{m:'Marked bays and signs show where and when loading and unloading is allowed on a red route (Rule 247).',h:'Check the sign for the times and for how long you can stay.',w:'The colours of the box and its border can mean different things on different routes. Read the sign.'},
+'Pedestrian Crossing Zig-Zags':{m:'Zig-zag lines before a pedestrian crossing. You must not stop or park on them, and must not overtake the moving vehicle nearest the crossing (Rules 191 and 240).'},
+'School Zig-Zag (Keep Clear)':{m:'Zig-zag lines at school entrances. You must not stop or park, or set down or pick up passengers, on them when a nearby upright sign shows a prohibition of stopping (Rule 238).',w:'Do not stop on them at any time. Enforcement depends on the signs, which are not always present.'},
+'Keep Clear':{l:'sh',m:'Do not stop or park in the area, even for a short time.',h:'Do not stop in front of an emergency service entrance.',w:'Not verified whether this marking can be enforced. Treat it as a ban.'},
+'Chevrons with Broken Border':{h:'Used to separate lanes or protect traffic turning right. Enter only if necessary and you can see it is safe (Rule 130).'},
+'Rear Markers (Red and Yellow)':{w:'The exact vehicle weights and lengths that need rear markings come from regulations I could not check. Look at the DVSA guidance or the vehicle handbook.'},
+'Projection Markers':{w:'The exact distances at which marking is needed come from regulations I could not check. Ask your transport office or check DVSA guidance before carrying a projecting load.'},
+'Hazard Information Panel':{w:'ADR orange plates have a hazard identification number on top and a UN substance number below. Check the ADR rules for your load.'},
+'Red Route: No Stopping Except Buses':{m:'No stopping, except buses, at the times shown on the sign. It is a red route.'},
+'Pedestrian Crossing Point over Tramway':{l:'info',w:'Not verified. Treat it as an information sign for a pedestrian crossing of the tram tracks.'},
+'With-Flow Pedal Cycle Lane':{m:'A lane for pedal cycles that goes the same way as traffic. You must not drive or park in a lane marked by a solid white line during its hours of operation. With a broken line, do not use it unless it cannot be avoided (Rule 140).'},
+'Traffic Signals Not in Use':{h:'Treat the junction as an unmarked junction: no one has priority, so approach slowly and be ready to stop.'},
+'Slip Road: Joining from Left':{m:'A sign about traffic joining from the left at a slip road.',w:'Not verified against the Highway Code. Do not rely on this entry for who has priority.'},
+'Slip Road: Right-hand Lane Joining':{m:'A sign about traffic joining in the right-hand lane of a slip road.',w:'Not verified against the Highway Code. Do not rely on this entry for who has priority.'},
+'Downward Arrows (Get in Lane)':{h:'Get into the lane for your destination in good time. A heavy vehicle needs more time to change lanes.'},
+'Primary Route Approach (Turpin\'s Crossroads)':{n:'Primary Route Approach (Crossroads)'},
+'Primary Route Forming Part of a Ring Road':{w:'Not verified. Follow the route numbers and place names on the sign.'},
+'Ancient Monument':{m:'The way to an ancient monument or historic site in the care of a heritage body.'},
+'Yellow Kerb Marks: Loading Ban':{w:'The Highway Code refers to the Road markings guide, which I could not check. Read the plate beside the kerb every time.'},
+'Yellow Kerb Marks: More Than One':{m:'More than one yellow mark on the kerb can mean the loading ban applies at more times. Check the plate.',w:'Not verified. The number of marks and what each means should come from the plate. Read it.'},
+'Hatched Area (Chevrons)':{m:'Chevron hatching with a solid edge line is a buffer. Do not enter it except in an emergency. With a broken edge line, you should not enter unless it is necessary and safe (Rule 130).'}
+};
+S.forEach(x=>{const f=FIX[x.n];if(f)Object.assign(x,f)});
 window.SIGNS=S;
 })();

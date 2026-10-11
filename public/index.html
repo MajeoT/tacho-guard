@@ -165,7 +165,7 @@ body{letter-spacing:-.003em}
 #hero{border:1px solid #2b3643;box-shadow:none}.h-chip,.h-t{border:1px solid #2b3643;background:transparent}
 .h-big{letter-spacing:-.02em}
 #sync{border:1px solid #3b4756}
-.lg{margin-top:6px;font-size:13px;padding:6px 8px;border:1px solid var(--bd2);border-left-width:4px;color:var(--tx)}.lg-law{border-left-color:var(--bad)}.lg-adv{border-left-color:var(--warn)}.lg-sh{border-left-color:var(--warn)}.lg-warn{border-left-color:var(--warn)}.lg-info{border-left-color:var(--mut)}.lg-veh{border-left-color:var(--acc)}
+.wn{margin-top:8px;font-size:13px;padding:6px 8px;border:1px solid var(--warn);border-left-width:4px;color:var(--tx)}.lg{margin-top:6px;font-size:13px;padding:6px 8px;border:1px solid var(--bd2);border-left-width:4px;color:var(--tx)}.lg-law{border-left-color:var(--bad)}.lg-adv{border-left-color:var(--warn)}.lg-sh{border-left-color:var(--warn)}.lg-warn{border-left-color:var(--warn)}.lg-info{border-left-color:var(--mut)}.lg-veh{border-left-color:var(--acc)}
 .sgc img{flex:none;width:84px;height:84px;object-fit:contain}.sgc img.fl{transform:scaleX(-1)}
 </style>
 </head>
@@ -315,7 +315,7 @@ const LGL={law:['Legal order','You must obey it. It can be enforced.'],adv:['Adv
 function renderSigns(){const S=window.SIGNS||[],gs=[...new Set(S.map(x=>x.g))];
  $('sgf').innerHTML=['All'].concat(gs).map(g=>`<button class="pl${(g==='All'&&!sgState.g)||sgState.g===g?' on':''}" data-sg="${g==='All'?'':g}">${g}</button>`).join('');
  const q=sgState.q.trim().toLowerCase(),L=S.filter(x=>(!sgState.g||x.g===sgState.g)&&(!q||(x.n+' '+x.m+' '+x.h+' '+x.g).toLowerCase().includes(q)));
- $('sgl').innerHTML=L.length?L.map(x=>`<div class="g sgc">${x.img?`<img src="${x.img}" alt="${x.n}" width="84" height="84" loading="lazy"${x.f?' class="fl"':''}>`:`<svg viewBox="0 0 100 100" width="72" height="72" role="img" aria-label="${x.n}">${x.s}</svg>`}<div><div class="lbl">${x.n}</div><div class="note">${x.g}</div>${x.l&&LGL[x.l]?`<div class="lg lg-${x.l}"><b>${LGL[x.l][0]}.</b> ${LGL[x.l][1]}</div>`:''}<div style="margin-top:4px">${x.m}</div>${x.h?`<div class="bx" style="margin:8px 0 0"><div class="bt">For HGV Drivers</div>${x.h}</div>`:''}</div></div>`).join(''):'<div class="g note">No signs match that search.</div>'}
+ $('sgl').innerHTML=L.length?L.map(x=>`<div class="g sgc">${x.img?`<img src="${x.img}" alt="${x.n}" width="84" height="84" loading="lazy"${x.f?' class="fl"':''}>`:`<svg viewBox="0 0 100 100" width="72" height="72" role="img" aria-label="${x.n}">${x.s}</svg>`}<div><div class="lbl">${x.n}</div><div class="note">${x.g}</div>${x.l&&LGL[x.l]?`<div class="lg lg-${x.l}"><b>${LGL[x.l][0]}.</b> ${LGL[x.l][1]}</div>`:''}<div style="margin-top:4px">${x.m}</div>${x.h?`<div class="bx" style="margin:8px 0 0"><div class="bt">For HGV Drivers</div>${x.h}</div>`:''}${x.w?`<div class="wn"><b>Check this.</b> ${x.w}</div>`:''}</div></div>`).join(''):'<div class="g note">No signs match that search.</div>'}
 document.addEventListener('click',e=>{const l=e.target.closest('[data-lr]');if(l){['signs','rules','new'].forEach(k=>{$('lr-'+k).hidden=k!==l.dataset.lr});document.querySelectorAll('#lrf .pl').forEach(b=>b.classList.toggle('on',b===l));window.scrollTo(0,0);return}const b=e.target.closest('[data-sg]');if(b){sgState.g=b.dataset.sg;renderSigns()}});
 document.addEventListener('input',e=>{if(e.target.id==='sgq'){sgState.q=e.target.value;renderSigns()}});
 const ib=k=>`<button class="i" data-i="${k}" aria-label="More info">i</button>`;
