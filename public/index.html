@@ -91,6 +91,31 @@ a{color:var(--tx)}
 .tab{min-width:0}@media (max-width:360px){.tab{font-size:12px;padding:9px 1px}.tabs{gap:3px}}
 #sync{position:fixed;left:50%;bottom:20px;transform:translate(-50%,20px);max-width:90vw;background:#1f2937;color:#fff;font-size:14px;padding:10px 16px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:50;text-align:center}
 #sync.on{opacity:1;transform:translate(-50%,0)}
+
+/* modern refresh */
+:root{--r:18px;--sh:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06)}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:linear-gradient(180deg,var(--bg),var(--bg)) fixed}
+h1,h2,.num,.cs,.mb h3,.st,.go,.act{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:-.01em}
+h1{font-size:26px;font-weight:800}
+.g,.cd,.wkb,.bx{border:0;border-radius:var(--r);box-shadow:var(--sh)}
+.cd.on{box-shadow:0 0 0 2px var(--acc),var(--sh)}
+.wkb{border-left:0;position:relative;padding-left:18px;overflow:hidden}.wkb::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--mut)}.wkb.nb::before{background:var(--bad)}.wkb.dn2::before{background:var(--ok)}.wkb.wn::before{background:var(--warn)}
+.tabs{background:var(--card);border-radius:999px;padding:4px;box-shadow:var(--sh);gap:2px}
+.tab{border:0;background:transparent;border-radius:999px;font-weight:600}.tab.on{box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.tab.gear{background:var(--card);box-shadow:var(--sh)}
+.tabs .tab.dot::after{margin-left:4px}
+.act{border:0;border-radius:16px;box-shadow:var(--sh);padding:12px 2px}.act b{font-size:20px}
+.cs{font:700 12px system-ui,sans-serif!important;text-transform:uppercase;letter-spacing:.08em!important;color:var(--mut);margin:22px 4px 8px!important}
+.cd .num{font-size:24px;font-weight:800;white-space:nowrap}.cd .num small{font-size:14px;font-weight:600}.cd.w .num{font-size:26px}
+.bar{height:8px;border-radius:99px}.cd .bar{height:7px}.bar i{border-radius:99px}
+.cd .lbl{font-size:15px;font-weight:600;line-height:1.25}.nw{white-space:nowrap}
+.qf button,.pl,.tg,.add{border-radius:999px}
+.go{border-radius:var(--r)}
+input,select{border:1px solid var(--bd);border-radius:12px}
+.mb{border-radius:22px}
+.i{border-color:var(--bd);background:var(--bg);color:var(--mut)}
+.foot{text-align:center}
+.cp #s1 .cs,.cp #s2 .cs{margin:12px 4px 4px!important}
 </style>
 </head>
 <body>
@@ -234,7 +259,7 @@ function brkInfo(a,ss){let p=false,k=0,d=0,last=0;if(!ss)return{k,last};const n=
  const s=a.filter(x=>x.s>=ss);s.forEach((x,i)=>{if(i)step(x.s-s[i-1].e,x.s);if(x.t==='d')d+=x.e-x.s});
  const l=s[s.length-1];if(l&&!l.live)step(n-l.e,n);return{k,last}}
 function card(k,label,val,lim,t,over,soft,xtra,on){const c=val>=(soft||lim)?'bad':val/lim>=.8?'warn':'ok';
- return `<div class="g cd${on===true?' on':on===false?' off':''}"><div class="row"><span class="lbl">${label} ${ib(k)}${on===true?CNT:''}</span><span class="num ${c}">${fmt(val)} <small>/ ${lim/H}h</small></span></div><div class="bar"><i style="width:${Math.round(Math.min(100,val/lim*100))}%;background:var(--${c})"></i></div><div class="note">${val>=lim?over:fmt(lim-val)+' left. '+t}</div>${xtra||''}${ex(k)}</div>`}
+ return `<div class="g cd${on===true?' on':on===false?' off':''}"><div class="row"><span class="lbl">${label.replace(/\s(\S+)$/,' <span class="nw">$1 ')}${/\s\S+$/.test(label)?ib(k)+'</span>':' '+ib(k)}${on===true?CNT:''}</span><span class="num ${c}">${fmt(val)} <small>/ ${lim/H}h</small></span></div><div class="bar"><i style="width:${Math.round(Math.min(100,val/lim*100))}%;background:var(--${c})"></i></div><div class="note">${val>=lim?over:fmt(lim-val)+' left. '+t}</div>${xtra||''}${ex(k)}</div>`}
 let lock=false;let dArm=null,dT=0,lim=14,tab='today',esFor=0,ed=null,wid=null,last=null,gmsg='',wl=null,flash='',prog=0,ac=null,fired={};
 const beep=()=>{try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume();const o=ac.createOscillator();o.frequency.value=880;o.connect(ac.destination);o.start();o.stop(ac.currentTime+.4)}catch(e){}};
 async function wake(){if(!st.gps)return;try{if(navigator.wakeLock)wl=await navigator.wakeLock.request('screen')}catch(e){}}
@@ -1016,7 +1041,7 @@ const AU=$('auth'),AB=$('authb');
 const closeAuth=()=>{AU.hidden=true;AB.innerHTML=''};
 const ampMsg=(t,bad)=>{const m=$('amsg');if(m){m.textContent=t;m.className='note'+(bad?' bad':'')}};
 function showAuth(msg,mode){const rec=mode==='recover';
- AB.innerHTML=`<h3>${rec?'Set a New Password':'TachoGuard'}</h3><p>${rec?'Enter a new password for your account.':'Sign in to save your hours and walkaround checks to your account, so they are kept if you change phone. The app still works with no signal.'}</p>${rec?'':'<label for="aem">Email</label><input type="email" id="aem" autocomplete="username" inputmode="email">'}<label for="apw">${rec?'New Password':'Password'}</label><input type="password" id="apw" autocomplete="${rec?'new-password':'current-password'}"><div class="note${msg&&msg.bad?' bad':''}" id="amsg" role="alert" style="margin-bottom:8px">${msg?msg.t:''}</div>${rec?'<button class="tg big" data-a="ok">Save Password</button>':'<button class="tg big" data-a="in">Sign In</button><button class="tg big" data-a="up">Create Account</button><button class="tg big" data-a="fg">Forgot Password</button><button class="tg big" data-a="lo">Use on This Phone Only</button>'}`;
+ AB.innerHTML=`<h3>${rec?'Set a New Password':'TachoGuard'}</h3><p>${rec?'Enter a new password for your account.':'Sign in to save your hours and walkaround checks to your account, so they are kept if you change phone. Or continue as a guest and keep everything on this phone only. The app works with no signal either way.'}</p>${rec?'':'<label for="aem">Email</label><input type="email" id="aem" autocomplete="username" inputmode="email">'}<label for="apw">${rec?'New Password':'Password'}</label><input type="password" id="apw" autocomplete="${rec?'new-password':'current-password'}"><div class="note${msg&&msg.bad?' bad':''}" id="amsg" role="alert" style="margin-bottom:8px">${msg?msg.t:''}</div>${rec?'<button class="tg big" data-a="ok">Save Password</button>':'<button class="tg big" data-a="in">Sign In</button><button class="tg big" data-a="up">Create Account</button><button class="tg big" data-a="fg">Forgot Password</button><button class="tg big" data-a="lo">Continue as Guest</button><p class="note" style="margin:6px 0 0">Guest keeps everything on this phone only. Nothing is sent to an account.</p>'}`;
  AU.hidden=false}
 const aErr=e=>/Failed to fetch|NetworkError|Load failed/i.test(e.message||'')||e instanceof TypeError?'You need a signal to do this. Try again when you are online.':(e.message||'Something went wrong.');
 AB.onclick=async e=>{const b=e.target.closest('[data-a]');if(!b)return;const k=b.dataset.a,em=($('aem')||{}).value,pw=($('apw')||{}).value,red='redirect_to='+encodeURIComponent(location.origin+'/');
@@ -1039,7 +1064,7 @@ AB.onclick=async e=>{const b=e.target.closest('[data-a]');if(!b)return;const k=b
 let outArm=0;
 function acctUi(){const n=$('acn'),b=$('acb');
  if(!SBU){n.textContent='Account saving is not set up in this copy of the app. Your record is saved on this phone only.';b.hidden=true;return}
- b.hidden=false;if(sess){n.textContent='Signed in as '+(sess.email||'your account')+'. Your record is saved to your account and kept on this phone.';b.textContent=outArm?'Tap Again to Sign Out':'Sign Out'}else{n.textContent='Not signed in. Your record is saved on this phone only.';b.textContent='Sign In'}}
+ b.hidden=false;if(sess){n.textContent='Signed in as '+(sess.email||'your account')+'. Your record is saved to your account and kept on this phone.';b.textContent=outArm?'Tap Again to Sign Out':'Sign Out'}else{n.textContent='Guest mode. Your record is saved on this phone only and is lost if you clear the app data or change phone. Sign in to back it up.';b.textContent='Sign In or Create Account'}}
 $('acb').onclick=()=>{if(!sess){showAuth();return}
  if(!outArm){outArm=1;acctUi();setTimeout(()=>{outArm=0;acctUi()},4000);return}
  outArm=0;clearTimeout(pushT);saveSess(null);cloudReady=false;cloud=null;syncMsg='You are signed out. Your record is still on this phone.';syncNote();acctUi()};
