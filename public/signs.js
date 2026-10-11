@@ -57,5 +57,21 @@ add('Motorway','Red Cross Lane Signal',box(`<path d="M24 24L76 76M76 24L24 76" s
 add('Motorway','Move Left or Lane Closed Ahead',box(`<g transform="rotate(-135 50 50)"><path d="M50 18L74 46H59V82H41V46H26Z" fill="${AM}"/></g>`),'Move to the lane the arrow points to. A lane is closed ahead.','Start moving over early. A heavy vehicle needs time to merge safely.');
 add('Motorway','Variable Speed Limit',box(`<circle cx="50" cy="50" r="34" fill="#fff" stroke="${R}" stroke-width="8"/>${t('50',50,62,30)}`),'A mandatory speed limit set for the conditions. It applies to the lane under the sign.','A limit with a red ring is the law and is often enforced by cameras.');
 add('Motorway','Flashing Amber Lights',box(`<circle cx="32" cy="50" r="14" fill="${AM}"/><circle cx="68" cy="50" r="14" fill="${AM}"/>`),'There is a hazard ahead. Slow down and be ready to stop. Look for the message on the sign.','');
+/* Roadworks */
+const rw=i=>`<rect x="6" y="6" width="88" height="88" rx="8" fill="${AM}" stroke="#111" stroke-width="4"/>${i}`;
+add('Roadworks','Road Works',tri(`<circle cx="46" cy="40" r="5" fill="#111"/><path d="M44 46l-8 16 6 2 6-12 6 10 5-3-8-13z M30 70h30l-6-8z" fill="#111"/>`),'Road works ahead. Expect workers, narrowed lanes, cones and slower traffic.','Slow down early and be ready to stop. Workers may be close to your wing mirrors.');
+add('Roadworks','Lane Closed Ahead',rw(`<g fill="#111"><rect x="30" y="20" width="10" height="60"/><rect x="60" y="20" width="10" height="60"/></g><path d="M50 78V44M38 54l12-14 12 14" stroke="#111" stroke-width="7" fill="none"/>`),'A lane is closed ahead for works. Merge in good time to the lane that stays open.','Let a gap open and merge early. Do not push in at the last moment.');
+add('Roadworks','Temporary Speed Limit',`<circle cx="50" cy="50" r="45" fill="#fff" stroke="${R}" stroke-width="9"/>${t('40',50,63,36)}`,'A mandatory speed limit through the works. It stays in force until you see the end of the limit.','Roadworks limits are often enforced by average speed cameras. Your HGV limit still applies if it is lower.');
+add('Roadworks','Road Narrows',tri(`<path d="M34 78V50l12-26M66 78V50L54 24" stroke="#111" stroke-width="8" fill="none"/>`),'The road gets narrower ahead on both sides.','Check your width against any width limit and give way where signs say so.');
+/* Direction */
+const rc=(bg,bd,i)=>`<rect x="4" y="22" width="92" height="56" rx="6" fill="${bg}" stroke="${bd}" stroke-width="4"/>${i}`;
+add('Direction','Motorway Direction Sign',rc(BL,'#fff',t('M1',50,60,26,'#fff')),'Blue background with white text: the route is a motorway, or leads onto one.','Motorways have their own rules, including no stopping on the hard shoulder except in an emergency.');
+add('Direction','Primary Route Sign',rc('#0b7a3b','#fff',t('A1',50,60,26,'#fff')),'Green background with white text: a primary route, the main A roads between large towns.','');
+add('Direction','Local Route Sign',rc('#fff','#111',t('Town',50,60,22,'#111')),'White background with black text and border: a non-primary or local route.','');
+add('Direction','Tourist Sign',rc('#7a4a1b','#fff',t('Castle',50,60,20,'#fff')),'Brown background: a tourist attraction or tourist route.','Check the height and weight limits before following signs to an attraction.');
+/* Information */
+add('Information','Parking',`<rect x="6" y="6" width="88" height="88" rx="8" fill="${BL}"/>${t('P',50,72,64,'#fff')}`,'A place where you may park. Read any plates for times, tickets and who the parking is for.','Check that the bay suits your vehicle length and weight.');
+add('Information','Hospital',`<rect x="6" y="6" width="88" height="88" rx="8" fill="${BL}"/><rect x="20" y="20" width="60" height="60" fill="#fff"/><path d="M50 28v44M28 50h44" stroke="${BL}" stroke-width="12"/>`,'The way to a hospital, or the hospital itself. Take care for ambulances and pedestrians.','');
+add('Information','Lane Direction Signs',rc(BL,'#fff','<path d="M34 70V36M34 36l-8 10M34 36l8 10M66 70V36M66 36l-8 10M66 36l8 10" stroke="#fff" stroke-width="5" fill="none"/>'),'Arrows on a blue panel show which lanes go where. Get in the right lane in good time.','Use your mirrors and signal early so other traffic can see a long vehicle changing lane.');
 window.SIGNS=S;
 })();
