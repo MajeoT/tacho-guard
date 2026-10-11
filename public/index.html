@@ -120,17 +120,31 @@ input,select{border:1px solid var(--bd);border-radius:12px}
 #ck .pls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:0}
 #ck .pls .pl{width:100%;min-height:46px;padding:8px 10px;border-radius:12px;text-align:center;display:flex;align-items:center;justify-content:center;line-height:1.2}
 #ck .g2{margin-top:0;gap:10px}#ck .g2 label{font-size:13px;font-weight:600;color:var(--tx)}#ck .g2 input{margin-top:4px;height:46px;border-radius:12px}#ck .g2 label:last-child{grid-column:1/-1}
-.hr{display:flex;gap:6px;flex:none}.hr .tab{white-space:nowrap}.hbtn{padding:8px 12px;font-size:13px;box-shadow:var(--sh);border:0}.hbtn.on{background:var(--acc);color:var(--onacc)}.hd h1{white-space:nowrap}@media (max-width:380px){.hd h1{font-size:20px}.hd h1 .i{width:20px;height:20px}.hr .tab.gear,.hbtn{padding:8px 9px}}
+.hr{display:flex;gap:6px;flex:none}.hr .tab{white-space:nowrap}.hbtn{padding:8px 12px;font-size:13px;box-shadow:var(--sh);border:0}.hbtn.on{background:var(--acc);color:var(--onacc)}.hd h1{white-space:nowrap;font-size:24px}.hr{gap:5px}.hr .tab.gear,.hbtn{padding:8px 10px;font-size:13px}@media (max-width:380px){.hd h1{font-size:20px}.hd h1 .i{width:20px;height:20px}.hr .tab.gear,.hbtn{padding:8px 9px}}
+
+#hero{background:#10161d;color:#f3f5f7;border-radius:26px;padding:16px 18px 16px;margin:0 0 12px;box-shadow:0 8px 24px rgba(8,14,22,.28)}
+.h-chip{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#cfd8e2;background:#1b2530;border-radius:999px;padding:6px 12px}.h-chip i{width:9px;height:9px;border-radius:50%}
+.h-big{font-size:58px;font-weight:800;line-height:1;letter-spacing:-.035em;margin-top:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.h-cap{font-size:17px;font-weight:600;margin-top:6px;color:#f3f5f7}.h-cap span{font-weight:400;color:#9fb0c3;font-size:15px}
+.h-bar{height:8px;border-radius:99px;background:#26303b;margin-top:16px;overflow:hidden}.h-bar i{display:block;height:100%;border-radius:99px;transition:width .4s}
+.h-bl{display:flex;justify-content:space-between;font-size:12px;color:#9fb0c3;margin-top:6px}
+.h-ts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.h-ts.one{grid-template-columns:1fr}
+.h-t{background:#1a232d;border-radius:16px;padding:10px 12px;min-width:0}.h-k{font-size:12px;color:#9fb0c3;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.h-v{font-size:20px;font-weight:700;margin-top:2px;letter-spacing:-.01em}
+#hero .i{border-color:#4a5868;background:transparent;color:#9fb0c3;width:18px;height:18px;font-size:11px}
+.acts{gap:8px}.act{font-size:14px;font-weight:600;font-family:system-ui,sans-serif!important;padding:12px 2px}.act b{font-size:22px}.act.on{box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.cp #hero{padding:12px 14px;border-radius:20px}.cp .h-big{font-size:42px;margin-top:8px}.cp .h-cap span{display:none}.cp .h-bar{margin-top:10px}.cp .h-ts{margin-top:10px}.cp .h-v{font-size:17px}.cp .h-bl{display:none}
+@media (max-width:360px){.h-big{font-size:48px}}
 </style>
 </head>
 <body>
 <main>
-<div class="hd"><h1>TachoGuard <button class="i" data-i="about" aria-label="More info">i</button></h1><div class="hr"><button class="tg hbtn" id="cpb" aria-pressed="false"></button><button class="tab gear" data-t="set" aria-label="Settings">&#9881; Settings</button></div></div>
+<div class="hd"><h1>TachoGuard <button class="i" data-i="about" aria-label="More info">i</button></h1><div class="hr"><button class="tg hbtn" id="cpb" aria-pressed="false"></button><button class="tab gear" data-t="set" aria-label="Settings">Settings</button></div></div>
 <div class="tabs"><button class="tab on" data-t="today">Today</button><button class="tab" data-t="check">Walk</button><button class="tab" data-t="hours">Hours</button><button class="tab" data-t="tacho">Tacho</button><button class="tab" data-t="signs">Learn</button><button class="tab" data-t="log">Log</button></div>
 <div id="sync" role="status"></div>
 <section id="t-today">
-<p class="sub">Tap what you are doing now, as on the tachograph. To stop, change to another activity or tap End Shift. The cards below that are counting are outlined.</p><div class="alert" id="alert" hidden></div>
+<p class="sub">Tap what you are doing now, as on the tachograph. Outlined cards are the ones counting.</p><div class="alert" id="alert" hidden></div>
 <div id="wkb"></div>
+<div id="hero"></div>
 <div class="acts"><button class="act" data-a="d"><b>🚛</b>Driving</button><button class="act" data-a="w"><b>⚒</b>Work</button><button class="act" data-a="p"><b>◪</b>POA</button><button class="act" data-a="r"><b>🛏</b>Break</button></div>
 <div class="live" id="live"></div><div class="tr" id="es" style="margin-top:10px" hidden><label for="est" id="esl">Started At</label><input type="time" id="est"><button class="tg" id="esb">Change</button></div>
 <div id="s1"></div><div id="s2"></div><button class="tg" id="esh" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">End Shift</button><button class="tg" id="rd2" style="display:block;width:100%;margin-top:10px;padding:14px;font-size:16px;border-radius:12px">Reset Day</button><p class="note" style="text-align:center;margin:6px 0 0">Starts breaks, shift and working time again from now.</p><button class="tg" id="tlog" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">Today's Log</button><p class="note" style="text-align:center;margin:6px 0 0">See and edit today's driving, work, POA and breaks.</p></section><section id="t-tacho" hidden><h2>Tacho Downloads <button class="i" data-i="tac" aria-label="More info">i</button></h2><div id="tcx"></div><div class="g"><div class="tr"><label for="tc">Driver Card Downloaded</label><input type="date" id="tc"></div><div class="note" id="tcn"></div><div class="tr" style="margin-top:12px"><label for="tu">Vehicle Unit Downloaded</label><input type="date" id="tu"></div><div class="note" id="tun"></div></div>
@@ -258,7 +272,7 @@ INFO.signs=`Simplified drawings of common UK road signs with what each one means
 INFO.poa=`POA means Period of Availability. It is waiting time where you do not have to stay at your workstation, but you must be ready to start or carry on driving or other work, and you must know how long the wait will last in advance. Examples: waiting on a ferry, or waiting while others load or unload your vehicle.<br><b>Working Time</b> POA is not working time. It does not count towards the 48 hour average or the 6 hour rule. It is also not a break, so it does not count towards your 45 minutes or rest. On the tachograph it is the POA symbol.<br><b>Pay</b> The working time rules do not set pay. Whether you are paid for POA is a matter for your contract. Being paid for it does not turn it into working time, and being unpaid does not stop a wait being working time. So a company can pay for POA without it touching your 48 hour average.<br><b>Limits</b> You cannot call a wait POA if you did not know how long it would last. A wait of unknown length is working time, so log it as Work.<br><span class="note">Source: gov.uk drivers hours rules for goods vehicles, Annex 2, and the Road Transport (Working Time) Regulations 2005. Not legal advice.</span>`;
 let open=null;
 let cp=false;try{cp=localStorage.getItem('tachoguard.compact')==='1'}catch(e){}
-const cpUi=()=>{document.body.classList.toggle('cp',cp);$('cpb').textContent='\u25A4 Compact';$('cpb').classList.toggle('on',cp);$('cpb').setAttribute('aria-pressed',cp)};
+const cpUi=()=>{document.body.classList.toggle('cp',cp);$('cpb').textContent='Compact';$('cpb').classList.toggle('on',cp);$('cpb').setAttribute('aria-pressed',cp)};
 $('cpb').onclick=()=>{cp=!cp;try{localStorage.setItem('tachoguard.compact',cp?'1':'0')}catch(e){}cpUi()};cpUi();
 const sgState={q:'',g:''};
 function renderSigns(){const S=window.SIGNS||[],gs=[...new Set(S.map(x=>x.g))];
@@ -527,8 +541,8 @@ function live(){
   else if(b.p)L.push('15 minutes counted. Keep resting to 45 minutes to reset, or take 30 minutes at your next stop.')}
  L.push(flash);
  set($('live'),L.filter(Boolean).join('<br>'));
- let nx;
- if(act==='d'){const c=[[270*M-b.d,'4h 30m break'],[6*H-wc.d,'6 hour working limit'],[9*H-day,'9 hour daily limit'],[56*H-wkd,'weekly limit'],[90*H-fn,'fortnight limit']].sort((x,y)=>x[0]-y[0])[0];
+ let nx,hc=null,nsv=null;
+ if(act==='d'){const c=[[270*M-b.d,'4h 30m break'],[6*H-wc.d,'6 hour working limit'],[9*H-day,'9 hour daily limit'],[56*H-wkd,'weekly limit'],[90*H-fn,'fortnight limit']].sort((x,y)=>x[0]-y[0])[0];hc=c;
   nx=['Stop Driving By',tt(n+Math.max(0,c[0])),'Because of your '+c[1]+'.'+(extLeft&&c[1]==='9 hour daily limit'?' You can extend to 10h.':'')]}
  else{const R=[],e=l?l.e:n;
   if(l){if(b.d>=270*M)R.push([e+(b.q?30:45)*M,'45 minute break']);
@@ -537,10 +551,21 @@ function live(){
   if(wkd>=56*H||fn>=90*H)R.push([w+7*864e5,'weekly or fortnight limit']);
   const r=R.filter(x=>x[0]>n).sort((x,y)=>y[0]-x[0]);
   nx=r.length?['Next Legal Start',tt(r[0][0]),'Waiting on: '+r.map(x=>x[1]).join(', ')+'.']:['Next Legal Start','Now','Nothing is stopping you driving.']}
- let h=`<div class="g cd w kp"><div class="row"><span class="lbl">${nx[0]} ${ib('next')}</span><span class="num">${nx[1]}</span></div><div class="note">${nx[2]}</div>${ex('next')}</div>`;
+ let h='';
  if(l){const dw=x=>{const d=Math.round((sod(x)-sod(n))/864e5);return (d<=0?'Today':d===1?'Tomorrow':new Date(x).toLocaleDateString('en-GB',{weekday:'long'}))+' '+hm(x)},le=l.live?n:l.e,
   ns=gap>=11*H?['Now','Your daily rest is done.']:[dw(le+11*H),(busy?'If you stop now. ':'')+'Regular 11h rest. With a reduced 9h rest (max 3 per week): '+dw(le+9*H)+'.'];
-  h+=`<div class="g cd w kp"><div class="row"><span class="lbl">Next Shift Can Start ${ib('ns')}</span><span class="num">${ns[0]}</span></div><div class="note">${ns[1]}</div>${ex('ns')}</div>`}
+  nsv=ns}
+
+ {const act0=act,ac=act0?NM[act0]:'Idle',since=st.active?hm(st.active):'',dc={d:'#3ecf7b',w:'#ffb020',p:'#6fb1ff',r:'#9aa6b5'}[act0]||'#9aa6b5';
+  let big,cap,sub='';
+  if(act0==='d'&&hc){big=fmt(Math.max(0,hc[0]));cap='left to drive';sub='until your '+hc[1]}
+  else if(act0==='w'||act0==='p'){big=fmt(Math.max(0,6*H-wc.d));cap='of work left';sub='before a '+(sw>9*H?45:30)+' minute break'}
+  else if(nx[1]==='Now'){big='Ready';cap='to drive';sub=nx[2]}
+  else{big=nx[1];cap='next legal start';sub=nx[2]}
+  const pr=Math.min(100,Math.round(b.d/(270*M)*100)),pc2=pr>=100?'#ff6b5e':pr>=80?'#ffb020':'#3ecf7b';
+  const tl1=act0==='d'?`<div class="h-t"><div class="h-k">${nx[0]} ${ib('next')}</div><div class="h-v">${nx[1]}</div></div>`:'';
+  const tl2=nsv?`<div class="h-t"><div class="h-k">Next shift can start ${ib('ns')}</div><div class="h-v">${nsv[0]}</div></div>`:'';
+  set($('hero'),`<div class="h-top"><span class="h-chip"><i style="background:${dc}"></i>${ac}${since&&act0?' since '+since:''}</span></div><div class="h-big">${big}</div><div class="h-cap">${cap}${sub?'<span> '+sub+'</span>':''}</div><div class="h-bar"><i style="width:${pr}%;background:${pc2}"></i></div><div class="h-bl"><span>Driving since last break</span><span>${fmt(b.d)} / 4h 30m</span></div>${tl1||tl2?`<div class="h-ts${tl1&&tl2?'':' one'}">${tl1}${tl2}</div>`:''}`)}
  if(!busy&&l){
   const c=gap>=11*H?'ok':gap>=9*H?'warn':'acc';
   let t=gap>=45*H?'Weekly rest done.':gap>=11*H?'Regular daily rest done. Weekly rest of 45h is at '+tt(l.e+45*H)+'.':gap>=9*H?'Reduced daily rest done (allowed 3 times between weekly rests). Regular 11h at '+tt(l.e+11*H)+'.':'Reduced 9h rest at '+tt(l.e+9*H)+', regular 11h at '+tt(l.e+11*H)+'.';
