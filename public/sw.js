@@ -1,6 +1,6 @@
 /* TachoGuard service worker: keeps the app on the phone so it opens with no signal.
    Change VERSION whenever you deploy a new build so phones pick up the update. */
-const VERSION='tg-2026-10-11-18';
+const VERSION='tg-2026-10-11-19';
 const SHELL=['./','index.html','config.js','signs.js','manifest.webmanifest','fonts/inter-Regular.woff','fonts/inter-SemiBold.woff','fonts/inter-Bold.woff','fonts/inter-ExtraBold.woff','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(VERSION).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==VERSION).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
