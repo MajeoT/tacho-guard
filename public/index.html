@@ -89,13 +89,15 @@ a{color:var(--tx)}
 .foot{margin-top:28px;color:var(--mut);font-size:13px}
 .i::after{content:'';position:absolute;inset:-11px}
 .tab{min-width:0}@media (max-width:360px){.tab{font-size:12px;padding:9px 1px}.tabs{gap:3px}}
+#sync{position:fixed;left:50%;bottom:20px;transform:translate(-50%,20px);max-width:90vw;background:#1f2937;color:#fff;font-size:14px;padding:10px 16px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:50;text-align:center}
+#sync.on{opacity:1;transform:translate(-50%,0)}
 </style>
 </head>
 <body>
 <main>
 <div class="hd"><h1>TachoGuard <button class="i" data-i="about" aria-label="More info">i</button></h1><button class="tab gear" data-t="set" aria-label="Settings">&#9881; Settings</button></div>
 <div class="tabs"><button class="tab on" data-t="today">Today</button><button class="tab" data-t="check">Check</button><button class="tab" data-t="hours">Hours</button><button class="tab" data-t="tacho">Tacho</button><button class="tab" data-t="signs">Signs</button><button class="tab" data-t="log">Log</button></div>
-<p class="note" id="sync" style="margin:-8px 0 6px;font-size:12px" role="status"></p>
+<div id="sync" role="status"></div>
 <section id="t-today">
 <div class="tr" style="justify-content:flex-end;margin:0 0 8px"><button class="tg" id="cpb">Compact View</button></div>
 <p class="sub">Tap what you are doing now, as on the tachograph. To stop, change to another activity or tap End Shift. The cards below that are counting are outlined.</p><div class="alert" id="alert" hidden></div>
@@ -934,7 +936,8 @@ function wkUpdate(){
  set($('wkb'),h);document.querySelector('.tab[data-t="check"]').classList.toggle('dot',!w)}
 $('wkb').onclick=()=>showTab('check');
 /* Account storage: the record is kept in the page's database, private to the signed-in driver. The phone copy is a fallback. */
-function syncNote(){const el=$('sync');if(!el)return;const m=syncMsg||(cloudReady?'✓ Saved to your account':lsOk?'':'Could not save on this phone.');if(el.textContent!==m)el.textContent=m}
+function syncNote(){const el=$('sync');if(!el)return;const m=syncMsg||(cloudReady?'✓ Saved to your account':lsOk?'':'Could not save on this phone.');if(el.textContent!==m){el.textContent=m;clearTimeout(syncT);if(m){el.classList.add('on');syncT=setTimeout(()=>el.classList.remove('on'),3000)}else el.classList.remove('on')}}
+let syncT=0;
 const mainJ=()=>{const o=Object.assign({},st);delete o.walks;delete o.u;return JSON.stringify(o)};
 let baseU=0,pend=null;
 function adopt(r,ru,lost){if(!MO.hidden){pend=[r,ru];return}
