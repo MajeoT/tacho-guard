@@ -120,11 +120,12 @@ input,select{border:1px solid var(--bd);border-radius:12px}
 #ck .pls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:0}
 #ck .pls .pl{width:100%;min-height:46px;padding:8px 10px;border-radius:12px;text-align:center;display:flex;align-items:center;justify-content:center;line-height:1.2}
 #ck .g2{margin-top:0;gap:10px}#ck .g2 label{font-size:13px;font-weight:600;color:var(--tx)}#ck .g2 input{margin-top:4px;height:46px;border-radius:12px}#ck .g2 label:last-child{grid-column:1/-1}
+.hr{display:flex;gap:6px;flex:none}.hr .tab{white-space:nowrap}.hbtn{padding:8px 12px;font-size:13px;box-shadow:var(--sh);border:0}.hbtn.on{background:var(--acc);color:var(--onacc)}.hd h1{white-space:nowrap}@media (max-width:380px){.hd h1{font-size:20px}.hd h1 .i{width:20px;height:20px}.hr .tab.gear,.hbtn{padding:8px 9px}}
 </style>
 </head>
 <body>
 <main>
-<div class="hd"><h1>TachoGuard <button class="i" data-i="about" aria-label="More info">i</button></h1><button class="tab gear" data-t="set" aria-label="Settings">&#9881; Settings</button></div>
+<div class="hd"><h1>TachoGuard <button class="i" data-i="about" aria-label="More info">i</button></h1><div class="hr"><button class="tg hbtn" id="cpb" aria-pressed="false"></button><button class="tab gear" data-t="set" aria-label="Settings">&#9881; Settings</button></div></div>
 <div class="tabs"><button class="tab on" data-t="today">Today</button><button class="tab" data-t="check">Walk</button><button class="tab" data-t="hours">Hours</button><button class="tab" data-t="tacho">Tacho</button><button class="tab" data-t="signs">Learn</button><button class="tab" data-t="log">Log</button></div>
 <div id="sync" role="status"></div>
 <section id="t-today">
@@ -208,7 +209,6 @@ input,select{border:1px solid var(--bd);border-radius:12px}
 <p class="note">Distance only updates while this page is open, so keep your phone unlocked. If location is blocked, allow it for this site in Chrome.</p>
 <h2>Settings</h2>
 <div class="g"><div class="tr"><span><span class="lbl">Alerts</span><br><span class="note">Sound and vibration at your limits. Alerts need the page open.</span></span><button class="tg" id="al"></button></div>
-<div class="tr" style="margin-top:14px"><span><span class="lbl">Compact Today Screen</span><br><span class="note">Hides the longer notes on the Today tab so more fits on screen.</span></span><button class="tg" id="cpb"></button></div>
 <div class="tr" style="margin-top:14px"><span><span class="lbl">Reset Day</span><br><span class="note">Starts breaks, shift and working time again from now.</span></span><button class="tg" id="rd">Reset Day</button></div></div>
 <h2>Account</h2><div class="g"><div class="note" id="acn"></div><div class="tr" style="margin-top:10px"><button class="tg" id="acb"></button></div></div>
 <h2>Install</h2><div class="g" id="insg"><div class="note" id="inn"></div><div class="tr" style="margin-top:10px"><button class="tg" id="inb" hidden>Install TachoGuard</button></div></div>
@@ -258,7 +258,7 @@ INFO.signs=`Simplified drawings of common UK road signs with what each one means
 INFO.poa=`POA means Period of Availability. It is waiting time where you do not have to stay at your workstation, but you must be ready to start or carry on driving or other work, and you must know how long the wait will last in advance. Examples: waiting on a ferry, or waiting while others load or unload your vehicle.<br><b>Working Time</b> POA is not working time. It does not count towards the 48 hour average or the 6 hour rule. It is also not a break, so it does not count towards your 45 minutes or rest. On the tachograph it is the POA symbol.<br><b>Pay</b> The working time rules do not set pay. Whether you are paid for POA is a matter for your contract. Being paid for it does not turn it into working time, and being unpaid does not stop a wait being working time. So a company can pay for POA without it touching your 48 hour average.<br><b>Limits</b> You cannot call a wait POA if you did not know how long it would last. A wait of unknown length is working time, so log it as Work.<br><span class="note">Source: gov.uk drivers hours rules for goods vehicles, Annex 2, and the Road Transport (Working Time) Regulations 2005. Not legal advice.</span>`;
 let open=null;
 let cp=false;try{cp=localStorage.getItem('tachoguard.compact')==='1'}catch(e){}
-const cpUi=()=>{document.body.classList.toggle('cp',cp);$('cpb').textContent=cp?'On':'Off'};
+const cpUi=()=>{document.body.classList.toggle('cp',cp);$('cpb').textContent='\u25A4 Compact';$('cpb').classList.toggle('on',cp);$('cpb').setAttribute('aria-pressed',cp)};
 $('cpb').onclick=()=>{cp=!cp;try{localStorage.setItem('tachoguard.compact',cp?'1':'0')}catch(e){}cpUi()};cpUi();
 const sgState={q:'',g:''};
 function renderSigns(){const S=window.SIGNS||[],gs=[...new Set(S.map(x=>x.g))];
