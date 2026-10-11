@@ -95,7 +95,7 @@ a{color:var(--tx)}
 <main>
 <div class="hd"><h1>TachoGuard <button class="i" data-i="about" aria-label="More info">i</button></h1><button class="tab gear" data-t="set" aria-label="Settings">&#9881; Settings</button></div>
 <div class="tabs"><button class="tab on" data-t="today">Today</button><button class="tab" data-t="check">Check</button><button class="tab" data-t="hours">Hours</button><button class="tab" data-t="tacho">Tacho</button><button class="tab" data-t="signs">Signs</button><button class="tab" data-t="log">Log</button></div>
-<p class="note" id="sync" style="margin:-6px 0 10px" role="status"></p>
+<p class="note" id="sync" style="margin:-8px 0 6px;font-size:12px" role="status"></p>
 <section id="t-today">
 <div class="tr" style="justify-content:flex-end;margin:0 0 8px"><button class="tg" id="cpb">Compact View</button></div>
 <p class="sub">Tap what you are doing now, as on the tachograph. To stop, change to another activity or tap End Shift. The cards below that are counting are outlined.</p><div class="alert" id="alert" hidden></div>
@@ -934,7 +934,7 @@ function wkUpdate(){
  set($('wkb'),h);document.querySelector('.tab[data-t="check"]').classList.toggle('dot',!w)}
 $('wkb').onclick=()=>showTab('check');
 /* Account storage: the record is kept in the page's database, private to the signed-in driver. The phone copy is a fallback. */
-function syncNote(){const el=$('sync');if(!el)return;const m=syncMsg||(cloudReady?'Saved to your account. Your record is kept when you close or reopen this page.':lsOk?'':'Could not save on this phone.');if(el.textContent!==m)el.textContent=m}
+function syncNote(){const el=$('sync');if(!el)return;const m=syncMsg||(cloudReady?'✓ Saved to your account':lsOk?'':'Could not save on this phone.');if(el.textContent!==m)el.textContent=m}
 const mainJ=()=>{const o=Object.assign({},st);delete o.walks;delete o.u;return JSON.stringify(o)};
 let baseU=0,pend=null;
 function adopt(r,ru,lost){if(!MO.hidden){pend=[r,ru];return}
@@ -1047,7 +1047,7 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dip=e;instU
 $('inb').onclick=async()=>{if(!dip)return;dip.prompt();try{await dip.userChoice}catch(e){}dip=null;instUi()};
 acctUi();instUi();
 if(!SBU){syncMsg='Saved on this phone only.';syncNote()}
-else if(!sess){syncMsg='Saved on this phone only. Sign in to keep your record in your account.';syncNote();let lo=false;try{lo=!!localStorage.getItem(LK)}catch(e){}if(!lo&&AU.hidden)showAuth()}
+else if(!sess){syncMsg='Saved on this phone only. Sign in (Settings) to back up.';syncNote();let lo=false;try{lo=!!localStorage.getItem(LK)}catch(e){}if(!lo&&AU.hidden)showAuth()}
 else bootCloud();
 setInterval(()=>{if(SBU&&sess&&!cloudReady)bootCloud();else if(cloudReady&&document.visibilityState==='visible')cloud.main.get().then(fromAcc).catch(()=>{})},30000);
 window.addEventListener('online',()=>{if(cloudReady)queuePush(true);else bootCloud()});
