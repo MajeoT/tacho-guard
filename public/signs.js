@@ -226,7 +226,7 @@ const FIX={
 'Weight Limit':{m:'No vehicles over the maximum gross weight (mgw) shown. This picture is a weak bridge sign.',h:'Do not use the road if your vehicle is over the limit.',w:'Orders differ on whether the limit means the plated weight or the actual laden weight, and a plate can allow access. If you are not sure, do not use the road and plan another route.'},
 'Goods Vehicles Over Weight':{h:'Plan the whole route before you leave and read the plate. A plate may allow access for loading and unloading only.',w:'Check the exact wording of the plate and the local order. If you are not sure it allows you in, do not enter.'},
 'Length Limit':{w:'Orders can define length differently (for example including a trailer). If your combination is close to the limit, find another route.'},
-'Mini Roundabout':{h:'Avoid driving over the centre of a mini-roundabout. If you cannot avoid it with a long vehicle, check there is nobody close to your nearside first (Rule 188).'},
+'Mini Roundabout':{h:'All vehicles must pass round the central markings, except large vehicles that are physically incapable of doing so (Rule 188). If you cannot get round, check there is nobody close to your nearside before you cross the centre. There is little room to manoeuvre and little time to signal.'},
 'Hump Bridge':{h:'Long and low vehicles can ground out on the crest. Slow down and check you can see the road beyond.'},
 'Advisory Route for Lorries':{m:'A recommended route for lorries. It is advisory, not a legal requirement.',h:'Use it as a guide. Check your own vehicle height and weight against any limits on the route.',w:'An advisory route is not guaranteed to be free of low bridges or weight limits. Check for yourself.'},
 'Advisory Speed Limit':{h:'Follow it where you can. You can still be prosecuted for driving too fast for the conditions.'},
@@ -261,5 +261,17 @@ const FIX={
 'Hatched Area (Chevrons)':{m:'Chevron hatching with a solid edge line is a buffer. Do not enter it except in an emergency. With a broken edge line, you should not enter unless it is necessary and safe (Rule 130).'}
 };
 S.forEach(x=>{const f=FIX[x.n];if(f)Object.assign(x,f)});
+
+const ADD={
+'Stop Line':'At advanced stop lines, large vehicles should stop far enough behind the first line to see the whole area where cyclists may be waiting, allowing for the blind spot in front of the cab (Rule 178).',
+'Tunnel Ahead':'In a tunnel a large vehicle should leave a four-second gap to the vehicle in front (Rule 126).',
+'Bus Lane':'Any vehicle may enter a bus lane to stop, load or unload where that is not prohibited (Rule 240). Driving along it is a different matter.',
+'National Speed Limit':'Many large vehicles are fitted with a speed limiter at 56 mph (Rule 222), but the legal limit for your vehicle is still the table above.',
+'Roundabout':'Give plenty of room to long vehicles, and remember other drivers may have to straddle lanes (Rule 187).',
+'Turn Left':'Use your mirrors and signal well before you turn left. Do not overtake just before you turn, and watch your nearside for cyclists and motorcyclists you cannot see (Rule 182).',
+'Hospital':'Do not wait or park near the entrance. Ambulances need the road clear.',
+'Low Bridge':'A strike can mean prosecution, losing your job and a referral to the Traffic Commissioner. Know your height every time you change load or trailer, and do not follow a satnav that does not know your vehicle.'
+};
+S.forEach(x=>{const a=ADD[x.n];if(a&&!(x.h||'').includes(a))x.h=((x.h||'')+' '+a).trim()});
 window.SIGNS=S;
 })();
