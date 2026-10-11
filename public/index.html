@@ -256,7 +256,9 @@ body{letter-spacing:-.003em}
 <div class="g"><div class="tr"><span><span class="lbl">Distance Tracking</span><br><span class="note">Off by default. When on, it uses your location only while Driving is on, and the screen stays awake.</span></span><button class="tg" id="gp"></button></div><div class="row" style="margin-top:14px"><span class="lbl">Distance This Drive</span><span class="num" id="gd"></span></div><div class="note" id="gs"></div></div>
 <p class="note">Distance only updates while this page is open, so keep your phone unlocked. If location is blocked, allow it for this site in Chrome.</p>
 <h2>Settings</h2>
-<div class="g"><div class="tr"><span><span class="lbl">Alerts</span><br><span class="note">Sound and vibration at your limits. Alerts need the page open.</span></span><button class="tg" id="al"></button></div>
+<div class="g"><div class="tr"><span><span class="lbl">Alerts</span><br><span class="note">Sound, vibration and a phone notification at your limits and break milestones (15, 30 and 45 minutes). Alerts need the app open or running in the background, so keep it open while you drive.</span></span><button class="tg" id="al"></button></div>
+<div style="margin-top:14px"><label for="da">Driving Alarm</label><select id="da"><option value="0">Off</option></select><div class="note">Alerts you when your driving since your last break reaches this time.</div></div>
+<div class="tr" style="margin-top:14px"><span><span class="lbl">Notifications</span><br><span class="note" id="nn"></span></span><button class="tg" id="nt"></button></div>
 <div class="tr" style="margin-top:14px"><span><span class="lbl">Reset Day</span><br><span class="note">Starts breaks, shift and working time again from now.</span></span><button class="tg" id="rd">Reset Day</button></div></div>
 <h2>Account</h2><div class="g"><div class="note" id="acn"></div><div class="tr" style="margin-top:10px"><button class="tg" id="acb"></button></div></div>
 <h2>Install</h2><div class="g" id="insg"><div class="note" id="inn"></div><div class="tr" style="margin-top:10px"><button class="tg" id="inb" hidden>Install TachoGuard</button></div></div>
@@ -533,7 +535,14 @@ function placeBreak(N,t0,t1){
  flash='+'+N+' minute break added from '+hm(t0)+' to '+hm(t1)+'.'+(full?' Full 45 minute break done.':'')+(ot?' '+ot:'');setTimeout(()=>{flash='';live()},6000);
  save();render();
 }
-function fire(m){if(!st.alerts)return;$('alert').textContent=m+' (tap to dismiss)';$('alert').hidden=false;try{navigator.vibrate&&navigator.vibrate([400,200,400])}catch(e){}beep()}
+function fire(m){if(!st.alerts)return;$('alert').textContent=m+' (tap to dismiss)';$('alert').hidden=false;try{navigator.vibrate&&navigator.vibrate([400,200,400])}catch(e){}beep();notify(m)}
+function notify(m){try{if(!('Notification' in window)||Notification.permission!=='granted')return;const o={body:m,tag:'tg-alert',renotify:true,vibrate:[400,200,400],icon:'icons/icon-192.png',badge:'icons/icon-192.png'};
+ if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(r=>{if(r)r.showNotification('TachoGuard',o);else new Notification('TachoGuard',o)}).catch(()=>{try{new Notification('TachoGuard',o)}catch(e){}});else new Notification('TachoGuard',o)}catch(e){}}
+function ntUi(){const s=!('Notification' in window)?'na':Notification.permission;$('nt').textContent=s==='granted'?'Send Test':s==='denied'?'Blocked':s==='na'?'Not Supported':'Turn On';$('nt').disabled=s==='denied'||s==='na';
+ $('nn').textContent=s==='granted'?'On. Alerts also appear as a phone notification.':s==='denied'?'Blocked. Allow notifications for this site in Chrome settings.':s==='na'?'This browser cannot show notifications.':'Off. Turn on to get alerts as phone notifications.'}
+$('nt').onclick=()=>{if(Notification.permission==='granted'){beep();notify('Test alert. Notifications are working.');return}Notification.requestPermission().then(ntUi).catch(ntUi)};
+const DA=[0,30,60,90,120,150,180,210,240,255,270];$('da').innerHTML=DA.map(m=>`<option value="${m}">${m?fmt(m*M):'Off'}</option>`).join('');
+ntUi();$('da').onchange=()=>{st.da=+$('da').value;fired.da=false;if(st.da)ntUi();save();live()};
 function tcs(v,days,el){const e=$(el);if(!v){e.textContent='Enter the date to track it.';e.className='note';return}
  const d=Math.ceil((new Date(v+'T12:00').getTime()+days*864e5-Date.now())/864e5);
  e.textContent=d<0?'Overdue by '+(-d)+' days.':d===0?'Due today.':'Next due in '+d+' days.';e.className='note '+(d<0?'bad':d<=7?'warn':'ok')}
@@ -565,6 +574,12 @@ function live(){
  const al=[['b15',act==='d'&&b.d>=255*M,'15 minutes until you need a 45 minute break.'],['b0',act==='d'&&b.d>=270*M,'4h 30m of driving reached. Take a break now.'],
   ['w15',busy&&act!=='p'&&wc.d>=345*M,'15 minutes until your 6 hour working limit.'],['w0',busy&&act!=='p'&&wc.d>=6*H,'6 hours of work reached. Take a break now.'],
   ['d15',act==='d'&&day>=9*H-15*M,'15 minutes until 9 hours driving this shift.'],['d0',act==='d'&&day>=9*H,extLeft?'9 hours reached. You can extend to 10 hours.':'9 hours reached. Stop driving.'],['e0',act==='d'&&extLeft&&day>=10*H,'10 hours reached. Stop driving.']];
+ if(document.activeElement!==$('da'))$('da').value=String(st.da||0);
+ const lb=[...a].reverse().find(x=>x.t!=='r'&&!x.live),be=!busy&&lb?n-lb.e:-1,inW=(x,y)=>be>=x*M&&be<y*M;
+ al.push(['da',!!st.da&&act==='d'&&b.d>=st.da*M,'Driving alarm: you have driven '+fmt(b.d)+' since your last break.'],
+  ['k15',inW(15,20),'15 minutes of break done. Take 30 more to finish a split break, or carry on to 45.'],
+  ['k30',inW(30,35),'30 minutes of break done. 15 more minutes completes a full 45 minute break.'],
+  ['k45',inW(45,50),'45 minutes of break done. Your driving break is complete.']);
  al.forEach(([k,c,m])=>{if(c&&!fired[k])fire(m);fired[k]=c});
  const L=[];
  $('gp').textContent=st.gps?'GPS On':'GPS Off';$('gd').textContent=act==='d'&&st.gps?mi(st.ad):'Not tracking';$('gs').textContent=!st.gps?'GPS is off. Turn it on above to track distance.':act==='d'?(gmsg||'Starting GPS...'):'GPS is on and starts when you start driving.';
@@ -671,7 +686,7 @@ const endAsk=same=>{const n=Date.now(),a=all(),z=a[a.length-1],base=z?(z.live?n:
  mcb={no:moX,ok:()=>{moX();const e=Date.now();commit(e);st.se=e;save();flash='Shift ended at '+hm(e)+'. Daily rest is counting.';setTimeout(()=>{flash='';live()},8000);render()}}};
 $('esh').onclick=()=>endAsk();
 $('gp').onclick=()=>{st.gps=!st.gps;if(st.gps){if(st.act==='d'){gpsOn();wake()}}else gpsOff();save();live()};
-$('al').onclick=()=>{st.alerts=!st.alerts;if(st.alerts){beep();try{navigator.vibrate&&navigator.vibrate(200)}catch(e){}}save();live()};
+$('al').onclick=()=>{st.alerts=!st.alerts;if(st.alerts){try{'Notification' in window&&Notification.permission==='default'&&Notification.requestPermission().then(ntUi)}catch(e){}beep();try{navigator.vibrate&&navigator.vibrate(200)}catch(e){}}save();live()};
 $('tc').value=st.tc.c;$('tu').value=st.tc.u;
 $('tc').onchange=()=>{st.tc.c=$('tc').value;save();live()};$('tu').onchange=()=>{st.tc.u=$('tu').value;save();live()};
 const listClick=e=>{
