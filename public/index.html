@@ -129,17 +129,39 @@ input,select{border:1px solid var(--bd);border-radius:12px}
 .h-bar{height:8px;border-radius:99px;background:#26303b;margin-top:16px;overflow:hidden}.h-bar i{display:block;height:100%;border-radius:99px;transition:width .4s}
 .h-bl{display:flex;justify-content:space-between;font-size:12px;color:#9fb0c3;margin-top:6px}
 .h-ts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.h-ts.one{grid-template-columns:1fr}
-.h-t{background:#1a232d;border-radius:16px;padding:10px 12px;min-width:0}.h-k{font-size:12px;color:#9fb0c3;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.h-v{font-size:20px;font-weight:700;margin-top:2px;letter-spacing:-.01em}
+.h-t{background:#1a232d;border-radius:16px;padding:10px 12px;min-width:0}.h-k{white-space:nowrap;font-size:12px;color:#9fb0c3;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.h-v{white-space:nowrap;font-size:19px;font-weight:700;margin-top:2px;letter-spacing:-.01em}
 #hero .i{border-color:#4a5868;background:transparent;color:#9fb0c3;width:18px;height:18px;font-size:11px}
 .acts{gap:8px}.act{font-size:14px;font-weight:600;font-family:system-ui,sans-serif!important;padding:12px 2px}.act b{font-size:22px}.act.on{box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .cp #hero{padding:12px 14px;border-radius:20px}.cp .h-big{font-size:42px;margin-top:8px}.cp .h-cap span{display:none}.cp .h-bar{margin-top:10px}.cp .h-ts{margin-top:10px}.cp .h-v{font-size:17px}.cp .h-bl{display:none}
 @media (max-width:360px){.h-big{font-size:48px}}
+
+/* structure: borders and pills */
+:root{--bd2:#c9d1da}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bd2:#364150}}:root[data-theme="dark"]{--bd2:#364150}
+.g,.cd,.wkb,.bx,.alert{border:1.5px solid var(--bd2);box-shadow:none}
+.cd.on{border-color:var(--acc);box-shadow:none;border-width:2px}
+.cd.off{border-style:solid}
+.tabs{border:1.5px solid var(--bd2);box-shadow:none;overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tab{flex:1 0 auto;white-space:nowrap;padding:9px 10px;font-size:13px}
+.tab.on{box-shadow:none}
+@media (max-width:420px){.tab{padding:9px 4px;font-size:12px}.tabs{gap:0}}
+.tab.gear,.hbtn{border:1.5px solid var(--bd2);box-shadow:none}.hbtn.on{border-color:var(--acc)}
+.act{border:1.5px solid var(--bd2);box-shadow:none}.act.on{border-color:var(--acc);box-shadow:none}
+.cs,#s1 .cs,#s2 .cs{display:inline-block;justify-self:start;border:1.5px solid var(--bd2);border-radius:999px;padding:5px 14px;background:var(--card);margin:20px 0 6px!important}
+#s1 .cs,#s2 .cs{margin:18px 0 4px!important}
+.bar{background:var(--bg);border:1px solid var(--bd2);height:10px}.cd .bar{height:9px}
+.i{border:1.5px solid var(--bd2)}
+.qf button,.pl,.tg,.add,.alert{border:1.5px solid var(--bd2)}.pl.on{border-color:var(--acc)}
+input,select{border-width:1.5px;border-color:var(--bd2)}
+.item{border-top-color:var(--bd2)}
+.bx{padding:6px 14px}
+#sync{border:1px solid #3b4756}
 </style>
 </head>
 <body>
 <main>
 <div class="hd"><h1>TachoGuard <button class="i" data-i="about" aria-label="More info">i</button></h1><div class="hr"><button class="tg hbtn" id="cpb" aria-pressed="false"></button><button class="tab gear" data-t="set" aria-label="Settings">Settings</button></div></div>
-<div class="tabs"><button class="tab on" data-t="today">Today</button><button class="tab" data-t="check">Walk</button><button class="tab" data-t="hours">Hours</button><button class="tab" data-t="tacho">Tacho</button><button class="tab" data-t="signs">Learn</button><button class="tab" data-t="log">Log</button></div>
+<div class="tabs"><button class="tab on" data-t="today">Today</button><button class="tab" data-t="check">Walk Round</button><button class="tab" data-t="hours">Hours</button><button class="tab" data-t="tacho">Tacho</button><button class="tab" data-t="signs">Learn</button><button class="tab" data-t="log">Log</button></div>
 <div id="sync" role="status"></div>
 <section id="t-today">
 <p class="sub">Tap what you are doing now, as on the tachograph. Outlined cards are the ones counting.</p><div class="alert" id="alert" hidden></div>
@@ -212,7 +234,7 @@ input,select{border:1px solid var(--bd);border-radius:12px}
 <div id="lr-new" hidden>
 <p class="note">General tips for a newly qualified driver. These are not official guidance, so check gov.uk for the detail.</p>
 <details class="bx" open><summary>Before Your First Day</summary><div class="dbody">Have your licence, Driver CPC card and digital tachograph card with you. Ask for a familiarisation drive and a handover on the vehicle's controls, tail lift or fridge unit. Check who to ring if you break down or are running late.</div></details>
-<details class="bx"><summary>Every Day</summary><div class="dbody">Do the walkaround check before the first drive, using the Walk tab, and report defects before you move. Put your mode on the tachograph correctly: driving, other work, POA or rest. Plan your breaks around the 4h 30m limit rather than leaving it late.</div></details>
+<details class="bx"><summary>Every Day</summary><div class="dbody">Do the walkaround check before the first drive, using the Walk Round tab, and report defects before you move. Put your mode on the tachograph correctly: driving, other work, POA or rest. Plan your breaks around the 4h 30m limit rather than leaving it late.</div></details>
 <details class="bx"><summary>Staying Legal</summary><div class="dbody">Keep a note of how many 10-hour days you have used this week. Make sure your card is downloaded on time and record anything unusual, such as a ferry or an unforeseen delay, on a printout or manual entry.</div></details>
 <details class="bx"><summary>Asking for Help</summary><div class="dbody">If you are unsure about a rule, ask your transport manager before you drive. It is better to stop and ask than to break the rules.</div></details>
 </div>
@@ -564,7 +586,7 @@ function live(){
   else{big=nx[1];cap='next legal start';sub=nx[2]}
   const pr=Math.min(100,Math.round(b.d/(270*M)*100)),pc2=pr>=100?'#ff6b5e':pr>=80?'#ffb020':'#3ecf7b';
   const tl1=act0==='d'?`<div class="h-t"><div class="h-k">${nx[0]} ${ib('next')}</div><div class="h-v">${nx[1]}</div></div>`:'';
-  const tl2=nsv?`<div class="h-t"><div class="h-k">Next shift can start ${ib('ns')}</div><div class="h-v">${nsv[0]}</div></div>`:'';
+  const tl2=nsv?`<div class="h-t"><div class="h-k">Next shift from ${ib('ns')}</div><div class="h-v">${nsv[0]}</div></div>`:'';
   set($('hero'),`<div class="h-top"><span class="h-chip"><i style="background:${dc}"></i>${ac}${since&&act0?' since '+since:''}</span></div><div class="h-big">${big}</div><div class="h-cap">${cap}${sub?'<span> '+sub+'</span>':''}</div><div class="h-bar"><i style="width:${pr}%;background:${pc2}"></i></div><div class="h-bl"><span>Driving since last break</span><span>${fmt(b.d)} / 4h 30m</span></div>${tl1||tl2?`<div class="h-ts${tl1&&tl2?'':' one'}">${tl1}${tl2}</div>`:''}`)}
  if(!busy&&l){
   const c=gap>=11*H?'ok':gap>=9*H?'warn':'acc';
@@ -999,8 +1021,8 @@ function ckSave(){
  const old=(st.walks||[]).filter(x=>x.t<=Date.now()-490*864e5);old.forEach(x=>recPh(x).forEach(phDel));
  st.walks=(st.walks||[]).filter(x=>x.t>Date.now()-490*864e5);st.walks.push(r);w.rt=r.t;save();ckRender();live();
  const dg=D.some(x=>x.d);
- if(D.length){mo(`<h3>${dg?'Dangerous Defect Recorded':'Defects Recorded'}</h3><p>${dg?'Do not drive this vehicle until it is fixed. ':''}Your answers stay on the Walk tab. Later changes need confirming and are then logged with the time. Report ${D.length===1?'it':'them'} in writing to whoever deals with vehicle defects, with the registration, date, details and your name.</p><button class="tg big" data-k="cp">Copy Defect Report</button><button class="tg big" data-k="x">Close</button>`);mcb={cp:el=>ckCopy(r,el),x:moX}}
- else{mo(`<h3>Walkaround Saved</h3><p>No defects found. It is recorded as a nil report. Your answers stay on the Walk tab and you can still change them. Changes need confirming and are then logged with the time.</p><button class="tg big" data-k="x">Close</button>`);mcb={x:moX}}}
+ if(D.length){mo(`<h3>${dg?'Dangerous Defect Recorded':'Defects Recorded'}</h3><p>${dg?'Do not drive this vehicle until it is fixed. ':''}Your answers stay on the Walk Round tab. Later changes need confirming and are then logged with the time. Report ${D.length===1?'it':'them'} in writing to whoever deals with vehicle defects, with the registration, date, details and your name.</p><button class="tg big" data-k="cp">Copy Defect Report</button><button class="tg big" data-k="x">Close</button>`);mcb={cp:el=>ckCopy(r,el),x:moX}}
+ else{mo(`<h3>Walkaround Saved</h3><p>No defects found. It is recorded as a nil report. Your answers stay on the Walk Round tab and you can still change them. Changes need confirming and are then logged with the time.</p><button class="tg big" data-k="x">Close</button>`);mcb={x:moX}}}
 function ckHist(){
  const a=(st.walks||[]).slice().sort((x,y)=>y.t-x.t).slice(0,20);
  if(!a.length){$('ckh').innerHTML='<div class="g note">No walkarounds saved yet.</div>';return}
