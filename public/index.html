@@ -165,6 +165,7 @@ body{letter-spacing:-.003em}
 #hero{border:1px solid #2b3643;box-shadow:none}.h-chip,.h-t{border:1px solid #2b3643;background:transparent}
 .h-big{letter-spacing:-.02em}
 #sync{border:1px solid #3b4756}
+.lg{margin-top:6px;font-size:13px;padding:6px 8px;border:1px solid var(--bd2);border-left-width:4px;color:var(--tx)}.lg-law{border-left-color:var(--bad)}.lg-adv{border-left-color:var(--warn)}.lg-sh{border-left-color:var(--warn)}.lg-warn{border-left-color:var(--warn)}.lg-info{border-left-color:var(--mut)}.lg-veh{border-left-color:var(--acc)}
 </style>
 </head>
 <body>
@@ -218,6 +219,7 @@ body{letter-spacing:-.003em}
 <p><b>Plates</b> under a sign add detail, such as a distance, a time or a vehicle type.</p>
 <p><b>Direction sign colours:</b> blue is a motorway, green is a primary route, white with a black border is a local or non-primary route, and brown is a tourist attraction. An aircraft symbol shows the way to an airport.</p>
 <p><b>Roadworks signs</b> warn of works and temporary changes, such as lane closures and temporary speed limits.</p>
+<p><b>What is enforceable?</b> Orders (red ring, blue circle, signals, most road markings and speed limits in a red ring) are the law and can be enforced. Warning triangles and information signs are not orders. An advisory speed, such as a white or plain-circle limit on a motorway gantry, is not a legal limit, but you should follow it and can still be charged for driving too fast for the conditions. In the Highway Code, <b>MUST</b> means a legal requirement and <b>should</b> means advice. Ignoring a "should" is not an offence by itself, but it can be used against you in court if something goes wrong. A speed limit in a red ring is enforceable even if it is lower than the road limit, such as 50 on a 70 road.</p>
 <p class="note">In Wales many signs are in Welsh and English. Some older designs are still on the road. Source: the Highway Code, Traffic signs section on gov.uk.</p>
 </div></details>
 <input type="search" id="sgq" placeholder="Search signs" aria-label="Search signs" autocomplete="off">
@@ -306,10 +308,11 @@ let cp=false;try{cp=localStorage.getItem('tachoguard.compact')==='1'}catch(e){}
 const cpUi=()=>{document.body.classList.toggle('cp',cp);$('cpb').textContent='Compact';$('cpb').classList.toggle('on',cp);$('cpb').setAttribute('aria-pressed',cp)};
 $('cpb').onclick=()=>{cp=!cp;try{localStorage.setItem('tachoguard.compact',cp?'1':'0')}catch(e){}cpUi()};cpUi();
 const sgState={q:'',g:''};
+const LGL={law:['Legal order','You must obey it. It can be enforced.'],adv:['Advisory','Not a legal order. You should still follow it.'],warn:['Warning','Warns of a hazard. Not an order, but take care.'],sh:['Highway Code "should"','Not a direct order, but you can be prosecuted if ignoring it causes danger.'],info:['Information','Gives information. Not an order.'],veh:['Legal requirement for the vehicle','The vehicle must carry or show this.']};
 function renderSigns(){const S=window.SIGNS||[],gs=[...new Set(S.map(x=>x.g))];
  $('sgf').innerHTML=['All'].concat(gs).map(g=>`<button class="pl${(g==='All'&&!sgState.g)||sgState.g===g?' on':''}" data-sg="${g==='All'?'':g}">${g}</button>`).join('');
  const q=sgState.q.trim().toLowerCase(),L=S.filter(x=>(!sgState.g||x.g===sgState.g)&&(!q||(x.n+' '+x.m+' '+x.h+' '+x.g).toLowerCase().includes(q)));
- $('sgl').innerHTML=L.length?L.map(x=>`<div class="g sgc"><svg viewBox="0 0 100 100" width="72" height="72" role="img" aria-label="${x.n}">${x.s}</svg><div><div class="lbl">${x.n}</div><div class="note">${x.g}</div><div style="margin-top:4px">${x.m}</div>${x.h?`<div class="bx" style="margin:8px 0 0"><div class="bt">For HGV Drivers</div>${x.h}</div>`:''}</div></div>`).join(''):'<div class="g note">No signs match that search.</div>'}
+ $('sgl').innerHTML=L.length?L.map(x=>`<div class="g sgc"><svg viewBox="0 0 100 100" width="72" height="72" role="img" aria-label="${x.n}">${x.s}</svg><div><div class="lbl">${x.n}</div><div class="note">${x.g}</div>${x.l&&LGL[x.l]?`<div class="lg lg-${x.l}"><b>${LGL[x.l][0]}.</b> ${LGL[x.l][1]}</div>`:''}<div style="margin-top:4px">${x.m}</div>${x.h?`<div class="bx" style="margin:8px 0 0"><div class="bt">For HGV Drivers</div>${x.h}</div>`:''}</div></div>`).join(''):'<div class="g note">No signs match that search.</div>'}
 document.addEventListener('click',e=>{const l=e.target.closest('[data-lr]');if(l){['signs','rules','new'].forEach(k=>{$('lr-'+k).hidden=k!==l.dataset.lr});document.querySelectorAll('#lrf .pl').forEach(b=>b.classList.toggle('on',b===l));window.scrollTo(0,0);return}const b=e.target.closest('[data-sg]');if(b){sgState.g=b.dataset.sg;renderSigns()}});
 document.addEventListener('input',e=>{if(e.target.id==='sgq'){sgState.q=e.target.value;renderSigns()}});
 const ib=k=>`<button class="i" data-i="${k}" aria-label="More info">i</button>`;
