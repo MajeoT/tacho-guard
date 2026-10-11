@@ -256,7 +256,7 @@ const FIX={
 'Primary Route Approach (Turpin\'s Crossroads)':{n:'Primary Route Approach (Crossroads)'},
 'Primary Route Forming Part of a Ring Road':{w:'Not verified. Follow the route numbers and place names on the sign.'},
 'Ancient Monument':{m:'The way to an ancient monument or historic site in the care of a heritage body.'},
-'Yellow Kerb Marks: Loading Ban':{w:'The Highway Code refers to the Road markings guide, which I could not check. Read the plate beside the kerb every time.'},
+'Yellow Kerb Marks: Loading Ban':{h:'Kerb marks often run alongside yellow lines. A yellow line on its own usually lets you load or unload, but where there are kerb marks you must not load or unload at the times on the plate. A marked ban applies even next to double yellow lines.',w:'The Highway Code refers to the Road markings guide, which I could not check. Read the plate beside the kerb every time.'},
 'Yellow Kerb Marks: More Than One':{m:'More than one yellow mark on the kerb can mean the loading ban applies at more times. Check the plate.',w:'Not verified. The number of marks and what each means should come from the plate. Read it.'},
 'Hatched Area (Chevrons)':{m:'Chevron hatching with a solid edge line is a buffer. Do not enter it except in an emergency. With a broken edge line, you should not enter unless it is necessary and safe (Rule 130).'}
 };
