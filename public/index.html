@@ -37,6 +37,7 @@ h2{font-size:20px;margin:28px 0 10px}
 .bar{height:10px;border-radius:5px;background:var(--bd);margin:10px 0 6px;overflow:hidden}
 .bar i{display:block;height:100%;border-radius:5px;background:var(--ok)}
 .note{color:var(--mut);font-size:14px}
+.swt{-webkit-appearance:none;appearance:none;position:relative;width:48px!important;height:28px!important;min-height:0!important;flex:none;padding:0!important;margin:0!important;border-radius:14px!important;background:var(--bd);border:0!important;cursor:pointer}.swt::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:left .15s}.swt:checked{background:var(--ok)}.swt:checked::after{left:23px}
 .ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
 form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:end}form>*{min-width:0}input[type=date],input[type=time]{min-width:0;max-width:100%;-webkit-appearance:none;appearance:none;height:42px}input[type=checkbox]{height:auto}
 label{font-size:13px;color:var(--mut);display:block}
@@ -413,12 +414,12 @@ const bsig=()=>st.sessions.length+'|'+st.sessions.reduce((q,x)=>q+x.s+x.e,0)+'|'
 function unBreak(){const u=bu[bu.length-1];if(!u||u.g!==bsig()){bu=[];render();return}bu.pop();const o=JSON.parse(u.s);['sessions','active','ad','as','ae','rs','bdone'].forEach(k=>{if(k in o)st[k]=o[k];else delete st[k]});flash=u.n+' minutes removed from your break.';setTimeout(()=>{flash='';live()},6000);save();render()}
 const mo=h=>{MO.innerHTML='<div class="mb">'+h+'</div>';MO.hidden=false};
 const moX=()=>{MO.hidden=true;MO.innerHTML=''};
-MO.onclick=e=>{const k=e.target.dataset.k;if(k&&mcb[k])mcb[k](e.target)};
+MO.onclick=e=>{const b=e.target.closest('[data-k]'),k=b&&b.dataset.k;if(k&&mcb[k])mcb[k](b)};
 const atT=(v,after)=>{const[h,m]=v.split(':').map(Number),d=new Date(after);d.setHours(h,m,0,0);if(d.getTime()<after)d.setDate(d.getDate()+1);return d.getTime()};
 const nearT=(v,ref)=>{const[h,m]=v.split(':').map(Number);let b=null;[-1,0,1].forEach(k=>{const d=new Date(ref);d.setDate(d.getDate()+k);d.setHours(h,m,0,0);const x=d.getTime();if(b===null||Math.abs(x-ref)<Math.abs(b-ref))b=x});return b};
 function commit(n){if(st.active){if(n-st.active>=20000)st.sessions.push(rec(st.active,n));if(st.act==='d')gpsOff();st.active=null;st.act=null;st.ad=0;st.as=st.ae=null}}
-let bd=0;
-function begin(t){moX();st.active=Date.now();st.act=t;if(bd){const x=bd;bd=0;st.sessions=st.sessions.filter(y=>!(y.e>x&&y.s>=x));st.sessions.forEach(y=>{if(y.e>x)y.e=x});st.active=x}if(t==='d'){gpsOn();wake()}save();render()}
+let bd=0,usnap=null;
+function begin(t){moX();const us=snap;if(us){const msg=NM[t]+' started at '+hm(Date.now())+'. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';flash=msg;usnap=us;setTimeout(()=>{if(flash===msg){flash='';usnap=null;live()}},12000)}st.active=Date.now();st.act=t;if(bd){const x=bd;bd=0;st.sessions=st.sessions.filter(y=>!(y.e>x&&y.s>=x));st.sessions.forEach(y=>{if(y.e>x)y.e=x});st.active=x}if(t==='d'){gpsOn();wake()}save();render()}
 function undo(){moX();if(snap){st=JSON.parse(snap);snap=null}if(st.act==='d'){gpsOn();wake()}save();render()}
 function legalStart(){
  const a0=all(),rs=st.rs||0,a=a0.filter(x=>x.e>rs).map(x=>x.s<rs?Object.assign({},x,{s:rs}):x),dr=a.filter(x=>x.t==='d'),dr0=a0.filter(x=>x.t==='d'),n=Date.now(),w=mon(),l=a[a.length-1];
@@ -475,7 +476,8 @@ function setAct(t){
   if(!was&&z&&n-z.e>=9*H&&(st.fq||0)<z.e)shiftAsk(z,n,gp,chk);else if(!was)gp();else chk0()}}
 function startAsk(next,chg){
  const J=jobs();let sj=jobC(st.cj).id,tc=st.tm!==undefined&&st.tm!==null&&!chg?!!st.tm:jobC(sj).tc!==false,wk=true;
- const draw=()=>{mo(`<h3>${chg?'Change job':'Starting a shift'}</h3>${J.length>1?`<p>Which job is this for?</p>${J.map((j,i)=>`<button class="tg big${j.id===sj?' on':''}" data-k="j${i}" style="${j.id===sj?'border:2px solid '+JCOL[i]+';':''}"><span style="color:${JCOL[i]}">●</span> ${esc(j.n)}${j.tc===false?' (no tacho)':''}</button>`).join('')}`:''}<p>Are you driving under tacho rules today?</p><button class="tg big${tc?' on':''}" data-k="ty" style="${tc?'border:2px solid var(--ok)':''}">Yes, tacho</button><button class="tg big${!tc?' on':''}" data-k="tn" style="${!tc?'border:2px solid var(--warn)':''}">No tacho</button><p class="note">${tc?'Driving counts towards the 4h 30m, 9h and weekly driving limits.':'Driving is logged as Driving (no tacho). It counts as working time and stops your break, but not towards the tacho driving limits. You can convert an entry to tacho driving later.'}</p>${!tc&&!chg?`<p>Do you still need a walkaround check today?</p><button class="tg big${wk?' on':''}" data-k="wy" style="${wk?'border:2px solid var(--acc)':''}">Yes, show it</button><button class="tg big${!wk?' on':''}" data-k="wn" style="${!wk?'border:2px solid var(--acc)':''}">No walkaround needed</button>`:''}<button class="tg big" data-k="ok">${chg?'Save':'Start shift'}</button><button class="tg big" data-k="no">Cancel</button>`);
+ const sel=(on,bg,fg)=>on?`style="background:${bg};border-color:${bg};color:${fg||'#fff'};font-weight:700"`:'';
+ const draw=()=>{mo(`<h3>${chg?'Change job':'Starting a shift'}</h3>${J.length>1?`<p>Which job is this for?</p>${J.map((j,i)=>`<button class="tg big" data-k="j${i}" ${sel(j.id===sj,JCOL[i])}>${j.id===sj?'✓ ':''}${esc(j.n)}${j.tc===false?' (no tacho)':''}</button>`).join('')}`:''}<p>Are you driving under tacho rules today?</p><button class="tg big" data-k="ty" ${sel(tc,'var(--ok)')}>${tc?'✓ ':''}Yes, tacho</button><button class="tg big" data-k="tn" ${sel(!tc,'var(--warn)','#1b1300')}>${!tc?'✓ ':''}No tacho</button><p class="note">${tc?'Driving counts towards the 4h 30m, 9h and weekly driving limits.':'Driving is logged as Driving (no tacho). It counts as working time and stops your break, but not towards the tacho driving limits. You can convert an entry to tacho driving later.'}</p>${!tc&&!chg?`<p>Do you still need a walkaround check today?</p><button class="tg big" data-k="wy" ${sel(wk,'var(--acc)','var(--onacc)')}>${wk?'✓ ':''}Yes, show it</button><button class="tg big" data-k="wn" ${sel(!wk,'var(--acc)','var(--onacc)')}>${!wk?'✓ ':''}No walkaround needed</button>`:''}<button class="tg big" data-k="ok" style="margin-top:14px;font-weight:700">${chg?'Save':'Start shift'}</button><button class="tg big" data-k="no">← Back</button>`);
   mcb={no:chg?moX:undo,ty:()=>{tc=true;draw()},tn:()=>{tc=false;draw()},wy:()=>{wk=true;draw()},wn:()=>{wk=false;draw()},
    ok:()=>{const n=Date.now(),was=st.act,ch=chg&&st.active&&was&&was!=='r';if(ch){snap=null;commit(n)}
     st.cj=sj;st.tm=tc;st.tmt=n;if(!chg){if(!tc)st.dd={t:n,v:wk?'y':'n'};else delete st.dd}
@@ -483,7 +485,7 @@ function startAsk(next,chg){
   J.forEach((j,i)=>mcb['j'+i]=()=>{sj=j.id;tc=j.tc!==false;draw()})};draw()}
 function shiftAsk(z,n,gp,chk){
  const ss0=st.sessions.filter(x=>x.t!=='r'&&x.e>(st.rs||0)).sort((a,b)=>a.s-b.s);
- mo(`<h3>When did your last shift finish?</h3><p>You are starting a new shift. The app has your last shift ending at ${tt(z.e)}. Check the time so the rest between shifts is worked out correctly.</p><div class="tr"><label>Last shift ended<input type="time" id="sa1" value="${hm(z.e)}"></label></div><div class="note bad" id="saerr"></div><div class="note" id="sarest"></div><button class="tg big" data-k="ok">Confirm and start</button><button class="tg big" data-k="oth">I was working or driving since then</button><button class="tg big" data-k="no">Cancel</button>`);
+ mo(`<h3>When did your last shift finish?</h3><p>You are starting a new shift. The app has your last shift ending at ${tt(z.e)}. Check the time so the rest between shifts is worked out correctly.</p><div class="tr"><label>Last shift ended<input type="time" id="sa1" value="${hm(z.e)}"></label></div><div class="note bad" id="saerr"></div><div class="note" id="sarest"></div><button class="tg big" data-k="ok">Confirm and continue</button><button class="tg big" data-k="oth">I was working or driving since then</button><button class="tg big" data-k="no">← Back</button>`);
  const T=()=>{const v=$('sa1').value;return v?nearT(v,z.e):null};
  const draw=()=>{const E=T(),el=$('sarest');if(E===null||E>n||E<=z.s){el.textContent='';return}const r=n-E;
   el.innerHTML='Rest between shifts: <b>'+fmt(r)+'</b>. '+(r>=45*H?'That is long enough for a weekly rest, if it was taken as one.':r>=11*H?'That is a regular daily rest (11h).':r>=9*H?'That is a reduced daily rest (9h to under 11h). You are allowed 3 of these between weekly rests.':'That is under 9h, which is not enough for a daily rest.')};
@@ -738,7 +740,7 @@ function dayPage(){if(dayView==null)return;const o=buildD()[dayView]||emptyD(),T
  $('dsum').innerHTML=`${fmt(T.d+T.w)} worked. ${fmt(T.d)} driving, ${fmt(T.w)} work, ${fmt(T.p)} POA, ${fmt(T.r)} break${o.m?', '+mi(o.m):''}`;
  $('dayc').innerHTML=rowsOf(o)||'<div class="g note">Nothing logged this day.</div>'}
 let dayFrom='hours';function openDay(ts,from){dayFrom=from||'hours';dayView=ts;['today','check','log','hours','tacho','signs','set'].forEach(x=>$('t-'+x).hidden=true);$('t-day').hidden=false;ed=null;dayPage();window.scrollTo(0,0)}
-const render=()=>{live();list()};
+const render=()=>{live();list();if(typeof jobsUi==='function')jobsUi()};
 function showTab(k){tab=k;dayView=null;ed=null;$('t-day').hidden=true;['today','check','log','hours','tacho','signs','set'].forEach(x=>{$('t-'+x).hidden=x!==k});document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===k));if(k==='check')ckRender();if(k==='signs')renderSigns();render()}
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
 document.querySelectorAll('.act').forEach(b=>b.onclick=()=>setAct(b.dataset.a));
@@ -756,17 +758,17 @@ const rdF=()=>{mo('<h3>Reset Day?</h3><p>This starts your breaks, shift and work
  mcb={no:moX,ok:()=>{mo('<h3>Are you sure?</h3><p>This is the second check. After this, today counts from now. You will have 20 seconds to tap Undo on the Today page.</p><button class="tg big bad" data-k="ok2">Yes, reset my day</button><button class="tg big" data-k="no">No, go back</button>');mcb={no:moX,ok2:doReset}}}};
 $('rd').onclick=rdF;$('rd2').onclick=rdF;
 function jobsUi(){const J=st.jobs||[];
- set($('jobs'),`<div class="note">Add up to 3 jobs if you drive for more than one company. Mark a job as no tacho if the vehicle has no tachograph or is outside the tacho rules. You are asked which job and whether you are on tacho rules when you start a shift. Working time and rest are counted across all jobs together, because the law counts your total time.</div>${J.map((j,i)=>`<div class="tr" style="margin-top:10px;gap:6px"><span style="color:${JCOL[i]};font-size:20px">●</span><input type="text" value="${esc(j.n)}" maxlength="24" data-jn="${i}" aria-label="Job ${i+1} name" style="flex:1;min-width:0"><button class="tg" data-jt="${i}">${j.tc===false?'No tacho':'Tacho'}</button><button class="tg" data-jr="${i}" aria-label="Remove job">✕</button></div>`).join('')}${J.length<3?`<div class="tr" style="margin-top:10px"><button class="tg" data-ja="1">${J.length?'Add job':'Set up jobs'}</button></div>`:''}`)}
-$('jobs').onclick=e=>{const d=e.target.dataset;let ch=0;
- if(d.ja){st.jobs=st.jobs||[];if(!st.jobs.length)st.jobs.push({id:'j1',n:'Main job',tc:true});const id='j'+(Date.now()%1e6);st.jobs.push({id,n:'Job '+(st.jobs.length+1),tc:true});if(!st.cj)st.cj=st.jobs[0].id;ch=1}
- else if(d.jt!==undefined){const j=st.jobs[+d.jt];j.tc=j.tc===false;if(st.cj===j.id&&!st.active)delete st.tm;ch=1}
- else if(d.jr!==undefined){const j=st.jobs[+d.jr];if(confirmJ!==j.id){confirmJ=j.id;e.target.textContent='Remove?';return}confirmJ=0;st.jobs.splice(+d.jr,1);if(st.cj===j.id){st.cj=st.jobs[0]?st.jobs[0].id:undefined;delete st.tm}ch=1}
- if(ch){save();jobsUi();render();live()}};
-let confirmJ=0;
-$('jobs').onchange=e=>{const d=e.target.dataset;if(d.jn!==undefined){st.jobs[+d.jn].n=(e.target.value||'Job '+(+d.jn+1)).trim();save();live()}};
+ set($('jobs'),`<div class="note">Add up to 3 jobs if you drive for more than one company. Switch off "Uses a tachograph" for a job where the vehicle has no tachograph or is outside the tacho rules. When you start a shift you are asked which job, and whether you are on tacho rules that day. Working time and rest are counted across all jobs together, because the law counts your total time.</div>${J.map((j,i)=>{const on=j.tc!==false;return `<div class="bx" style="margin-top:10px;border-left:4px solid ${JCOL[i]}"><div class="tr" style="gap:6px;margin:0"><input type="text" value="${esc(j.n)}" maxlength="24" data-jn="${i}" aria-label="Job ${i+1} name" style="flex:1;min-width:0"><button class="tg${confirmJ===j.id?' bad':''}" data-jr="${i}" aria-label="Remove job">${confirmJ===j.id?'Tap again to remove':'Remove'}</button></div><label class="tr" style="margin:10px 0 0;cursor:pointer"><span><span class="lbl">Uses a tachograph</span><br><span class="note ${on?'ok':'warn'}">${on?'Yes. Driving counts towards the tacho limits.':'No. Driving is logged as no tacho and counts as work.'}</span></span><input type="checkbox" class="swt" data-jt="${i}"${on?' checked':''} aria-label="${esc(j.n)} uses a tachograph"></label></div>`}).join('')}${J.length<3?`<div class="tr" style="margin-top:10px"><button class="tg" data-ja="1">${J.length?'Add job':'Set up jobs'}</button></div>`:''}`)}
+let confirmJ=0,cjT=0;
+$('jobs').onclick=e=>{const b=e.target.closest('[data-ja],[data-jr]');if(!b)return;const d=b.dataset;
+ if(d.ja){st.jobs=st.jobs||[];if(!st.jobs.length)st.jobs.push({id:'j1',n:'Main job',tc:true});const id='j'+(Date.now()%1e6);st.jobs.push({id,n:'Job '+(st.jobs.length+1),tc:true});if(!st.cj)st.cj=st.jobs[0].id}
+ else{const j=st.jobs[+d.jr];if(confirmJ!==j.id){confirmJ=j.id;clearTimeout(cjT);cjT=setTimeout(()=>{confirmJ=0;jobsUi()},4000);jobsUi();return}confirmJ=0;st.jobs.splice(+d.jr,1);if(st.cj===j.id){st.cj=st.jobs[0]?st.jobs[0].id:undefined;delete st.tm}}
+ save();jobsUi();render()};
+$('jobs').onchange=e=>{const d=e.target.dataset;if(d.jn!==undefined){st.jobs[+d.jn].n=(e.target.value||'Job '+(+d.jn+1)).trim();save();jobsUi();live()}
+ else if(d.jt!==undefined){const j=st.jobs[+d.jt];j.tc=e.target.checked;if(st.cj===j.id&&!st.active)delete st.tm;save();jobsUi();live()}};
 jobsUi();
 $('hero').onclick=e=>{if(e.target.closest('[data-job]'))startAsk(()=>{},1)};
-$('live').addEventListener('click',e=>{const cv=e.target.dataset.cv;if(cv&&st.active){st.act=cv;if(cv==='d'){gpsOn();wake()}else gpsOff();save();render();live();return}if(e.target.dataset.ur&&rsnap){st=JSON.parse(rsnap);rsnap=null;flash='Reset undone.';setTimeout(()=>{flash='';live()},5000);save();render();live()}});
+$('live').addEventListener('click',e=>{if(e.target.closest('[data-ua]')){if(usnap&&snap===usnap){usnap=null;flash='';undo();flash='Undone.';setTimeout(()=>{if(flash==='Undone.'){flash='';live()}},4000);live()}else{flash='';live()}return}const cv=e.target.dataset.cv;if(cv&&st.active){st.act=cv;if(cv==='d'){gpsOn();wake()}else gpsOff();save();render();live();return}if(e.target.dataset.ur&&rsnap){st=JSON.parse(rsnap);rsnap=null;flash='Reset undone.';setTimeout(()=>{flash='';live()},5000);save();render();live()}});
 const endAsk=same=>{const n=Date.now(),a=all(),z=a[a.length-1],fresh0=!z||(!z.live&&n-z.e>=9*H),ss=fresh0?n:shiftStart(a);
  const lo=st.act&&st.active?st.active:(z?z.e:0);let T=n,touched=false,note='';
  const pre=same===1&&st.act?NM[st.act]+' is already running and cannot be switched off on its own. To change activity, tap Cancel and then tap the new one. ':'';
