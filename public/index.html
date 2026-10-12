@@ -39,6 +39,13 @@ h2{font-size:20px;margin:28px 0 10px}
 .note{color:var(--mut);font-size:14px}
 .cd[data-seg],.cd[data-go],.cd[data-wrd]{position:relative}.cd[data-seg]::after,.cd[data-go]::after,.cd[data-wrd]::after{content:"›";position:absolute;right:10px;bottom:6px;color:var(--mut);font-size:18px;line-height:1;opacity:.6}
 .i::after{content:"";position:absolute;top:-11px;right:-11px;bottom:-11px;left:-11px}
+.plg{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.plh{font-size:11px;color:var(--mut);text-align:center;padding:2px 0}
+.pld{position:relative;min-height:66px;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:3px;text-align:left;font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:2px;overflow:hidden;min-width:0}
+.plo{opacity:.4}.plp{background:var(--bg)}.plt{border:2px solid var(--acc)}.pln{font-size:12px;font-weight:700}
+.plk{font-size:9.5px;border-left:3px solid var(--mut);padding-left:2px;white-space:nowrap;overflow:hidden;line-height:1.3}.plk i{font-style:normal;font-weight:800;margin-left:2px}.plk i.warn{color:var(--warn)}.plk i.bad{color:var(--bad)}.pll{color:var(--mut)}
+.pldot{display:inline-block;width:8px;height:8px;border-radius:50%!important;background:var(--mut);vertical-align:middle}.pldot.ok{background:var(--ok)}.pldot.warn{background:var(--warn)}.pldot.bad{background:var(--bad)}
+.pld .pldot{position:absolute;top:5px;right:4px}.plw{font-size:9.5px;color:var(--mut);margin-top:auto}
+.tabs{overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
 .swt{position:relative;display:inline-block;width:50px;height:28px;flex:none}.swt input{position:absolute;inset:0;opacity:0;width:100%!important;height:100%!important;margin:0!important;padding:0!important;cursor:pointer;z-index:1}.swt i{position:absolute;inset:0;background:var(--bd);transition:background .15s}.swt i::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .15s}.swt input:checked+i{background:var(--ok)}.swt input:checked+i::after{transform:translateX(22px)}.swt input:focus-visible+i{outline:2px solid var(--acc);outline-offset:2px}
 .ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
 form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:end}form>*{min-width:0}input[type=date],input[type=time]{min-width:0;max-width:100%;-webkit-appearance:none;appearance:none;height:42px}input[type=checkbox]{height:auto}
@@ -175,15 +182,15 @@ body{letter-spacing:-.003em}
 <body>
 <main>
 <div class="hd"><h1>TachoGuard <button class="i" data-i="about" aria-label="More info">i</button></h1><div class="hr"><button class="tg hbtn" id="cpb" aria-pressed="false"></button><button class="tab gear" data-t="set" aria-label="Settings">Settings</button></div></div>
-<div class="tabs"><button class="tab on" data-t="today">Today</button><button class="tab" data-t="check">Walkaround</button><button class="tab" data-t="hours">Hours</button><button class="tab" data-t="tacho">Tacho</button><button class="tab" data-t="signs">Learn</button><button class="tab" data-t="log">Log</button></div>
+<div class="tabs"><button class="tab on" data-t="today">Today</button><button class="tab" data-t="check">Walkaround</button><button class="tab" data-t="hours">Hours</button><button class="tab" data-t="plan">Plan</button><button class="tab" data-t="tacho">Tacho</button><button class="tab" data-t="signs">Learn</button><button class="tab" data-t="log">Log</button></div>
 <div id="sync" role="status"></div>
 <section id="t-today">
 <p class="sub">Tap what you are doing now, as on the tachograph. Outlined cards are the ones counting.</p><div class="alert" id="alert" hidden></div>
-<div id="iss"></div><div id="wkb"></div><div id="mx"></div>
+<div id="plb"></div><div id="iss"></div><div id="wkb"></div><div id="mx"></div>
 <div id="hero"></div>
 <div class="acts"><button class="act" data-a="d"><b>🚛</b>Driving</button><button class="act" data-a="w"><b>⚒</b>Work</button><button class="act" data-a="p"><b>◪</b>POA</button><button class="act" data-a="r"><b>🛏</b>Break</button></div>
 <div class="live" id="live"></div><div class="tr" id="es" style="margin-top:10px" hidden><label for="est" id="esl">Started At</label><input type="time" id="est"><button class="tg" id="esb">Change</button></div>
-<div id="s1"></div><div id="s2"></div><button class="tg" id="esh" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">End Shift</button><button class="tg" id="tlog" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">Today's Log</button><p class="note" style="text-align:center;margin:6px 0 0">See and edit today's driving, work, POA and breaks.</p><button class="tg" id="rd2" style="display:block;width:100%;margin-top:30px;padding:14px;font-size:16px;border-radius:12px;color:#fff;background:var(--bad);border-color:var(--bad)">Reset Day</button><p class="note" style="text-align:center;margin:6px 0 0">Starts breaks, shift and working time again from now. Asks twice and can be undone for 20 seconds.</p></section><section id="t-tacho" hidden><h2>Tacho Downloads <button class="i" data-i="tac" aria-label="More info">i</button></h2><div id="tcx"></div><div class="g"><div class="tr"><label for="tc">Driver Card Downloaded</label><input type="date" id="tc"></div><div class="note" id="tcn"></div><div class="tr" style="margin-top:12px"><label for="tu">Vehicle Unit Downloaded</label><input type="date" id="tu"></div><div class="note" id="tun"></div></div>
+<div id="s1"></div><div id="s2"></div><button class="tg" id="esh" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">End Shift</button><button class="tg" id="tlog" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">Today's Log</button><p class="note" style="text-align:center;margin:6px 0 0">See and edit today's driving, work, POA and breaks.</p><button class="tg" id="rd2" style="display:block;width:100%;margin-top:30px;padding:14px;font-size:16px;border-radius:12px;color:#fff;background:var(--bad);border-color:var(--bad)">Reset Day</button><p class="note" style="text-align:center;margin:6px 0 0">Starts breaks, shift and working time again from now. Asks twice and can be undone for 20 seconds.</p></section><section id="t-plan" hidden><h2>Shift Planner</h2><p class="note" style="margin-top:-6px">Plan shifts for all your jobs. Each day is checked against the rest, working time and driving rules, using what you have logged so far.</p><div id="plc"></div></section><section id="t-tacho" hidden><h2>Tacho Downloads <button class="i" data-i="tac" aria-label="More info">i</button></h2><div id="tcx"></div><div class="g"><div class="tr"><label for="tc">Driver Card Downloaded</label><input type="date" id="tc"></div><div class="note" id="tcn"></div><div class="tr" style="margin-top:12px"><label for="tu">Vehicle Unit Downloaded</label><input type="date" id="tu"></div><div class="note" id="tun"></div></div>
 
 <div id="tacwhy">
 <details class="bx"><summary>If You Have Not Downloaded</summary><div class="dbody">The card only holds about 28 days, so anything older than that can be overwritten and lost for good. If you are overdue, tell your transport manager or operator now and get the card downloaded at the next chance. Do not delete, alter or swap anything to cover the gap. If days are already lost, keep any printouts and make a written note of the missing days and why, and give it to your operator. Gaps in your records are what DVSA looks for at a check.</div></details>
@@ -296,7 +303,7 @@ body{letter-spacing:-.003em}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-12-53';
+const APPV='tg-2026-10-12-55';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -667,7 +674,7 @@ function wrInfo(){const W=st.wr;if(!W)return null;const n=Date.now(),A=all().sor
  if(anc===null)return{W,anc:null};
  const S=A.filter(x=>x.e>anc),G=[];for(let i=1;i<S.length;i++){const g=S[i].s-S[i-1].e;if(g>0)G.push({s:S[i-1].e,e:S[i].s,len:g})}
  const last=S[S.length-1],busy=!!st.active&&st.act!=='r',ong=last&&!last.live&&!busy?n-last.e:0;
- const R=G.filter(g=>g.len>=24*H).map(g=>Object.assign(g,{red:g.len<45*H}));
+ const R=[];{let le=anc;const GG=G.concat(last&&!busy?[{s:last.e,e:Infinity,len:Infinity,tail:1}]:[]);GG.forEach((g,i)=>{if(g.tail||g.len<24*H)return;if(g.len<45*H&&GG.slice(i+1).some(h=>h.len>=45*H&&h.s<=le+144*H))return;R.push(Object.assign(g,{red:g.len<45*H}));le=g.e})}
  const lw=R[R.length-1],lastEnd=lw?lw.e:anc,prevRed=lw?lw.red:(!W.fresh&&!!W.red);
  const split=g=>{let k=S.findIndex(y=>y.e===g.s);if(k<0)return false;for(;k>0;k--){const q=S[k].s-S[k-1].e;if(q>=9*H)return false;if(q>=3*H)return true}return false},
   redD=G.filter(g=>g.s>=lastEnd&&g.len>=9*H&&g.len<11*H&&!split(g)).length;
@@ -832,9 +839,9 @@ function dayPage(){if(dayView==null)return;const o=buildD()[dayView]||emptyD(),T
  $('dtitle').textContent=dd(dayView);
  $('dsum').innerHTML=`${fmt(T.d+T.w)} worked. ${fmt(T.d)} driving, ${fmt(T.w)} work, ${fmt(T.p)} POA, ${fmt(T.r)} break${o.m?', '+mi(o.m):''}`;
  $('dayc').innerHTML=rowsOf(o)||'<div class="g note">Nothing logged this day.</div>'}
-let dayFrom='hours';function openDay(ts,from){dayFrom=from||'hours';dayView=ts;['today','check','log','hours','tacho','signs','set'].forEach(x=>$('t-'+x).hidden=true);$('t-day').hidden=false;ed=null;dayPage();window.scrollTo(0,0)}
+let dayFrom='hours';function openDay(ts,from){dayFrom=from||'hours';dayView=ts;['today','check','log','hours','plan','tacho','signs','set'].forEach(x=>$('t-'+x).hidden=true);$('t-day').hidden=false;ed=null;dayPage();window.scrollTo(0,0)}
 const render=()=>{live();list();if(typeof jobsUi==='function'){jobsUi();rpUi()}};
-function showTab(k){if(cloudReady&&pushT)queuePush(true);tab=k;dayView=null;ed=null;$('t-day').hidden=true;['today','check','log','hours','tacho','signs','set'].forEach(x=>{$('t-'+x).hidden=x!==k});document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===k));if(k==='check')ckRender();if(k==='signs')renderSigns();render()}
+function showTab(k){if(cloudReady&&pushT)queuePush(true);tab=k;dayView=null;ed=null;$('t-day').hidden=true;['today','check','log','hours','plan','tacho','signs','set'].forEach(x=>{$('t-'+x).hidden=x!==k});document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===k));if(k==='check')ckRender();if(k==='plan'&&typeof plRender==='function')plRender();if(k==='signs')renderSigns();render()}
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
 document.querySelectorAll('.act').forEach(b=>b.onclick=()=>setAct(b.dataset.a));
 $('s1').addEventListener('click',e=>{if(e.target.closest('[data-wr]')){wrSetup();return}if(e.target.closest('[data-wrd]')&&!e.target.closest('[data-i]')){wrDetail();return}const b=e.target.closest('[data-m]');if(b&&!b.disabled)breakAsk(+b.dataset.m);else if(e.target.closest('[data-ub]'))unBreak()});
@@ -1275,7 +1282,7 @@ function wkUpdate(){
  else if(act==='d'||dd==='y'){dot=true;h=`<button class="wkb nb"><b>Walkaround not done</b><span>${act==='d'?'You are driving and no walkaround is recorded for this shift.':'Do it before you drive. The DVSA expects it before the first drive of the day.'} Tap to start.</span></button>`}
  else if(dd==='n')h=`<div class="wkb dn2"><b>No walkaround needed today</b><span>You said you are not driving this shift. <u data-dd="" style="cursor:pointer">Change</u></span></div>`;
  else h=`<div class="wkb"><b>Are you driving today?</b><span>A walkaround check is only needed on a day you drive.</span><div style="display:flex;gap:8px;margin-top:8px"><button class="tg" data-dd="y" style="flex:1;min-width:0">Yes</button><button class="tg" data-dd="n" style="flex:1;min-width:0">No</button></div></div>`;
- set($('wkb'),h);document.querySelector('.tab[data-t="check"]').classList.toggle('dot',dot);mxUpdate();issUpdate()}
+ set($('wkb'),h);document.querySelector('.tab[data-t="check"]').classList.toggle('dot',dot);mxUpdate();issUpdate();if(typeof plBanner==='function')plBanner()}
 function issUpdate(){const I=st.iss||[],el=$('iss');if(!el)return;
  set(el,I.map((x,i)=>`<div class="wkb nb" style="cursor:default"><b>Needs checking: ${NM[x.a]||'Activity'} started ${tt(x.t)}</b><span>${x.r.map(esc).join('. ')}. If a time was logged wrong, fix it in the log. If the times are right, this may be an infringement, so keep a note of why.</span><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="tg" data-isf="${i}" style="flex:1 1 0;min-width:0;white-space:normal;padding-left:6px;padding-right:6px">Fix entries</button><button class="tg" data-isd="${i}" style="flex:1 1 0;min-width:0;white-space:normal;padding-left:6px;padding-right:6px">Fixed</button><button class="tg" data-isk="${i}" style="flex:1 1 0;min-width:0;white-space:normal;padding-left:6px;padding-right:6px">Times are right</button></div></div>`).join(''))}
 $('iss').onclick=e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
@@ -1436,5 +1443,6 @@ try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}
 $('ver').textContent='TachoGuard v'+APPV.replace(/^tg-(\d+)-(\d+)-(\d+)-(\d+)$/,'$1.$2.$3.$4');
 addSrc();if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){const hadCtl=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!hadCtl||document.getElementById('upd'))return;const u=document.createElement('button');u.id='upd';u.className='tg';u.textContent='App updated. Tap to reload';u.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60;box-shadow:0 4px 16px rgba(0,0,0,.25)';u.onclick=()=>location.reload();document.body.appendChild(u)});window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 </script>
+<script src="plan.js"></script>
 </body>
 </html>

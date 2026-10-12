@@ -13,3 +13,5 @@
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: same-origin
+/plan.js
+  Cache-Control: no-cache
