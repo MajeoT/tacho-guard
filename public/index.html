@@ -1308,6 +1308,10 @@ archive();
 if(st.act==='d'){gpsOn();wake()}
 render();setInterval(live,1000);
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+(function dsk(){try{const touch=navigator.maxTouchPoints>0,sw=Math.min(screen.width,screen.height),wide=window.innerWidth>sw*1.4;if(!touch||!wide||sw>820||sessionStorage.getItem('tgDsk'))return;
+ const d=document.createElement('div');d.id='dsk';d.setAttribute('role','alert');d.style.cssText='position:sticky;top:0;z-index:70;background:var(--bad);color:#fff;padding:14px 16px;font-size:16px;line-height:1.4';
+ d.innerHTML='<b>Desktop site is switched on.</b> That makes TachoGuard look zoomed out and small. To fix it, open Chrome, tap the ⋮ menu and untick <b>Desktop site</b>, then reopen the app. <button class="tg" style="margin-top:8px;display:block">Hide this</button>';
+ d.querySelector('button').onclick=()=>{try{sessionStorage.setItem('tgDsk','1')}catch(e){}d.remove()};document.body.prepend(d)}catch(e){}})();
 addSrc();if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){const hadCtl=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!hadCtl||document.getElementById('upd'))return;const u=document.createElement('button');u.id='upd';u.className='tg';u.textContent='App updated. Tap to reload';u.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60;box-shadow:0 4px 16px rgba(0,0,0,.25)';u.onclick=()=>location.reload();document.body.appendChild(u)});window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 </script>
 </body>
