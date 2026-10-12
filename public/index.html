@@ -177,6 +177,11 @@ body{letter-spacing:-.003em}
 #sync{border:1px solid #3b4756}
 .i{position:relative}.i::after{content:'';position:absolute;inset:-12px}.dbody ul{margin:0;padding-left:18px}.dbody li{margin:0 0 8px}.srcs{margin-top:8px;line-height:1.1}.src{display:inline-block;margin:0 6px 4px 0;padding:2px 6px;font-size:11px;color:var(--mut);text-decoration:none;border:1px solid var(--bd)}.src:hover,.src:focus{color:var(--tx);text-decoration:underline}.wn{margin-top:8px;font-size:13px;padding:6px 8px;border:1px solid var(--warn);border-left-width:4px;color:var(--tx)}.lg{margin-top:6px;font-size:13px;padding:6px 8px;border:1px solid var(--bd2);border-left-width:4px;color:var(--tx)}.lg-law{border-left-color:var(--bad)}.lg-adv{border-left-color:var(--warn)}.lg-sh{border-left-color:var(--warn)}.lg-warn{border-left-color:var(--warn)}.lg-info{border-left-color:var(--mut)}.lg-veh{border-left-color:var(--acc)}
 .sgc img{flex:none;width:84px;height:84px;object-fit:contain}.sgc img.fl{transform:scaleX(-1)}
+.plkey>div{display:flex;align-items:center;gap:8px;font-size:13px;margin:3px 0}.plkey .ki{width:36px;flex:none;display:flex;justify-content:center;align-items:center}.plkey .plw{font-size:11px}
+.tabs{display:grid!important;grid-template-columns:repeat(12,1fr);gap:5px!important;background:transparent!important;box-shadow:none!important;border-bottom:0!important;padding:0!important;overflow:visible!important}
+.tab{border:1px solid var(--bd2)!important;border-radius:3px!important;background:var(--card)!important;padding:8px 2px!important;margin:0!important;color:var(--mut)!important;font-size:12.5px!important;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.tab{grid-column:span 3}.tab:nth-child(n+5){grid-column:span 4}@media (min-width:560px){.tabs{grid-template-columns:repeat(7,1fr)}.tab,.tab:nth-child(n+5){grid-column:auto}}
+.tab.on{background:var(--acc)!important;color:var(--onacc)!important;border-color:var(--acc)!important}
 </style>
 </head>
 <body>
@@ -303,7 +308,7 @@ body{letter-spacing:-.003em}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-12-59';
+const APPV='tg-2026-10-12-60';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
