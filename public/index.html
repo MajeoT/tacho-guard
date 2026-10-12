@@ -274,6 +274,7 @@ body{letter-spacing:-.003em}
 <div style="margin-top:14px"><label for="da">Driving Alarm</label><select id="da"><option value="0">Off</option></select><div class="note">Alerts you when your driving since your last break reaches this time.</div></div>
 <div class="tr" style="margin-top:14px"><span><span class="lbl">Notifications</span><br><span class="note" id="nn"></span></span><button class="tg" id="nt"></button></div>
 </div>
+<h2>Jobs</h2><div class="g" id="jobs"></div>
 <h2>Account</h2><div class="g"><div class="note" id="acn"></div><div class="tr" style="margin-top:10px"><button class="tg" id="acb"></button></div></div>
 <h2>Install</h2><div class="g" id="insg"><div class="note" id="inn"></div><div class="tr" style="margin-top:10px"><button class="tg" id="inb" hidden>Install TachoGuard</button></div></div>
 <div class="g" style="margin-top:24px"><div class="tr"><span><span class="lbl">Reset Day</span><br><span class="note">Starts breaks, shift and working time again from now. Asks twice and can be undone for 20 seconds.</span></span><button class="tg" id="rd" style="color:#fff;background:var(--bad);border-color:var(--bad)">Reset Day</button></div></div>
@@ -296,14 +297,18 @@ let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(
 const u0=st.u||0;
 if(st.active&&!st.act)st.act='d';
 const lay=a=>{a=a.filter(x=>x.e>x.s).sort((x,y)=>x.s-y.s);let m=-Infinity,ov=false;for(const x of a){if(x.s<m){ov=true;break}m=Math.max(m,x.e)}if(!ov)return a;let o=[];a.forEach(x=>{const n=[];o.forEach(y=>{if(y.e<=x.s||y.s>=x.e){n.push(y);return}if(y.s<x.s)n.push(Object.assign({},y,{e:x.s}));if(y.e>x.e)n.push(Object.assign({},y,{s:x.e,d:0,a:null}))});n.push(x);o=n});return o.sort((x,y)=>x.s-y.s)};
-const mrg=l=>{const o=[];l.forEach(x=>{const p=o[o.length-1];if(p&&(p.t||'d')===(x.t||'d')&&x.s-p.e<M)o[o.length-1]=Object.assign({},p,{e:Math.max(p.e,x.e),d:((p.d||0)+(x.d||0))||p.d,z:x.z||p.z});else o.push(x)});return o};
+const mrg=l=>{const o=[];l.forEach(x=>{const p=o[o.length-1];if(p&&(p.t||'d')===(x.t||'d')&&(p.j||'')===(x.j||'')&&x.s-p.e<M)o[o.length-1]=Object.assign({},p,{e:Math.max(p.e,x.e),d:((p.d||0)+(x.d||0))||p.d,z:x.z||p.z});else o.push(x)});return o};
 const fixOv=()=>{[x=>(x.t||'d')!=='r',x=>x.t==='r'].forEach(nr=>{const w=st.sessions.filter(nr),l=mrg(lay(w));if(l.length!==w.length||l.some(x=>!w.includes(x)))st.sessions=st.sessions.filter(x=>!nr(x)).concat(l)})};
 fixOv();
 let lsOk=true,cloud=null,cloudReady=false,pushT=0,pushing=null,pushAgain=false,lastPush=0,lastMain='',syncMsg='';const remW=new Map();
 const save=()=>{fixOv();st.u=Date.now();try{localStorage.setItem(K,JSON.stringify(st));lsOk=true}catch(e){lsOk=false}queuePush();syncNote()};
 const $=id=>document.getElementById(id);
 const set=(el,h)=>{if(el._h!==h){el.innerHTML=h;el._h=h}};
-const NM={d:'Driving',w:'Other work',p:'POA',r:'Break'},IC={d:'🚛',w:'⚒',p:'◪',r:'🛏'};
+const NM={d:'Driving',x:'Driving (no tacho)',w:'Other work',p:'POA',r:'Break'},IC={d:'🚛',x:'🚚',w:'⚒',p:'◪',r:'🛏'};
+const JCOL=['#3b82f6','#f59e0b','#a855f7'],JS={};
+const jobs=()=>st.jobs&&st.jobs.length?st.jobs:[{id:'j1',n:'Main job',tc:true}];
+const jobI=id=>Math.max(0,jobs().findIndex(j=>j.id===id)),jobC=id=>jobs()[jobI(id)],multi=()=>jobs().length>1,jobsOn=()=>!!(st.jobs&&st.jobs.length);
+const isTc=()=>st.tm!==undefined&&st.tm!==null?!!st.tm:jobC(st.cj).tc!==false;
 const DHP=ex=>`<br><br><b>Is it law?</b> Yes. This is a legal driver hours rule, not company policy.<br><b>If you break it:</b> a DVSA fixed penalty of £50 to £300.${ex?` For example, going over the 4h 30m driving limit is £100 (under 1 hour over), £200 (1 to 2 hours over) or £300 (2 hours or more), and examiners usually allow 15 minutes of leeway.`:''} An examiner can issue up to 5 fixed penalties at one check, including for offences from the last 28 days, so £1,500 is possible. Unpaid penalties go up by 50% in England and Wales. Serious cases can be prosecuted (a Level 4 fine, up to £2,500) or referred to the Traffic Commissioner, and you can be prohibited from driving or have the vehicle immobilised.<br><b>Points:</b> driver hours fixed penalties are non-endorsable, so they carry no points. Points show up for roadworthiness offences, such as 3 points for defective brakes.<br><span class="note">Checked on gov.uk and DVSA guidance in October 2026. Amounts can change, so check gov.uk.</span>`;
 const WTP=`<br><br><b>Is it law?</b> Yes. These are working time laws, not company policy, and DVSA enforces them.<br><b>If you break it:</b> it is a criminal offence (Road Transport (Working Time) Regulations 2005, regulation 17). In a magistrates court the fine is up to the statutory maximum, and in the Crown Court there is no upper limit. Ignoring an improvement or prohibition notice from DVSA can mean up to 3 months in prison in a magistrates court, or up to 2 years in the Crown Court.<br><b>Points:</b> There are no fixed penalty amounts or penalty points set for working time breaches.<br><span class="note">Checked on legislation.gov.uk and gov.uk in October 2026.</span>`;
 const INFO={
@@ -360,14 +365,14 @@ const tt=x=>new Date(x).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',m
 const hm=x=>new Date(x).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
 const mi=m=>(m/1609.34).toFixed(1)+' mi';
 const hav=(a,b)=>{const r=Math.PI/180,x=(b.lat-a.lat)*r,y=(b.lon-a.lon)*r,q=Math.sin(x/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(y/2)**2;return 12742000*Math.asin(Math.sqrt(q))};
-const all=()=>{const a=st.sessions.map(x=>Object.assign({t:'d'},x)).filter(x=>x.t!=='r');if(st.active&&st.act!=='r')a.push({s:st.active,e:Date.now(),t:st.act,live:1});return lay(a)};
+const all=()=>{const a=st.sessions.map(x=>Object.assign({t:'d'},x)).filter(x=>x.t!=='r');if(st.active&&st.act!=='r')a.push({s:st.active,e:Date.now(),t:st.act,live:1,j:st.cj});return lay(a)};
 const sum=(a,f,t)=>a.reduce((n,x)=>n+Math.max(0,Math.min(x.e,t)-Math.max(x.s,f)),0);
 const sod=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x.getTime()};
 const mon=()=>{const x=new Date(sod(Date.now()));x.setDate(x.getDate()-((x.getDay()+6)%7));return x.getTime()};
 const wkS=ts=>{const d=new Date(ts);d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getTime()};
 const nwk=w=>{const d=new Date(w);d.setDate(d.getDate()+7);return d.getTime()};
 function archive(){const cut=Date.now()-365*864e5,keep=[];let ch=0;
- st.sessions.forEach(x=>{if(x.e<cut){ch=1;const k=x.t||'d';if(k==='d'||k==='w'){let w=wkS(x.s);while(w<x.e){const g=Math.min(x.e,nwk(w))-Math.max(x.s,w);if(g>0){const a=st.arch[w]=st.arch[w]||{w:0,d:0};a.w+=g;if(k==='d')a.d+=g}w=nwk(w)}}}else keep.push(x)});
+ st.sessions.forEach(x=>{if(x.e<cut){ch=1;const k=x.t||'d';if(k==='d'||k==='w'||k==='x'){let w=wkS(x.s);while(w<x.e){const g=Math.min(x.e,nwk(w))-Math.max(x.s,w);if(g>0){const a=st.arch[w]=st.arch[w]||{w:0,d:0};a.w+=g;if(k==='d')a.d+=g}w=nwk(w)}}}else keep.push(x)});
  if(ch){st.sessions=keep;save()}}
 function totals(){const T={};Object.keys(st.arch).forEach(k=>{T[k]={w:st.arch[k].w,d:st.arch[k].d}});
  all().forEach(x=>{if(x.t==='p')return;let w=wkS(x.s);while(w<x.e){const g=Math.min(x.e,nwk(w))-Math.max(x.s,w);if(g>0){const a=T[w]=T[w]||{w:0,d:0};a.w+=g;if(x.t==='d')a.d+=g}w=nwk(w)}});return T}
@@ -383,7 +388,7 @@ function brkInfo(a,ss){let p=false,k=0,d=0,last=0;if(!ss)return{k,last};const n=
  const s=a.filter(x=>x.s>=ss);s.forEach((x,i)=>{if(i)step(x.s-s[i-1].e,x.s);if(x.t==='d')d+=x.e-x.s});
  const l=s[s.length-1];if(l&&!l.live)step(n-l.e,n);return{k,last}}
 function card(k,label,val,lim,t,over,soft,xtra,on){const c=val>=(soft||lim)?'bad':val/lim>=.8?'warn':'ok';
- return `<div class="g cd${on===true?' on':on===false?' off':''}"><div class="row"><span class="lbl">${label.replace(/\s(\S+)$/,' <span class="nw">$1 ')}${/\s\S+$/.test(label)?ib(k)+'</span>':' '+ib(k)}${on===true?CNT:''}</span><span class="num ${c}">${fmt(val)} <small>/ ${lim/H}h</small></span></div><div class="bar"><i style="width:${Math.round(Math.min(100,val/lim*100))}%;background:var(--${c})"></i></div><div class="note">${val>=lim?over:fmt(lim-val)+' left. '+t}</div>${xtra||''}${ex(k)}</div>`}
+ return `<div class="g cd${on===true?' on':on===false?' off':''}"><div class="row"><span class="lbl">${label.replace(/\s(\S+)$/,' <span class="nw">$1 ')}${/\s\S+$/.test(label)?ib(k)+'</span>':' '+ib(k)}${on===true?CNT:''}</span><span class="num ${c}">${fmt(val)} <small>/ ${lim/H}h</small></span></div><div class="bar">${JS[k]&&multi()&&JS[k].length?JS[k].map(q=>`<i style="float:left;width:${Math.min(100,q[1]/lim*100).toFixed(1)}%;background:${q[0]};border-radius:0!important"></i>`).join(''):`<i style="width:${Math.round(Math.min(100,val/lim*100))}%;background:var(--${c})"></i>`}</div><div class="note">${val>=lim?over:fmt(lim-val)+' left. '+t}</div>${xtra||''}${ex(k)}</div>`}
 let lock=false;let dArm=null,dT=0,lim=14,tab='today',esFor=0,ed=null,wid=null,last=null,gmsg='',wl=null,flash='',prog=0,ac=null,fired={};
 const beep=()=>{try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume();const o=ac.createOscillator();o.frequency.value=880;o.connect(ac.destination);o.start();o.stop(ac.currentTime+.4)}catch(e){}};
 async function wake(){if(!st.gps)return;try{if(navigator.wakeLock)wl=await navigator.wakeLock.request('screen')}catch(e){}}
@@ -401,7 +406,7 @@ function gpsOn(){
  },e=>{gmsg=e.code===1?'Location is blocked. Allow location for this site in Chrome to track distance.':'Waiting for a GPS signal...'},{enableHighAccuracy:true,maximumAge:5000});
 }
 function gpsOff(){if(wid!==null)navigator.geolocation.clearWatch(wid);wid=null;last=null;gmsg='';if(wl){wl.release().catch(()=>{});wl=null}}
-const rec=(t0,t1)=>st.act==='d'?{s:t0,e:t1,t:'d',d:Math.round(st.ad),a:st.as,z:st.ae||st.as}:{s:t0,e:t1,t:st.act};
+const rec=(t0,t1)=>{const o=st.act==='d'?{s:t0,e:t1,t:'d',d:Math.round(st.ad),a:st.as,z:st.ae||st.as}:{s:t0,e:t1,t:st.act};if(st.cj&&jobsOn())o.j=st.cj;return o};
 const MO=$('mo');
 let snap=null,mcb={},bu=[];
 const bsig=()=>st.sessions.length+'|'+st.sessions.reduce((q,x)=>q+x.s+x.e,0)+'|'+st.act+'|'+st.active+'|'+(st.rs||0);
@@ -456,16 +461,26 @@ function truthAsk(t,L){
   else if(ns<L.ss&&fi()){clear(ns,L.ss);const f=fi();if(f)f.s=ns}
   save();begin(t)}}}
 function setAct(t){
+ if(t==='d'&&!isTc())t='x';
  if(t==='r'&&st.act!=='r'&&lock){flash='Break is locked. You have had your full break this shift. It unlocks when a break is due or you pass 9h driving.'+(st.act?' To stop '+NM[st.act]+', change to another activity or tap End Shift.':'');setTimeout(()=>{flash='';live()},8000);live();return}
  if(st.act===t&&st.active){endAsk(1);return}
  const n=Date.now(),was=st.act,ps=st.active;snap=JSON.stringify(st);bd=0;
  commit(n);
  if(was===t){snap=null;save();render();return}
  const rs=st.rs||0,ends=st.sessions.filter(x=>x.e>rs).map(x=>x.e),le=ends.length?Math.max(...ends):0;
- const chk=()=>{if(t==='d'){const L=legalStart();if(L.R.length){warnAsk(t,L);return}}begin(t)};
- if(was&&ps)swapAsk(t,was,ps,n,chk);
+ const chk0=()=>{if(t==='x'&&isTc())t='d';if(t==='d'&&!isTc())t='x';if(t==='d'){const L=legalStart();if(L.R.length){warnAsk(t,L);return}}begin(t)};
+ if(was&&ps)swapAsk(t,was,ps,n,chk0);
  else{const zs=st.sessions.filter(x=>x.t!=='r'&&x.e>rs),z=zs.length?zs.reduce((a,b)=>b.e>a.e?b:a):null,gp=()=>{const e2=st.sessions.filter(x=>x.e>rs).map(x=>x.e),l2=e2.length?Math.max(...e2):0;if(l2&&n-l2>=60*M&&(st.gq||0)<l2)gapAsk(l2,n,chk);else chk()};
-  if(!was&&z&&n-z.e>=9*H&&(st.fq||0)<z.e)shiftAsk(z,n,gp,chk);else if(!was)gp();else chk()}}
+  const nsh=!was&&t!=='r'&&jobsOn()&&(!z||n-z.e>=9*H)&&(st.tmt||0)<(z?z.e:1),chk=()=>{if(nsh)startAsk(()=>chk0(),0);else chk0()};
+  if(!was&&z&&n-z.e>=9*H&&(st.fq||0)<z.e)shiftAsk(z,n,gp,chk);else if(!was)gp();else chk0()}}
+function startAsk(next,chg){
+ const J=jobs();let sj=jobC(st.cj).id,tc=st.tm!==undefined&&st.tm!==null&&!chg?!!st.tm:jobC(sj).tc!==false,wk=true;
+ const draw=()=>{mo(`<h3>${chg?'Change job':'Starting a shift'}</h3>${J.length>1?`<p>Which job is this for?</p>${J.map((j,i)=>`<button class="tg big${j.id===sj?' on':''}" data-k="j${i}" style="${j.id===sj?'border:2px solid '+JCOL[i]+';':''}"><span style="color:${JCOL[i]}">●</span> ${esc(j.n)}${j.tc===false?' (no tacho)':''}</button>`).join('')}`:''}<p>Are you driving under tacho rules today?</p><button class="tg big${tc?' on':''}" data-k="ty" style="${tc?'border:2px solid var(--ok)':''}">Yes, tacho</button><button class="tg big${!tc?' on':''}" data-k="tn" style="${!tc?'border:2px solid var(--warn)':''}">No tacho</button><p class="note">${tc?'Driving counts towards the 4h 30m, 9h and weekly driving limits.':'Driving is logged as Driving (no tacho). It counts as working time and stops your break, but not towards the tacho driving limits. You can convert an entry to tacho driving later.'}</p>${!tc&&!chg?`<p>Do you still need a walkaround check today?</p><button class="tg big${wk?' on':''}" data-k="wy" style="${wk?'border:2px solid var(--acc)':''}">Yes, show it</button><button class="tg big${!wk?' on':''}" data-k="wn" style="${!wk?'border:2px solid var(--acc)':''}">No walkaround needed</button>`:''}<button class="tg big" data-k="ok">${chg?'Save':'Start shift'}</button><button class="tg big" data-k="no">Cancel</button>`);
+  mcb={no:chg?moX:undo,ty:()=>{tc=true;draw()},tn:()=>{tc=false;draw()},wy:()=>{wk=true;draw()},wn:()=>{wk=false;draw()},
+   ok:()=>{const n=Date.now(),was=st.act,ch=chg&&st.active&&was&&was!=='r';if(ch){snap=null;commit(n)}
+    st.cj=sj;st.tm=tc;st.tmt=n;if(!chg){if(!tc)st.dd={t:n,v:wk?'y':'n'};else delete st.dd}
+    save();moX();if(ch)begin(was==='x'||was==='d'?(tc?'d':'x'):was);else if(chg)render();else next()}};
+  J.forEach((j,i)=>mcb['j'+i]=()=>{sj=j.id;tc=j.tc!==false;draw()})};draw()}
 function shiftAsk(z,n,gp,chk){
  const ss0=st.sessions.filter(x=>x.t!=='r'&&x.e>(st.rs||0)).sort((a,b)=>a.s-b.s);
  mo(`<h3>When did your last shift finish?</h3><p>You are starting a new shift. The app has your last shift ending at ${tt(z.e)}. Check the time so the rest between shifts is worked out correctly.</p><div class="tr"><label>Last shift ended<input type="time" id="sa1" value="${hm(z.e)}"></label></div><div class="note bad" id="saerr"></div><div class="note" id="sarest"></div><button class="tg big" data-k="ok">Confirm and start</button><button class="tg big" data-k="oth">I was working or driving since then</button><button class="tg big" data-k="no">Cancel</button>`);
@@ -609,6 +624,8 @@ function live(){
  const gap=l&&!busy?n-l.e:0,fresh=!l||gap>=9*H,ss=fresh?null:shiftStart(a),endd=!busy&&!!l&&(fresh||!!(st.se&&st.se>=l.e));
  const day=ss?sum(dr,ss,n+1):0,wkd=sum(dr0,w,n+1),fn=sum(dr0,w-7*864e5,n+1),sw=ss?sum(a.filter(x=>x.t!=='p'),ss,n+1):0;
  const b=cnt(a,45,x=>x.t==='d'),wc=cnt(a,sw>9*H?45:30,x=>x.t!=='p');
+ {const jsg=(L,f,t)=>{const m={};L.forEach(x=>{const o=Math.max(0,Math.min(x.e,t)-Math.max(x.s,f));if(o>0){const j=jobC(x.j).id;m[j]=(m[j]||0)+o}});return jobs().filter(j=>m[j.id]).map(j=>[JCOL[jobI(j.id)],m[j.id]])};
+  JS.brk=jsg(b.L,0,n+1);JS.wrk=jsg(wc.L,0,n+1);JS.day=ss?jsg(dr,ss,n+1):[]}
  const T7=totals(),R17=avg17(T7),S=shifts(a0),cur=ss?S[S.length-1]:null,isx=z=>z.s>=w&&z.d>9*H+M,used=S.filter(isx).length,prev=used-(cur&&isx(cur)?1:0),extLeft=prev<2;
  prog=brkp(a);
  SEG={brk:['Driving Since Last Break',b.L,0,n,'Driving since your last full break (45 minutes, or 15 then 30 minutes). Other work and POA do not reset it.'],
@@ -617,8 +634,8 @@ function live(){
   wk:['Driving This Week',dr0,w,n,'Driving since Monday 00:00.'],
   fn:['Driving This Fortnight',dr0,w-7*864e5,n,'Driving since Monday 00:00 of last week.']};
  const bi=brkInfo(a,ss);lock=bi.k>0&&day<9*H&&b.d<270*M&&wc.d<6*H;
- const dOn=act==='d',wOn=act==='d'||act==='w',bOn=!busy,so=(x,y)=>x?y:'';
- document.querySelectorAll('.act').forEach(x=>{const o=x.dataset.a===act;x.classList.toggle('on',o);x.setAttribute('aria-pressed',o);x.classList.toggle('lk',x.dataset.a==='r'&&lock&&act!=='r')});
+ const dOn=act==='d',wOn=act==='d'||act==='w'||act==='x',bOn=!busy,so=(x,y)=>x?y:'';
+ document.querySelectorAll('.act').forEach(x=>{const o=x.dataset.a===(act==='x'?'d':act);x.classList.toggle('on',o);x.setAttribute('aria-pressed',o);x.classList.toggle('lk',x.dataset.a==='r'&&lock&&act!=='r')});
  const qd=m=>lock||prog>=45*M||(m===15&&prog>=15*M);
  $('al').textContent=st.alerts?'Alerts On':'Alerts Off';
  const al=[['b15',act==='d'&&b.d>=255*M,'15 minutes until you need a 45 minute break.'],['b0',act==='d'&&b.d>=270*M,'4h 30m of driving reached. Take a break now.'],
@@ -636,6 +653,8 @@ function live(){
  if(!act)L.push(l&&!fresh&&!(st.se&&st.se>=l.e)?'Nothing running. Only your break timer is counting. Tap End Shift to start your daily rest.':'Nothing running. Only your rest and break timers are counting.');
  if(act==='p')L.push('POA is not counted as driving or working time.');
  else if(act==='w')L.push('Counting as working time only, not driving.');
+ else if(act==='x')L.push('Driving with no tacho. Counted as working time only, not towards your driving limits. <button class="tg" data-cv="d">Count as tacho driving</button>');
+ if(act==='d'&&jobsOn()&&!isTc())L.push('<button class="tg" data-cv="x">This is not tacho driving</button>');
  if(!busy&&l&&gap<9*H&&!endd){if(gap<15*M)L.push('On a break. Under 15 minutes does not count.');
   else if(!b.d&&dr.length)L.push('Break complete. Your 4h 30m has reset.');
   else if(b.p)L.push('15 minutes counted. Keep resting to 45 minutes to reset, or take 30 minutes at your next stop.')}
@@ -660,13 +679,13 @@ function live(){
  {const act0=act,ac=act0?NM[act0]:'Idle',since=st.active?hm(st.active):'',dc={d:'#3ecf7b',w:'#ffb020',p:'#6fb1ff',r:'#9aa6b5'}[act0]||'#9aa6b5';
   let big,cap,sub='';
   if(act0==='d'&&hc){big=fmt(Math.max(0,hc[0]));cap='left to drive';sub='until your '+hc[1]}
-  else if(act0==='w'||act0==='p'){big=fmt(Math.max(0,6*H-wc.d));cap='of work left';sub='before a '+(sw>9*H?45:30)+' minute break'}
+  else if(act0==='w'||act0==='p'||act0==='x'){big=fmt(Math.max(0,6*H-wc.d));cap='of work left';sub='before a '+(sw>9*H?45:30)+' minute break'}
   else if(nx[1]==='Now'){big='Ready';cap='to drive';sub=nx[2]}
   else{big=nx[1];cap='next legal start';sub=nx[2]}
   const pr=Math.min(100,Math.round(b.d/(270*M)*100)),pc2=pr>=100?'#ff6b5e':pr>=80?'#ffb020':'#3ecf7b';
   const tl1=act0==='d'?`<div class="h-t"><div class="h-k">${nx[0]} ${ib('next')}</div><div class="h-v">${nx[1]}</div></div>`:'';
   const tl2=nsv?`<div class="h-t"><div class="h-k">Next shift from ${ib('ns')}</div><div class="h-v">${nsv[0]}</div></div>`:'';
-  set($('hero'),`<div class="h-top"><span class="h-chip"><i style="background:${dc}"></i>${ac}${since&&act0?' since '+since:''}</span>${bkc?`<span class="h-chip"><i style="background:#9aa6b5"></i>${bl} ${bkc}</span>`:''}</div><div class="h-big">${big}</div><div class="h-cap">${cap}${sub?'<span> '+sub+'</span>':''}</div><div class="h-bar"><i style="width:${pr}%;background:${pc2}"></i></div><div class="h-bl"><span>Driving since last break</span><span>${fmt(b.d)} / 4h 30m</span></div>${tl1||tl2?`<div class="h-ts${tl1&&tl2?'':' one'}">${tl1}${tl2}</div>`:''}`)}
+  set($('hero'),`<div class="h-top"><span class="h-chip"><i style="background:${dc}"></i>${ac}${since&&act0?' since '+since:''}</span>${jobsOn()?`<span class="h-chip" data-job="1" role="button" tabindex="0" style="cursor:pointer"><i style="background:${JCOL[jobI(st.cj)]}"></i>${esc(jobC(st.cj).n)}${isTc()?'':' · no tacho'} ▾</span>`:''}${bkc?`<span class="h-chip"><i style="background:#9aa6b5"></i>${bl} ${bkc}</span>`:''}</div><div class="h-big">${big}</div><div class="h-cap">${cap}${sub?'<span> '+sub+'</span>':''}</div><div class="h-bar"><i style="width:${pr}%;background:${pc2}"></i></div><div class="h-bl"><span>Driving since last break</span><span>${fmt(b.d)} / 4h 30m</span></div>${tl1||tl2?`<div class="h-ts${tl1&&tl2?'':' one'}">${tl1}${tl2}</div>`:''}`)}
  if(!busy&&l){
   const c=gap>=11*H?'ok':gap>=9*H?'warn':'acc';
   let t=gap>=45*H?'Weekly rest done.':gap>=11*H?'Regular daily rest done. Weekly rest of 45h is at '+tt(l.e+45*H)+'.':gap>=9*H?'Reduced daily rest done (allowed 3 times between weekly rests). Regular 11h at '+tt(l.e+11*H)+'.':'Reduced 9h rest at '+tt(l.e+9*H)+', regular 11h at '+tt(l.e+11*H)+'.';
@@ -676,7 +695,7 @@ function live(){
    :`<div class="g cd w off kp"><div class="row"><span class="lbl">Rest Since Last Shift ${ib('rest')}</span><span class="num">0h 00m <small>/ 11h</small></span></div><div class="bar"><i style="width:0"></i></div><div class="note">Not counting. Your shift is still running, so this is a break, not rest. It starts when you tap End Shift.</div>${ex('rest')}</div>`}
  const pm=Math.floor(prog/M),pc=pm>=45?'ok':'acc';
  const room=270*M-b.d,bx=`<div class="note" style="margin-top:6px"><b>Breaks this shift:</b> ${bi.k?bi.k+' full break'+(bi.k>1?'s':'')+', last finished '+hm(bi.last):'no full break yet'}.<br><b>Still required:</b> ${b.d>=270*M?(b.q?'30':'45')+' minutes, due now.':bi.k&&9*H-day<=room?'nothing more for a 9h day. A break is needed if you drive another '+fmt(room)+'.':!busy&&bgc>0&&prog<45*M?Math.ceil(((bp?30:45)*M-bgc)/M)+' more minutes of this break'+(bp?'':', or stop at 15 and take 30 or more later')+'.':(b.p?'30 minutes (15 minute part done)':'45 minutes')+', within '+fmt(room)+' of driving.'}${lock?'<br>Break and +min buttons are locked until a break is due or you pass 9h driving.':''}</div>`;
- h+='<div class="cs">Breaks</div>'+sg('brk',card('brk','Driving Since Last Break',b.d,270*M,b.q?'Next break must be 30 min or more.':'Take 45 min, or 15 then 30.',b.q?'Take 30 minutes now.':'Take 45 minutes now.',0,bx+SGH,dOn).replace('g cd','g cd w'));
+ h+=(multi()?'<div class="note" style="margin-top:8px">Bar colours: '+jobs().map((j,i)=>'<span style="color:'+JCOL[i]+'">●</span> '+esc(j.n)).join('&nbsp; ')+'</div>':'')+'<div class="cs">Breaks</div>'+sg('brk',card('brk','Driving Since Last Break',b.d,270*M,b.q?'Next break must be 30 min or more.':'Take 45 min, or 15 then 30.',b.q?'Take 30 minutes now.':'Take 45 minutes now.',0,bx+SGH,dOn).replace('g cd','g cd w'));
  h+=`<div class="g cd w${bOn?' on':' off'}"><div class="row"><span class="lbl">Break Time Taken${so(bOn,CNT)}</span><span class="num">${pm} <small>/ 45 min</small></span></div>${bkc?`<div class="row" style="margin-top:6px"><span class="lbl">${endd?'Resting for':'On break for'}</span><span class="num bkc">${bkc}</span></div>`:''}<div class="bar"><i style="width:${Math.round(prog/(45*M)*100)}%;background:var(--${pc})"></i></div><div class="note">${pm>=45?'Full break done.':lock?'Locked. You have had your full break this shift.':(pm?'15 minute part counted. The next part only counts if it is 30 minutes or more.':'Nothing counted yet. A break under 15 minutes does not count.')+(!busy&&bgc>=M?' This break: '+Math.floor(bgc/M)+' min so far'+(bp?(bgc<30*M?', counts at 30.':'.'):(bgc<15*M?', counts at 15.':', full break at 45.')):'')+' Add break you took without logging it:'}</div><div class="qf">${[15,30,45].map(m=>`<button data-m="${m}"${qd(m)?' disabled':''}>+${m} min</button>`).join('')}</div>${bu.length&&bu[bu.length-1].g===bsig()?`<button class="tg" data-ub="1" style="display:block;width:100%;margin-top:10px;padding:12px;font-size:16px;border-radius:10px;border-color:var(--bad)">Undo +${bu[bu.length-1].n} min</button>`:''}</div>`;
  set($('s1'),h);
  const dt=extLeft?'You can extend to 10h ('+(2-prev)+' left this week).':'No 10h extensions left this week.';
@@ -695,15 +714,15 @@ function live(){
  wkUpdate();
 }
 const nxd=w=>{const d=new Date(w);d.setDate(d.getDate()+1);return d.getTime()};
-function dayTot(){const D={};all().forEach(x=>{const k=x.t||'d';let w=sod(x.s);while(w<x.e){const n2=nxd(w),s=Math.max(x.s,w),e=Math.min(x.e,n2);if(e>s){const o=D[w]=D[w]||{d:0,w:0,p:0,r:0};o[k]+=e-s}w=n2}});return D}
+function dayTot(){const D={};all().forEach(x=>{const k=x.t==='x'?'w':(x.t||'d');let w=sod(x.s);while(w<x.e){const n2=nxd(w),s=Math.max(x.s,w),e=Math.min(x.e,n2);if(e>s){const o=D[w]=D[w]||{d:0,w:0,p:0,r:0};o[k]+=e-s}w=n2}});return D}
 const od={};
 const dd=w=>new Date(w).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'}),ymd=w=>{const q=new Date(w);return q.getFullYear()+'-'+pad(q.getMonth()+1)+'-'+pad(q.getDate())};
 const lk=(p,t)=>p?` <a href="https://www.google.com/maps?q=${p.lat},${p.lon}" target="_blank" rel="noopener">${t}</a>`:'';
 const emptyD=()=>({T:{d:0,w:0,p:0,r:0},I:[],m:0});
 let dayView=null;
-function buildD(){const D={};const SS=st.sessions.slice();if(st.active&&st.act&&Date.now()>st.active)SS.push({s:st.active,e:Date.now(),t:st.act,live:1});SS.forEach(x=>{const k=x.t||'d';let w=sod(x.s);while(w<x.e){const n2=nxd(w),s=Math.max(x.s,w),e=Math.min(x.e,n2);if(e>s){const o=D[w]=D[w]||emptyD();o.T[k]+=e-s;if(x.s>=w)o.m+=x.d||0;o.I.push({x,s,e,c:x.s<w})}w=n2}});return D}
+function buildD(){const D={};const SS=st.sessions.slice();if(st.active&&st.act&&Date.now()>st.active)SS.push({s:st.active,e:Date.now(),t:st.act,live:1});SS.forEach(x=>{const k=x.t==='x'?'w':(x.t||'d');let w=sod(x.s);while(w<x.e){const n2=nxd(w),s=Math.max(x.s,w),e=Math.min(x.e,n2);if(e>s){const o=D[w]=D[w]||emptyD();o.T[k]+=e-s;if(x.s>=w)o.m+=x.d||0;o.I.push({x,s,e,c:x.s<w})}w=n2}});return D}
 function rowsOf(o){return o.I.sort((a,b)=>a.s-b.s).map(({x,s,e,c})=>{const t=x.t||'d';
-   if(!c&&x.s===ed)return `<div class="item" style="display:block"><div class="lbl">${IC[t]} ${NM[t]}</div><div class="tr" style="margin:8px 0"><input type="time" id="e1" value="${hm(x.s)}"><input type="time" id="e2" value="${hm(x.e)}"></div><select id="e3" style="margin-bottom:8px">${['d','w','p','r'].map(k=>`<option value="${k}"${k===t?' selected':''}>${NM[k]}</option>`).join('')}</select><br><button class="tg" data-sv="${x.s}">Save</button> <button class="tg" data-cn="1">Cancel</button><div class="note bad" id="eerr"></div></div>`;
+   if(!c&&x.s===ed)return `<div class="item" style="display:block"><div class="lbl">${IC[t]} ${NM[t]}</div><div class="tr" style="margin:8px 0"><input type="time" id="e1" value="${hm(x.s)}"><input type="time" id="e2" value="${hm(x.e)}"></div><select id="e3" style="margin-bottom:8px">${['d','x','w','p','r'].map(k=>`<option value="${k}"${k===t?' selected':''}>${NM[k]}</option>`).join('')}</select><br><button class="tg" data-sv="${x.s}">Save</button> <button class="tg" data-cn="1">Cancel</button><div class="note bad" id="eerr"></div></div>`;
    if(x.live)return `<div class="item"><div><div class="lbl">${IC[t]} ${NM[t]} (Running Now)</div><div class="note">${hm(s)} to now (${fmt(e-s)}). Change activity or end your shift on the Today tab to edit it.</div></div></div>`;
    return `<div class="item"><div><div class="lbl">${IC[t]} ${NM[t]}${c?' (from the day before)':''}</div><div class="note">${hm(s)} to ${hm(e)} (${fmt(e-s)}${x.d&&!c?', '+mi(x.d):''})${c?'':lk(x.a,'Start map')+lk(x.z,'End map')}</div></div>${c?'':`<div><button class="del" data-ed="${x.s}">Edit</button><button class="del${dArm===String(x.s)?' bad':''}" data-s="${x.s}">${dArm===String(x.s)?'Tap Again to Delete':'Delete'}</button></div>`}</div>`}).join('')}
 function list(){
@@ -736,7 +755,18 @@ let rsnap=null;
 const rdF=()=>{mo('<h3>Reset Day?</h3><p>This starts your breaks, shift and working time again from now. Your logged entries are kept in the log, but they stop counting towards today.</p><p class="note">Only use this if the app has the wrong idea of your day. It does not change your tachograph.</p><button class="tg big bad" data-k="ok">Continue</button><button class="tg big" data-k="no">Cancel</button>');
  mcb={no:moX,ok:()=>{mo('<h3>Are you sure?</h3><p>This is the second check. After this, today counts from now. You will have 20 seconds to tap Undo on the Today page.</p><button class="tg big bad" data-k="ok2">Yes, reset my day</button><button class="tg big" data-k="no">No, go back</button>');mcb={no:moX,ok2:doReset}}}};
 $('rd').onclick=rdF;$('rd2').onclick=rdF;
-$('live').addEventListener('click',e=>{if(e.target.dataset.ur&&rsnap){st=JSON.parse(rsnap);rsnap=null;flash='Reset undone.';setTimeout(()=>{flash='';live()},5000);save();render();live()}});
+function jobsUi(){const J=st.jobs||[];
+ set($('jobs'),`<div class="note">Add up to 3 jobs if you drive for more than one company. Mark a job as no tacho if the vehicle has no tachograph or is outside the tacho rules. You are asked which job and whether you are on tacho rules when you start a shift. Working time and rest are counted across all jobs together, because the law counts your total time.</div>${J.map((j,i)=>`<div class="tr" style="margin-top:10px;gap:6px"><span style="color:${JCOL[i]};font-size:20px">●</span><input type="text" value="${esc(j.n)}" maxlength="24" data-jn="${i}" aria-label="Job ${i+1} name" style="flex:1;min-width:0"><button class="tg" data-jt="${i}">${j.tc===false?'No tacho':'Tacho'}</button><button class="tg" data-jr="${i}" aria-label="Remove job">✕</button></div>`).join('')}${J.length<3?`<div class="tr" style="margin-top:10px"><button class="tg" data-ja="1">${J.length?'Add job':'Set up jobs'}</button></div>`:''}`)}
+$('jobs').onclick=e=>{const d=e.target.dataset;let ch=0;
+ if(d.ja){st.jobs=st.jobs||[];if(!st.jobs.length)st.jobs.push({id:'j1',n:'Main job',tc:true});const id='j'+(Date.now()%1e6);st.jobs.push({id,n:'Job '+(st.jobs.length+1),tc:true});if(!st.cj)st.cj=st.jobs[0].id;ch=1}
+ else if(d.jt!==undefined){const j=st.jobs[+d.jt];j.tc=j.tc===false;if(st.cj===j.id&&!st.active)delete st.tm;ch=1}
+ else if(d.jr!==undefined){const j=st.jobs[+d.jr];if(confirmJ!==j.id){confirmJ=j.id;e.target.textContent='Remove?';return}confirmJ=0;st.jobs.splice(+d.jr,1);if(st.cj===j.id){st.cj=st.jobs[0]?st.jobs[0].id:undefined;delete st.tm}ch=1}
+ if(ch){save();jobsUi();render();live()}};
+let confirmJ=0;
+$('jobs').onchange=e=>{const d=e.target.dataset;if(d.jn!==undefined){st.jobs[+d.jn].n=(e.target.value||'Job '+(+d.jn+1)).trim();save();live()}};
+jobsUi();
+$('hero').onclick=e=>{if(e.target.closest('[data-job]'))startAsk(()=>{},1)};
+$('live').addEventListener('click',e=>{const cv=e.target.dataset.cv;if(cv&&st.active){st.act=cv;if(cv==='d'){gpsOn();wake()}else gpsOff();save();render();live();return}if(e.target.dataset.ur&&rsnap){st=JSON.parse(rsnap);rsnap=null;flash='Reset undone.';setTimeout(()=>{flash='';live()},5000);save();render();live()}});
 const endAsk=same=>{const n=Date.now(),a=all(),z=a[a.length-1],fresh0=!z||(!z.live&&n-z.e>=9*H),ss=fresh0?n:shiftStart(a);
  const lo=st.act&&st.active?st.active:(z?z.e:0);let T=n,touched=false,note='';
  const pre=same===1&&st.act?NM[st.act]+' is already running and cannot be switched off on its own. To change activity, tap Cancel and then tap the new one. ':'';
@@ -745,7 +775,7 @@ const endAsk=same=>{const n=Date.now(),a=all(),z=a[a.length-1],fresh0=!z||(!z.li
  const gap=(s0,e0)=>`<div class="item"><div><div class="lbl">No activity</div><div class="note">${tm(s0)} to ${tm(e0)}. Counts as break or rest.</div></div><div class="lbl" style="white-space:nowrap;margin-left:8px">${fmt(e0-s0)}</div></div>`;
  const sumH=()=>{const cl=a.filter(x=>x.s>=ss&&x.s<T).map(x=>Object.assign({},x,{e:Math.min(x.live?n:x.e,T)})).filter(x=>x.e>x.s);
   let h='',d=0,w=0,p=0,prev=null;
-  cl.forEach(x=>{if(prev&&x.s-prev.e>=M)h+=gap(prev.e,x.s);h+=row(x.t,x.s,x.e,x.live&&x.e>=n);if(x.t==='d')d+=x.e-x.s;else if(x.t==='w')w+=x.e-x.s;else p+=x.e-x.s;prev=x});
+  cl.forEach(x=>{if(prev&&x.s-prev.e>=M)h+=gap(prev.e,x.s);h+=row(x.t,x.s,x.e,x.live&&x.e>=n);if(x.t==='d')d+=x.e-x.s;else if(x.t==='w'||x.t==='x')w+=x.e-x.s;else p+=x.e-x.s;prev=x});
   if(prev&&T-prev.e>=M)h+=gap(prev.e,T);
   if(!cl.length)h='<p class="note">Nothing is logged in this shift.</p>';
   const chk=d>10*H?'<div class="note bad">Driving is over 10 hours. Check your entries before you end the shift.</div>':d>9*H?'<div class="note warn">Over 9 hours of driving, so this uses one of your two 10 hour days this week.</div>':'';
@@ -1139,10 +1169,11 @@ function walkStatus(){const a0=all(),n=Date.now(),l=a0[a0.length-1];let since=so
  return (st.walks||[]).filter(x=>x.t>=since).sort((x,y)=>y.t-x.t)[0]||null}
 function wkUpdate(){
  const w=walkStatus(),act=st.act,a0=all(),n=Date.now(),l=a0[a0.length-1],busy=!!st.active&&st.act!=='r',gap=l&&!busy?n-l.e:0;
- const off=!st.active&&(!l||gap>=9*H||!!(st.se&&st.se>=l.e)),dd=st.dd&&st.dd.t>(l?l.e:0)?st.dd.v:'';let h,dot=!w;
+ const off=!st.active&&(!l||gap>=9*H||!!(st.se&&st.se>=l.e)),dd=st.dd&&st.dd.t>(l?l.e:0)?st.dd.v:'';let h,dot=!w;const nw=!off&&st.tm===false&&st.dd&&st.dd.v==='n'&&st.dd.t>=(st.tmt||0);
  if(!w&&off&&dd!=='y'){dot=false;
   h=dd==='n'?`<div class="wkb dn2"><b>No walkaround needed today</b><span>You said you are not driving. <u data-dd="">Change</u></span></div>`
    :`<div class="wkb"><b>Are you driving today?</b><span>A walkaround check is only needed on a day you drive.</span><div class="tr" style="margin-top:8px"><button class="tg" data-dd="y">Yes</button><button class="tg" data-dd="n">No</button></div></div>`}
+ else if(!w&&nw){dot=false;h=`<div class="wkb dn2"><b>No walkaround needed</b><span>You chose no walkaround for this no-tacho shift. <u data-dd="">Change</u></span></div>`}
  else if(!w)h=`<button class="wkb nb"><b>Walkaround not done</b><span>${act==='d'?'You are driving and no walkaround is recorded for this shift.':'Do it before you drive. The DVSA expects it before the first drive of the day.'} Tap to start.</span></button>`;
  else{const n=w.D.length,dg=w.D.some(x=>x.d);
   h=n?`<button class="wkb wn"><b>Walkaround done ${hm(w.t)}, ${n} defect${n>1?'s':''}</b><span>${dg?'A dangerous defect is recorded. Do not drive until it is fixed.':'Make sure they are reported in writing.'}</span></button>`
