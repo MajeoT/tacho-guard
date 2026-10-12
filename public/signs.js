@@ -67,7 +67,8 @@ add('Roadworks','Road Narrows',tri(`<path d="M34 78V50l12-26M66 78V50L54 24" str
 const rc=(bg,bd,i)=>`<rect x="4" y="22" width="92" height="56" rx="6" fill="${bg}" stroke="${bd}" stroke-width="4"/>${i}`;
 add('Direction','Motorway Direction Sign',rc(BL,'#fff',t('M1',50,60,26,'#fff')),'Blue background with white text: the route is a motorway, or leads onto one.','Motorways have their own rules, including no stopping on the hard shoulder except in an emergency.');
 add('Direction','Primary Route Sign',rc('#0b7a3b','#fff',t('A1',50,60,26,'#fff')),'Green background with white text: a primary route, the main A roads between large towns.','');
-add('Direction','Local Route Sign',rc('#fff','#111',t('Town',50,60,22,'#111')),'White background with black text and border: a non-primary or local route.','');
+add('Direction','Local Route Sign',rc('#fff','#111',t('Town',50,60,22,'#111')),'White background with black text and border: a direction sign for a non-primary or local route. Not the same as a town name sign, which is also white.','');
+add('Information','Town or Village Name Sign',rc('#fff','#888',t('LEEDS',50,60,20,'#111')),'Usually a white sign with black lettering at the edge of a town or village. It names the place. It is not a direction sign and does not set a speed limit on its own: any limit is on a separate red ring sign, often on the same post.','In a village or town expect lower limits, parked cars, pedestrians and tight junctions. Watch your width and swing.');
 add('Direction','Tourist Sign',rc('#7a4a1b','#fff',t('Castle',50,60,20,'#fff')),'Brown background: a tourist attraction or tourist route.','Check the height and weight limits before following signs to an attraction.');
 /* Information */
 add('Information','Parking',`<rect x="6" y="6" width="88" height="88" rx="8" fill="${BL}"/>${t('P',50,72,64,'#fff')}`,'A place where you may park. Read any plates for times, tickets and who the parking is for.','Check that the bay suits your vehicle length and weight.');
@@ -220,6 +221,7 @@ OV.forEach(o=>{const x=S.find(y=>y.n===o.n&&(!o.g||y.g===o.g));if(x){x.img=o.img
 NW.forEach(o=>S.push({g:o.g,n:o.n,s:'',img:o.img,m:o.m,h:o.h,l:o.l}));
 /* Accuracy review against the Highway Code (2025 text). w = warning shown to the driver where something could not be verified. */
 const FIX={
+'Town or Village Name Sign':{w:'Not shown in the Highway Code booklet. White with black lettering is the usual design, but I could not confirm the exact colours from an official source, and some councils add crests or their own designs.'},
 'National Speed Limit':{h:'Goods vehicle up to 7.5 tonnes: 50 mph single carriageway, 60 dual carriageway, 70 motorway (60 on a motorway if articulated or towing a trailer). Goods vehicle over 7.5 tonnes: 50 / 60 / 60 in England and Wales, and 40 / 50 / 60 in Scotland. Vehicles towing a trailer or caravan have their own limits. Check the Highway Code speed limit table (Rule 124) if unsure.'},
 'Roundabout':{h:'Long vehicles may need to take a different position on a roundabout from the normal one, and should signal their intention clearly and keep a watch for other traffic (Rule 187). Do not cut across other lanes.'},
 'Queues Likely':{h:'Do not rely on the traffic ahead being able to stop quickly. Leave extra room. You may use hazard lights briefly to warn drivers behind of a queue only on a motorway or unrestricted dual carriageway (Rule 116), never elsewhere while moving.'},
