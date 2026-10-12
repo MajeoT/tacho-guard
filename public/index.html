@@ -294,7 +294,7 @@ body{letter-spacing:-.003em}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-12-46';
+const APPV='tg-2026-10-12-47';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -1247,7 +1247,8 @@ function mxShow(){const L=mxList();if(!L)return;const P=[];let c=L.wd||L.items[0
 $('mx').onclick=e=>{if(e.target.closest('[data-mx]'))mxShow()};
 $('wkb').onclick=e=>{const d=e.target.closest('[data-dd]');if(d){const v=d.dataset.dd;if(v)st.dd={t:Date.now(),v};else delete st.dd;save();wkUpdate();return}if(!e.target.closest('.dn2')||e.target.closest('button'))showTab('check')};
 /* Account storage: the record is kept in the page's database, private to the signed-in driver. The phone copy is a fallback. */
-function syncNote(){const el=$('sync');if(!el)return;const m=syncMsg||(cloudReady?'✓ Saved to your account':lsOk?'':'Could not save on this phone.');if(el.textContent!==m){el.textContent=m;clearTimeout(syncT);if(m){el.classList.add('on');syncT=setTimeout(()=>el.classList.remove('on'),3000)}else el.classList.remove('on')}}
+let bootQ=true;['pointerdown','keydown'].forEach(k=>document.addEventListener(k,()=>{bootQ=false},{once:true,capture:true}));
+function syncNote(){const el=$('sync');if(!el)return;const m=syncMsg||(cloudReady?'✓ Saved to your account':lsOk?'':'Could not save on this phone.');if(bootQ&&!syncMsg&&cloudReady){el.textContent=m;el.classList.remove('on');return}if(el.textContent!==m){el.textContent=m;clearTimeout(syncT);if(m){el.classList.add('on');syncT=setTimeout(()=>el.classList.remove('on'),3000)}else el.classList.remove('on')}}
 let syncT=0;
 const mainJ=()=>{const o=Object.assign({},st);delete o.walks;delete o.u;return JSON.stringify(o)};
 let baseU=0,pend=null;
