@@ -306,6 +306,7 @@ const save=()=>{fixOv();st.u=Date.now();try{localStorage.setItem(K,JSON.stringif
 const $=id=>document.getElementById(id);
 const set=(el,h)=>{if(el._h!==h){el.innerHTML=h;el._h=h}};
 const NM={d:'Driving',x:'Driving (no tacho)',w:'Other work',p:'POA',r:'Break'},IC={d:'🚛',x:'🚚',w:'⚒',p:'◪',r:'🛏'};
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/'/g,'&#39;');
 const JCOL=['#3b82f6','#f59e0b','#a855f7'],JS={};
 const jobs=()=>st.jobs&&st.jobs.length?st.jobs:[{id:'j1',n:'Main job',tc:true}];
 const jobI=id=>Math.max(0,jobs().findIndex(j=>j.id===id)),jobC=id=>jobs()[jobI(id)],multi=()=>jobs().length>1,jobsOn=()=>!!(st.jobs&&st.jobs.length);
@@ -1054,7 +1055,7 @@ function infoCk(t){const c=T[t];if(!c)return '<div class="st">'+t+'</div>';
  if(c[3]&&c[3].trim())h+='<br><b>Penalties</b> '+c[3].trim();
  if(c[4])h+='<br><b>Good to Know</b> '+c[4];
  return '<div class="st">'+t+'</div>'+boxify(h)}
-const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+
 const wdef=()=>({k:'hgv',b:'',tl:false,reg:'',trl:'',odo:'',it:{}});
 let delArm=0,newArm=0;
 const SN={ok:'OK',bad:'Defect',na:'N/A'};
