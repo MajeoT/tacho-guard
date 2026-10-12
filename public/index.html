@@ -296,7 +296,7 @@ body{letter-spacing:-.003em}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-12-51';
+const APPV='tg-2026-10-12-52';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -692,7 +692,7 @@ function wrCard(){const I=wrInfo();
  const line=I.inWr?(I.ong>=45*H?'Full 45 hour weekly rest done.':'On a weekly rest. '+(I.prevRed?'It must reach 45h, at '+dmy(n-I.ong+45*H)+'.':'Full at 45h, '+dmy(n-I.ong+45*H)+'. Reduced counts from 24h.'))
   :left>0?`Start a ${I.prevRed?'45h':'45h (or reduced 24h)'} weekly rest by <b>${dmy(I.due)}</b>.`:`<b class="bad">Your weekly rest was due to start by ${dmy(I.due)}.</b>`;
  return `<div class="g cd w${I.inWr?' on':''}" data-wrd="1" role="button" tabindex="0" style="cursor:pointer"><div class="row"><span class="lbl">Weekly Rest ${ib('wkr')}</span><span class="num ${I.inWr?'':c}">${I.inWr?fmt(I.ong):left>0?fd(left):'Due'} <small>${I.inWr?'/ 45h':left>0?'left':''}</small></span></div><div class="bar"><i style="width:${Math.round(Math.min(100,(I.inWr?I.ong/(45*H):el/(144*H))*100))}%;background:var(--${I.inWr?'acc':c})"></i></div><div class="note">${line}${I.C.length?' <span class="warn">You owe '+fmt(I.C.reduce((q,x)=>q+x.owed,0))+' of weekly rest.</span>':''}</div>${I.mis?`<div class="note bad" style="margin-top:4px">Your logs show work during the weekly rest you entered. Tap to fix.</div>`:''}</div>`}
-function wrSetup(){const W=st.wr||{};let mode=W.fresh?'f':'k',red=!!W.red;const I0=wrInfo(),sv=I0&&I0.mis?I0.mis.s:W.e;
+function wrSetup(){const W=st.wr||{};let mode=W.fresh?'f':'k',red=!!W.red;let force=0;const I0=wrInfo(),sv=I0&&I0.mis?I0.mis.s:W.e;
  const dv=sv?new Date(sv-new Date(sv).getTimezoneOffset()*6e4).toISOString().slice(0,16):'';
  const draw=()=>{const sel=(on)=>on?'style="background:var(--acc);border-color:var(--acc);color:var(--onacc);font-weight:700"':'';
   mo(`<h3>Your last weekly rest</h3><p>Weekly rest must start within 6 days (144 hours) of the end of the last one. When did your last weekly rest end?</p>${I0&&I0.mis?'<div class="wn">You logged '+(NM[I0.mis.t]||'work')+' at '+dmy(I0.mis.s)+', so your weekly rest must have ended by then. The time below has been set to that. Change it if needed.</div>':''}<button class="tg big" data-k="mk" ${sel(mode==='k')}>${mode==='k'?'✓ ':''}I know when it ended</button><button class="tg big" data-k="mf" ${sel(mode==='f')}>${mode==='f'?'✓ ':''}More than 6 days ago, or this is my first job</button>${mode==='k'?`<label>It ended at<input type="datetime-local" id="wre" value="${$('wre')?$('wre').value:dv}"></label><p>Was it a full 45 hour rest?</p><button class="tg big" data-k="rf" ${sel(!red)}>${!red?'✓ ':''}Yes, 45 hours or more</button><button class="tg big" data-k="rr" ${sel(red)}>${red?'✓ ':''}No, reduced (24 to 45 hours)</button>${red?`<label>How many hours was it?<input type="number" id="wrl" min="24" max="44" step="1" value="${$('wrl')?$('wrl').value:(W.len?Math.round(W.len/H):24)}"></label>`:''}`:'<p class="note">The 6 day clock starts from the start of your current shift, or your next shift if you are not working now.</p>'}<div class="note bad" id="wrerr"></div><button class="tg big" data-k="ok" style="margin-top:12px">Save</button><button class="tg big" data-k="no">Cancel</button>`)};
@@ -700,6 +700,10 @@ function wrSetup(){const W=st.wr||{};let mode=W.fresh?'f':'k',red=!!W.red;const 
   if(mode==='f'){st.wr={fresh:1,t:Date.now()}}
   else{const v=$('wre').value;if(!v){$('wrerr').textContent='Enter when it ended.';return}const e=new Date(v).getTime();if(!(e<=Date.now())){$('wrerr').textContent='That is in the future.';return}
    let len=45*H;if(red){const hv=parseFloat($('wrl').value);if(!(hv>=24&&hv<45)){$('wrerr').textContent='A reduced weekly rest is 24 to 44 hours.';return}len=hv*H}
+   const cx=all().find(x=>x.e>e-len&&x.s<e);
+   if(cx&&!force){$('wrerr').innerHTML='Your log shows '+(NM[cx.t]||'work')+' from '+dmy(cx.s)+' to '+hm(cx.e)+', which is during this rest. A weekly rest has to be time off, so one of them is wrong.<div style="display:flex;flex-direction:column;gap:6px;margin-top:8px"><button class="tg" data-k="usex">The rest ended at '+hm(cx.s)+' (use that)</button><button class="tg" data-k="logx">My log is wrong, save this and open the log</button></div>';
+    mcb.usex=()=>{const v2=new Date(cx.s-new Date(cx.s).getTimezoneOffset()*6e4).toISOString().slice(0,16);$('wre').value=v2;force=0;mcb.ok()};
+    mcb.logx=()=>{force=1;mcb.ok();openDay(sod(cx.s),'today')};return}
    st.wr={e,red:red?1:0,len,t:Date.now()}}
   save();moX();render()}}}
 function live(){
