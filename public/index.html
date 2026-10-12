@@ -296,7 +296,7 @@ body{letter-spacing:-.003em}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-12-52';
+const APPV='tg-2026-10-12-53';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -655,7 +655,7 @@ function rpUi(){const rp=st.rp||{},W=rp.w===26?26:17,cus=!!rp.s,P=refP(Date.now(
 function sfAsk(){const P=refP(Date.now()),b=st.rpb&&st.rpb.p===P.s?st.rpb:null;
  const first=all().filter(x=>x.e>P.s&&x.t!=='p')[0],dto=b?b.to:first?Math.max(P.s,sod(first.s)):sod(Date.now());
  mo(`<h3>Starting figures</h3><p>Your current period started on <b>${dfm(P.s)}</b>. If you worked before you started logging in TachoGuard, add a rough figure so the average is closer to the truth.</p><label>Average hours worked a week, in the weeks you worked<input type="number" id="sfa" min="0" max="60" step="0.5" inputmode="decimal" value="${b?b.avg:''}"></label><label>Up to this date (the day you started logging)<input type="date" id="sft" value="${ymd(dto)}"></label><label>Days of annual leave or sick leave taken this period<input type="number" id="sfl" min="0" max="130" step="1" inputmode="numeric" value="${b?b.lv||0:0}"></label><p class="note">Leave does not lower your average. Each whole day of annual or sick leave counts as 8 hours of working time, and a whole week as 48 hours. The app counts leave days at 8 hours each and takes those days out of the weeks your average covers (5 days as one week).</p><div class="note bad" id="sferr"></div><button class="tg big" data-k="ok">Save</button>${b?'<button class="tg big" data-k="clr">Remove starting figures</button>':''}<button class="tg big" data-k="no">Cancel</button>`);
- mcb={no:moX,clr:()=>{delete st.rpb;save();moX();rpUi();live()},ok:()=>{const a=parseFloat($('sfa').value),l=parseInt($('sfl').value||'0',10),tv=$('sft').value;
+ mcb={no:moX,clr:()=>{st.rpb=null;save();moX();rpUi();live()},ok:()=>{const a=parseFloat($('sfa').value),l=parseInt($('sfl').value||'0',10),tv=$('sft').value;
   if(isNaN(a)||a<0||a>60){$('sferr').textContent='Enter your average hours a week (0 to 60).';return}
   if(!tv){$('sferr').textContent='Enter the date.';return}
   let to=new Date(tv+'T00:00').getTime();to=Math.min(Math.max(to,P.s),Date.now());
@@ -855,7 +855,7 @@ function jobsUi(){const J=st.jobs||[];
 let confirmJ=0,cjT=0;
 $('jobs').onclick=e=>{const b=e.target.closest('[data-ja],[data-jr]');if(!b)return;const d=b.dataset;
  if(d.ja){st.jobs=st.jobs||[];if(!st.jobs.length)st.jobs.push({id:'j1',n:'Main job',tc:true});const id='j'+(Date.now()%1e6);st.jobs.push({id,n:'Job '+(st.jobs.length+1),tc:true});if(!st.cj)st.cj=st.jobs[0].id}
- else{const j=st.jobs[+d.jr];if(confirmJ!==j.id){confirmJ=j.id;clearTimeout(cjT);cjT=setTimeout(()=>{confirmJ=0;jobsUi()},4000);jobsUi();return}confirmJ=0;st.jobs.splice(+d.jr,1);if(st.cj===j.id){st.cj=st.jobs[0]?st.jobs[0].id:undefined;delete st.tm}}
+ else{const j=st.jobs[+d.jr];if(confirmJ!==j.id){confirmJ=j.id;clearTimeout(cjT);cjT=setTimeout(()=>{confirmJ=0;jobsUi()},4000);jobsUi();return}confirmJ=0;st.jobs.splice(+d.jr,1);if(st.cj===j.id){st.cj=st.jobs[0]?st.jobs[0].id:null;delete st.tm}}
  save();jobsUi();render()};
 $('jobs').onchange=e=>{const d=e.target.dataset;if(d.jn!==undefined){st.jobs[+d.jn].n=(e.target.value||'Job '+(+d.jn+1)).trim();save();jobsUi();live()}
  else if(d.jt!==undefined){const j=st.jobs[+d.jt];j.tc=e.target.checked;if(st.cj===j.id&&!st.active)delete st.tm;save();jobsUi();live()}};
@@ -1318,12 +1318,15 @@ function fromAcc(s){try{if(!s||!s.exists)return;const d=s.data(),ru=d.u||0;if(ru
   if(d.j===lastMain){baseU=ru;return}
   if(ru>(st.u||0)){const r=JSON.parse(d.j);if(r&&Array.isArray(r.sessions))adopt(r,ru)}}catch(e){}}
 function queuePush(now){if(!cloudReady)return;clearTimeout(pushT);pushT=setTimeout(doPush,now?0:Math.max(1200,15000-(Date.now()-lastPush)))}
+const KEEP=['wr','wrp','jobs','rp','rpb','na','cj'];
+function keepKeys(r){let ch=0;if(r)KEEP.forEach(k=>{if(r[k]!==undefined&&r[k]!==null&&st[k]===undefined){st[k]=r[k];ch=1}});if(ch){try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}}return ch}
 function doPush(){if(!cloudReady)return;if(pushing){pushAgain=true;return}
  pushing=(async()=>{try{lastPush=Date.now();
    const j=mainJ(),u=st.u||0;if(j!==lastMain){const cur=await cloud.main.get(),cd=cur.exists?cur.data():null,cu=cd?(cd.u||0):0;let r=null;
     if(cd&&cu>baseU&&cd.j!==lastMain){try{r=JSON.parse(cd.j)}catch(e){}}
-    if(r&&Array.isArray(r.sessions)&&MO.hidden){adopt(r,cu,1);pushing=null;pushAgain=false;syncNote();return}
-    await cloud.main.set({v:1,u,j});lastMain=j;baseU=u}
+    if(r&&Array.isArray(r.sessions)){if(!MO.hidden){pushing=null;setTimeout(()=>queuePush(),4000);return}adopt(r,cu,1);pushing=null;pushAgain=false;syncNote();return}
+    let j2=j;if(cd){try{const rr=JSON.parse(cd.j);if(keepKeys(rr))j2=mainJ()}catch(e){}}
+    await cloud.main.set({v:1,u,j:j2});lastMain=j2;baseU=u}
    const have=new Set();
    for(const r of(st.walks||[]).slice()){const id=String(r.t),wj=JSON.stringify(r);have.add(id);if(remW.get(id)!==wj){await cloud.walks.doc(id).set({v:1,t:r.t,j:wj});remW.set(id,wj)}}
    for(const id of[...remW.keys()])if(!have.has(id)){await cloud.walks.doc(id).delete();remW.delete(id)}
@@ -1366,6 +1369,7 @@ async function bootCloud(){
   const lw=st.walks||[];let changed=false;
   if(remote&&Array.isArray(remote.sessions)&&(!hasLocal||(remote.u||0)>lu)){
    const wx=[...new Set([...(st.wx||[]),...(remote.wx||[])])];Object.assign(st,remote);st.walks=lw;st.wx=wx;changed=true}
+  else if(remote&&keepKeys(remote))changed=true;
   const gone=new Set((st.wx||[]).map(String)),mine=new Set(lw.map(x=>String(x.t)));
   ws.docs.forEach(d=>{let r=null;try{r=JSON.parse(d.data().j)}catch(e){}remW.set(d.id,r?d.data().j:'');
    if(r&&typeof r.t==='number'&&Array.isArray(r.D)){if(!mine.has(d.id)){if(!gone.has(d.id)){st.walks.push(r);changed=true}}
