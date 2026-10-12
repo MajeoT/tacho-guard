@@ -180,7 +180,7 @@ body{letter-spacing:-.003em}
 <div id="hero"></div>
 <div class="acts"><button class="act" data-a="d"><b>🚛</b>Driving</button><button class="act" data-a="w"><b>⚒</b>Work</button><button class="act" data-a="p"><b>◪</b>POA</button><button class="act" data-a="r"><b>🛏</b>Break</button></div>
 <div class="live" id="live"></div><div class="tr" id="es" style="margin-top:10px" hidden><label for="est" id="esl">Started At</label><input type="time" id="est"><button class="tg" id="esb">Change</button></div>
-<div id="s1"></div><div id="s2"></div><button class="tg" id="esh" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">End Shift</button><button class="tg" id="rd2" style="display:block;width:100%;margin-top:10px;padding:14px;font-size:16px;border-radius:12px">Reset Day</button><p class="note" style="text-align:center;margin:6px 0 0">Starts breaks, shift and working time again from now.</p><button class="tg" id="tlog" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">Today's Log</button><p class="note" style="text-align:center;margin:6px 0 0">See and edit today's driving, work, POA and breaks.</p></section><section id="t-tacho" hidden><h2>Tacho Downloads <button class="i" data-i="tac" aria-label="More info">i</button></h2><div id="tcx"></div><div class="g"><div class="tr"><label for="tc">Driver Card Downloaded</label><input type="date" id="tc"></div><div class="note" id="tcn"></div><div class="tr" style="margin-top:12px"><label for="tu">Vehicle Unit Downloaded</label><input type="date" id="tu"></div><div class="note" id="tun"></div></div>
+<div id="s1"></div><div id="s2"></div><button class="tg" id="esh" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">End Shift</button><button class="tg" id="tlog" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">Today's Log</button><p class="note" style="text-align:center;margin:6px 0 0">See and edit today's driving, work, POA and breaks.</p><button class="tg" id="rd2" style="display:block;width:100%;margin-top:30px;padding:14px;font-size:16px;border-radius:12px;color:#fff;background:var(--bad);border-color:var(--bad)">Reset Day</button><p class="note" style="text-align:center;margin:6px 0 0">Starts breaks, shift and working time again from now. Asks twice and can be undone for 20 seconds.</p></section><section id="t-tacho" hidden><h2>Tacho Downloads <button class="i" data-i="tac" aria-label="More info">i</button></h2><div id="tcx"></div><div class="g"><div class="tr"><label for="tc">Driver Card Downloaded</label><input type="date" id="tc"></div><div class="note" id="tcn"></div><div class="tr" style="margin-top:12px"><label for="tu">Vehicle Unit Downloaded</label><input type="date" id="tu"></div><div class="note" id="tun"></div></div>
 
 <div id="tacwhy">
 <details class="bx"><summary>If You Have Not Downloaded</summary><div class="dbody">The card only holds about 28 days, so anything older than that can be overwritten and lost for good. If you are overdue, tell your transport manager or operator now and get the card downloaded at the next chance. Do not delete, alter or swap anything to cover the gap. If days are already lost, keep any printouts and make a written note of the missing days and why, and give it to your operator. Gaps in your records are what DVSA looks for at a check.</div></details>
@@ -273,9 +273,10 @@ body{letter-spacing:-.003em}
 <div class="g"><div class="tr"><span><span class="lbl">Alerts</span><br><span class="note">Sound, vibration and a phone notification at your limits and break milestones (15, 30 and 45 minutes). Alerts need the app open or running in the background, so keep it open while you drive.</span></span><button class="tg" id="al"></button></div>
 <div style="margin-top:14px"><label for="da">Driving Alarm</label><select id="da"><option value="0">Off</option></select><div class="note">Alerts you when your driving since your last break reaches this time.</div></div>
 <div class="tr" style="margin-top:14px"><span><span class="lbl">Notifications</span><br><span class="note" id="nn"></span></span><button class="tg" id="nt"></button></div>
-<div class="tr" style="margin-top:14px"><span><span class="lbl">Reset Day</span><br><span class="note">Starts breaks, shift and working time again from now.</span></span><button class="tg" id="rd">Reset Day</button></div></div>
+</div>
 <h2>Account</h2><div class="g"><div class="note" id="acn"></div><div class="tr" style="margin-top:10px"><button class="tg" id="acb"></button></div></div>
 <h2>Install</h2><div class="g" id="insg"><div class="note" id="inn"></div><div class="tr" style="margin-top:10px"><button class="tg" id="inb" hidden>Install TachoGuard</button></div></div>
+<div class="g" style="margin-top:24px"><div class="tr"><span><span class="lbl">Reset Day</span><br><span class="note">Starts breaks, shift and working time again from now. Asks twice and can be undone for 20 seconds.</span></span><button class="tg" id="rd" style="color:#fff;background:var(--bad);border-color:var(--bad)">Reset Day</button></div></div>
 <h2>Backup</h2><div class="g"><div class="note">Your record is saved to your account when you are signed in and kept on this phone. You can also keep your own copy. Defect photos are not included.</div><div class="tr" style="margin-top:10px"><button class="tg" id="bc">Copy Backup</button></div><label for="bf" style="margin-top:12px">Import a Backup File</label><input type="file" id="bf" accept=".json,application/json"><textarea id="bt" aria-label="Paste a backup" placeholder="Or paste a copied backup here" style="width:100%;box-sizing:border-box;margin-top:8px;min-height:60px;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit"></textarea><div class="tr" style="margin-top:8px"><button class="tg" id="bi">Import</button></div><div class="note" id="bm" role="status"></div></div>
 </section>
 <section id="t-check" hidden>
@@ -463,7 +464,23 @@ function setAct(t){
  const rs=st.rs||0,ends=st.sessions.filter(x=>x.e>rs).map(x=>x.e),le=ends.length?Math.max(...ends):0;
  const chk=()=>{if(t==='d'){const L=legalStart();if(L.R.length){warnAsk(t,L);return}}begin(t)};
  if(was&&ps)swapAsk(t,was,ps,n,chk);
- else if(!was&&le&&n-le>=60*M&&(st.gq||0)<le)gapAsk(le,n,chk);else chk()}
+ else{const zs=st.sessions.filter(x=>x.t!=='r'&&x.e>rs),z=zs.length?zs.reduce((a,b)=>b.e>a.e?b:a):null,gp=()=>{const e2=st.sessions.filter(x=>x.e>rs).map(x=>x.e),l2=e2.length?Math.max(...e2):0;if(l2&&n-l2>=60*M&&(st.gq||0)<l2)gapAsk(l2,n,chk);else chk()};
+  if(!was&&z&&n-z.e>=9*H&&(st.fq||0)<z.e)shiftAsk(z,n,gp,chk);else if(!was)gp();else chk()}}
+function shiftAsk(z,n,gp,chk){
+ const ss0=st.sessions.filter(x=>x.t!=='r'&&x.e>(st.rs||0)).sort((a,b)=>a.s-b.s);
+ mo(`<h3>When did your last shift finish?</h3><p>You are starting a new shift. The app has your last shift ending at ${tt(z.e)}. Check the time so the rest between shifts is worked out correctly.</p><div class="tr"><label>Last shift ended<input type="time" id="sa1" value="${hm(z.e)}"></label></div><div class="note bad" id="saerr"></div><div class="note" id="sarest"></div><button class="tg big" data-k="ok">Confirm and start</button><button class="tg big" data-k="oth">I was working or driving since then</button><button class="tg big" data-k="no">Cancel</button>`);
+ const T=()=>{const v=$('sa1').value;return v?nearT(v,z.e):null};
+ const draw=()=>{const E=T(),el=$('sarest');if(E===null||E>n||E<=z.s){el.textContent='';return}const r=n-E;
+  el.innerHTML='Rest between shifts: <b>'+fmt(r)+'</b>. '+(r>=45*H?'That is long enough for a weekly rest, if it was taken as one.':r>=11*H?'That is a regular daily rest (11h).':r>=9*H?'That is a reduced daily rest (9h to under 11h). You are allowed 3 of these between weekly rests.':'That is under 9h, which is not enough for a daily rest.')};
+ $('sa1').onchange=draw;draw();
+ mcb={no:undo,oth:()=>{st.fq=z.e;save();moX();gp()},ok:()=>{const E=T();
+  if(E===null){$('saerr').textContent='Enter a time.';return}
+  if(E>n){$('saerr').textContent='That is in the future. Check the time.';return}
+  if(E<=z.s){$('saerr').textContent='That is before your last shift started ('+hm(z.s)+').';return}
+  const last=ss0.filter(x=>x.e===z.e)[0];
+  if(E<z.e)clear(E,z.e);else if(E>z.e){clear(z.e,E,1);if(last)last.e=E}
+  st.sessions=st.sessions.filter(x=>!(x.t==='r'&&x.s>=E&&x.e<=n));st.sessions.push({s:E,e:n,t:'r'});st.fq=n;st.gq=n;
+  if(st.se&&st.se<E)st.se=E;save();moX();chk()}}}
 function swapAsk(t,was,ps,n,next){
  const o=[5,10,15,30,60].filter(m=>n-m*M>ps);
  mo(`<h3>When did ${NM[t]} start?</h3><p>You were on ${NM[was]} from ${hm(ps)}. If you changed a while ago, say when, and ${NM[was]} will end at that time. To correct what was logged before, tap Edit earlier entries.</p><button class="tg big" data-k="now">Skip, it started just now</button>${o.map(m=>`<button class="tg big" data-k="m${m}">${m===60?'1 hour':m+' minutes'} ago (${hm(n-m*M)})</button>`).join('')}<div class="tr" style="margin-top:12px"><label>Or at this time<input type="time" id="sw1"></label><button class="tg" data-k="at">Use time</button></div><div class="note bad" id="swerr"></div><button class="tg big" data-k="fx" id="swfx">Edit earlier entries</button><button class="tg big" data-k="no">Cancel, stay on ${NM[was]}</button>`);
@@ -589,7 +606,7 @@ function segShow(k){const S=SEG[k];if(!S)return;const[ti,L,f,t,why]=S;
 function live(){
  if(pend&&MO.hidden){const[r,ru]=pend;pend=null;if(ru>(st.u||0))adopt(r,ru);else baseU=Math.max(baseU,ru)}
  const a0=all(),rs=st.rs||0,a=a0.filter(x=>x.e>rs).map(x=>x.s<rs?Object.assign({},x,{s:rs}):x),dr=a.filter(x=>x.t==='d'),dr0=a0.filter(x=>x.t==='d'),n=Date.now(),w=mon(),act=st.act,busy=!!act&&act!=='r',l=a[a.length-1];
- const gap=l&&!busy?n-l.e:0,fresh=!l||gap>=9*H,ss=fresh?null:shiftStart(a);
+ const gap=l&&!busy?n-l.e:0,fresh=!l||gap>=9*H,ss=fresh?null:shiftStart(a),endd=!busy&&!!l&&(fresh||!!(st.se&&st.se>=l.e));
  const day=ss?sum(dr,ss,n+1):0,wkd=sum(dr0,w,n+1),fn=sum(dr0,w-7*864e5,n+1),sw=ss?sum(a.filter(x=>x.t!=='p'),ss,n+1):0;
  const b=cnt(a,45,x=>x.t==='d'),wc=cnt(a,sw>9*H?45:30,x=>x.t!=='p');
  const T7=totals(),R17=avg17(T7),S=shifts(a0),cur=ss?S[S.length-1]:null,isx=z=>z.s>=w&&z.d>9*H+M,used=S.filter(isx).length,prev=used-(cur&&isx(cur)?1:0),extLeft=prev<2;
@@ -608,7 +625,7 @@ function live(){
   ['w15',busy&&act!=='p'&&wc.d>=345*M,'15 minutes until your 6 hour working limit.'],['w0',busy&&act!=='p'&&wc.d>=6*H,'6 hours of work reached. Take a break now.'],
   ['d15',act==='d'&&day>=9*H-15*M,'15 minutes until 9 hours driving this shift.'],['d0',act==='d'&&day>=9*H,extLeft?'9 hours reached. You can extend to 10 hours.':'9 hours reached. Stop driving.'],['e0',act==='d'&&extLeft&&day>=10*H,'10 hours reached. Stop driving.']];
  if(document.activeElement!==$('da'))$('da').value=String(st.da||0);
- const lb=[...a].reverse().find(x=>x.t!=='r'&&!x.live),be=!busy&&lb?n-lb.e:-1,inW=(x,y)=>be>=x*M&&be<y*M;
+ const lb=[...a].reverse().find(x=>x.t!=='r'&&!x.live),be=!busy&&lb?n-lb.e:-1,inW=(x,y)=>!endd&&be>=x*M&&be<y*M;
  al.push(['da',!!st.da&&act==='d'&&b.d>=st.da*M,'Driving alarm: you have driven '+fmt(b.d)+' since your last break.'],
   ['k15',inW(15,20),'15 minutes of break done. Take 30 more to finish a split break, or carry on to 45.'],
   ['k30',inW(30,35),'30 minutes of break done. 15 more minutes completes a full 45 minute break.'],
@@ -619,7 +636,7 @@ function live(){
  if(!act)L.push(l&&!fresh&&!(st.se&&st.se>=l.e)?'Nothing running. Only your break timer is counting. Tap End Shift to start your daily rest.':'Nothing running. Only your rest and break timers are counting.');
  if(act==='p')L.push('POA is not counted as driving or working time.');
  else if(act==='w')L.push('Counting as working time only, not driving.');
- if(!busy&&l&&gap<9*H){if(gap<15*M)L.push('On a break. Under 15 minutes does not count.');
+ if(!busy&&l&&gap<9*H&&!endd){if(gap<15*M)L.push('On a break. Under 15 minutes does not count.');
   else if(!b.d&&dr.length)L.push('Break complete. Your 4h 30m has reset.');
   else if(b.p)L.push('15 minutes counted. Keep resting to 45 minutes to reset, or take 30 minutes at your next stop.')}
  L.push(flash);
@@ -639,7 +656,7 @@ function live(){
   ns=gap>=11*H?['Now','Your daily rest is done.']:[dw(le+11*H),(busy?'If you stop now. ':'')+'Regular 11h rest. With a reduced 9h rest (max 3 per week): '+dw(le+9*H)+'.'];
   nsv=ns}
 
- const bks=Math.floor(be/1000),bkc=be>=0&&be<9*H?(bks>=3600?Math.floor(bks/3600)+':':'')+String(Math.floor(bks%3600/60)).padStart(bks>=3600?2:1,'0')+':'+String(bks%60).padStart(2,'0'):'';
+ const bl=endd?'Rest':'On break',bks=Math.floor(be/1000),bkc=be>=0&&(be<9*H||endd)?(bks>=3600?Math.floor(bks/3600)+':':'')+String(Math.floor(bks%3600/60)).padStart(bks>=3600?2:1,'0')+':'+String(bks%60).padStart(2,'0'):'';
  {const act0=act,ac=act0?NM[act0]:'Idle',since=st.active?hm(st.active):'',dc={d:'#3ecf7b',w:'#ffb020',p:'#6fb1ff',r:'#9aa6b5'}[act0]||'#9aa6b5';
   let big,cap,sub='';
   if(act0==='d'&&hc){big=fmt(Math.max(0,hc[0]));cap='left to drive';sub='until your '+hc[1]}
@@ -649,7 +666,7 @@ function live(){
   const pr=Math.min(100,Math.round(b.d/(270*M)*100)),pc2=pr>=100?'#ff6b5e':pr>=80?'#ffb020':'#3ecf7b';
   const tl1=act0==='d'?`<div class="h-t"><div class="h-k">${nx[0]} ${ib('next')}</div><div class="h-v">${nx[1]}</div></div>`:'';
   const tl2=nsv?`<div class="h-t"><div class="h-k">Next shift from ${ib('ns')}</div><div class="h-v">${nsv[0]}</div></div>`:'';
-  set($('hero'),`<div class="h-top"><span class="h-chip"><i style="background:${dc}"></i>${ac}${since&&act0?' since '+since:''}</span>${bkc?`<span class="h-chip"><i style="background:#9aa6b5"></i>On break ${bkc}</span>`:''}</div><div class="h-big">${big}</div><div class="h-cap">${cap}${sub?'<span> '+sub+'</span>':''}</div><div class="h-bar"><i style="width:${pr}%;background:${pc2}"></i></div><div class="h-bl"><span>Driving since last break</span><span>${fmt(b.d)} / 4h 30m</span></div>${tl1||tl2?`<div class="h-ts${tl1&&tl2?'':' one'}">${tl1}${tl2}</div>`:''}`)}
+  set($('hero'),`<div class="h-top"><span class="h-chip"><i style="background:${dc}"></i>${ac}${since&&act0?' since '+since:''}</span>${bkc?`<span class="h-chip"><i style="background:#9aa6b5"></i>${bl} ${bkc}</span>`:''}</div><div class="h-big">${big}</div><div class="h-cap">${cap}${sub?'<span> '+sub+'</span>':''}</div><div class="h-bar"><i style="width:${pr}%;background:${pc2}"></i></div><div class="h-bl"><span>Driving since last break</span><span>${fmt(b.d)} / 4h 30m</span></div>${tl1||tl2?`<div class="h-ts${tl1&&tl2?'':' one'}">${tl1}${tl2}</div>`:''}`)}
  if(!busy&&l){
   const c=gap>=11*H?'ok':gap>=9*H?'warn':'acc';
   let t=gap>=45*H?'Weekly rest done.':gap>=11*H?'Regular daily rest done. Weekly rest of 45h is at '+tt(l.e+45*H)+'.':gap>=9*H?'Reduced daily rest done (allowed 3 times between weekly rests). Regular 11h at '+tt(l.e+11*H)+'.':'Reduced 9h rest at '+tt(l.e+9*H)+', regular 11h at '+tt(l.e+11*H)+'.';
@@ -660,7 +677,7 @@ function live(){
  const pm=Math.floor(prog/M),pc=pm>=45?'ok':'acc';
  const room=270*M-b.d,bx=`<div class="note" style="margin-top:6px"><b>Breaks this shift:</b> ${bi.k?bi.k+' full break'+(bi.k>1?'s':'')+', last finished '+hm(bi.last):'no full break yet'}.<br><b>Still required:</b> ${b.d>=270*M?(b.q?'30':'45')+' minutes, due now.':bi.k&&9*H-day<=room?'nothing more for a 9h day. A break is needed if you drive another '+fmt(room)+'.':!busy&&bgc>0&&prog<45*M?Math.ceil(((bp?30:45)*M-bgc)/M)+' more minutes of this break'+(bp?'':', or stop at 15 and take 30 or more later')+'.':(b.p?'30 minutes (15 minute part done)':'45 minutes')+', within '+fmt(room)+' of driving.'}${lock?'<br>Break and +min buttons are locked until a break is due or you pass 9h driving.':''}</div>`;
  h+='<div class="cs">Breaks</div>'+sg('brk',card('brk','Driving Since Last Break',b.d,270*M,b.q?'Next break must be 30 min or more.':'Take 45 min, or 15 then 30.',b.q?'Take 30 minutes now.':'Take 45 minutes now.',0,bx+SGH,dOn).replace('g cd','g cd w'));
- h+=`<div class="g cd w${bOn?' on':' off'}"><div class="row"><span class="lbl">Break Time Taken${so(bOn,CNT)}</span><span class="num">${pm} <small>/ 45 min</small></span></div>${bkc?`<div class="row" style="margin-top:6px"><span class="lbl">On break for</span><span class="num bkc">${bkc}</span></div>`:''}<div class="bar"><i style="width:${Math.round(prog/(45*M)*100)}%;background:var(--${pc})"></i></div><div class="note">${pm>=45?'Full break done.':lock?'Locked. You have had your full break this shift.':(pm?'15 minute part counted. The next part only counts if it is 30 minutes or more.':'Nothing counted yet. A break under 15 minutes does not count.')+(!busy&&bgc>=M?' This break: '+Math.floor(bgc/M)+' min so far'+(bp?(bgc<30*M?', counts at 30.':'.'):(bgc<15*M?', counts at 15.':', full break at 45.')):'')+' Add break you took without logging it:'}</div><div class="qf">${[15,30,45].map(m=>`<button data-m="${m}"${qd(m)?' disabled':''}>+${m} min</button>`).join('')}</div>${bu.length&&bu[bu.length-1].g===bsig()?`<button class="tg" data-ub="1" style="display:block;width:100%;margin-top:10px;padding:12px;font-size:16px;border-radius:10px;border-color:var(--bad)">Undo +${bu[bu.length-1].n} min</button>`:''}</div>`;
+ h+=`<div class="g cd w${bOn?' on':' off'}"><div class="row"><span class="lbl">Break Time Taken${so(bOn,CNT)}</span><span class="num">${pm} <small>/ 45 min</small></span></div>${bkc?`<div class="row" style="margin-top:6px"><span class="lbl">${endd?'Resting for':'On break for'}</span><span class="num bkc">${bkc}</span></div>`:''}<div class="bar"><i style="width:${Math.round(prog/(45*M)*100)}%;background:var(--${pc})"></i></div><div class="note">${pm>=45?'Full break done.':lock?'Locked. You have had your full break this shift.':(pm?'15 minute part counted. The next part only counts if it is 30 minutes or more.':'Nothing counted yet. A break under 15 minutes does not count.')+(!busy&&bgc>=M?' This break: '+Math.floor(bgc/M)+' min so far'+(bp?(bgc<30*M?', counts at 30.':'.'):(bgc<15*M?', counts at 15.':', full break at 45.')):'')+' Add break you took without logging it:'}</div><div class="qf">${[15,30,45].map(m=>`<button data-m="${m}"${qd(m)?' disabled':''}>+${m} min</button>`).join('')}</div>${bu.length&&bu[bu.length-1].g===bsig()?`<button class="tg" data-ub="1" style="display:block;width:100%;margin-top:10px;padding:12px;font-size:16px;border-radius:10px;border-color:var(--bad)">Undo +${bu[bu.length-1].n} min</button>`:''}</div>`;
  set($('s1'),h);
  const dt=extLeft?'You can extend to 10h ('+(2-prev)+' left this week).':'No 10h extensions left this week.';
  const td=sod(n),poaD=sum(a0.filter(x=>x.t==='p'),td,n+1),poaW=sum(a0.filter(x=>x.t==='p'),w,n+1),paidD=sum(a0.filter(x=>x.t!=='r'),td,n+1);
@@ -673,7 +690,7 @@ function live(){
   let wk='';R17.ws.slice(0,R17.cnt).forEach(w3=>{const tw=T7[w3]?T7[w3].w:0;let ds='';for(let j=0;j<7;j++){const q=new Date(w3);q.setDate(q.getDate()+j);const o=T[q.getTime()],tot=o?o.d+o.w:0;if(tot>0)ds+=`<button class="pl" data-day="${q.getTime()}">${q.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} &middot; ${fmt(tot)}</button>`}
    wk+=`<div class="g cd w"><div class="row"><span class="lbl">Week of ${new Date(w3).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</span><span class="num ${tw>60*H?'bad':''}" style="font-size:22px">${fmt(tw)}</span></div>${ds?'<div class="pls">'+ds+'</div>':'<div class="note">No work logged this week. It still counts in the average.</div>'}</div>`});
   set($('hrs'),card('avg','17 Week Average',R17.avg,48*H,'Limit is 48h a week.','Over the 48h average.').replace('g cd','g cd w')+'<div class="cs" style="grid-column:1/-1">Last 7 Days</div>'+cs+`<div class="note" style="grid-column:1/-1">Tap a day to see and edit its activities. Driving plus other work. ${R17.cnt} of 17 weeks counted so far.</div><div class="cs" id="wkc" style="grid-column:1/-1">Weeks Counted in the Average</div>`+(wk||'<div class="note" style="grid-column:1/-1">Nothing logged yet.</div>')+(R17.cnt?`<div class="note" style="grid-column:1/-1">The average is these ${R17.cnt} week totals added up and divided by ${R17.cnt}. Tap a day to see and edit what was logged.</div>`:''))}
- const bs=busy?0:(l&&gap<9*H?l.e:0)||st.active||0,ek=busy?st.active:-bs;$('es').hidden=!ek;$('esl').textContent=busy?'Started At':'Break Started At';$('esh').hidden=!act&&fresh;if(ek&&esFor!==ek){$('est').value=hm(busy?st.active:bs);esFor=ek}
+ const bs=busy?0:(l&&gap<9*H?l.e:0)||st.active||0,ek=busy?st.active:-bs;$('es').hidden=!ek;$('esl').textContent=busy?'Started At':'Break Started At';$('esh').hidden=(!act&&fresh)||endd;if(ek&&esFor!==ek){$('est').value=hm(busy?st.active:bs);esFor=ek}
  set($('tcx'),ex('tac'));tcs(st.tc.c,28,'tcn');tcs(st.tc.u,90,'tun');
  wkUpdate();
 }
@@ -714,7 +731,12 @@ const edFix=e=>{if(e.target.id!=='e1'&&e.target.id!=='e2')return;const x=st.sess
 $('hrs').onclick=e=>{const b=e.target.closest('[data-day]');if(!b)return;openDay(+b.dataset.day)};
 $('alert').onclick=()=>{$('alert').hidden=true};
 let rdT=0;
-const rdF=b=>()=>{if(!rdT){b.textContent='Tap Again to Confirm';rdT=setTimeout(()=>{rdT=0;b.textContent='Reset Day'},4000);return}clearTimeout(rdT);rdT=0;b.textContent='Reset Day';st.rs=Date.now();st.bdone=0;fired={};flash='Day reset. Breaks, shift and working time start again from now.';setTimeout(()=>{flash='';live()},8000);save();showTab('today')};$('rd').onclick=rdF($('rd'));$('rd2').onclick=rdF($('rd2'));
+const doReset=()=>{const sv=JSON.stringify(st);st.rs=Date.now();st.bdone=0;fired={};moX();flash='Day reset. Breaks, shift and working time start again from now. <button class="tg" data-ur="1" style="margin-left:6px">Undo</button>';rsnap=sv;setTimeout(()=>{if(rsnap===sv)rsnap=null;flash='';live()},20000);save();showTab('today');live()};
+let rsnap=null;
+const rdF=()=>{mo('<h3>Reset Day?</h3><p>This starts your breaks, shift and working time again from now. Your logged entries are kept in the log, but they stop counting towards today.</p><p class="note">Only use this if the app has the wrong idea of your day. It does not change your tachograph.</p><button class="tg big bad" data-k="ok">Continue</button><button class="tg big" data-k="no">Cancel</button>');
+ mcb={no:moX,ok:()=>{mo('<h3>Are you sure?</h3><p>This is the second check. After this, today counts from now. You will have 20 seconds to tap Undo on the Today page.</p><button class="tg big bad" data-k="ok2">Yes, reset my day</button><button class="tg big" data-k="no">No, go back</button>');mcb={no:moX,ok2:doReset}}}};
+$('rd').onclick=rdF;$('rd2').onclick=rdF;
+$('live').addEventListener('click',e=>{if(e.target.dataset.ur&&rsnap){st=JSON.parse(rsnap);rsnap=null;flash='Reset undone.';setTimeout(()=>{flash='';live()},5000);save();render();live()}});
 const endAsk=same=>{const n=Date.now(),a=all(),z=a[a.length-1],fresh0=!z||(!z.live&&n-z.e>=9*H),ss=fresh0?n:shiftStart(a);
  const lo=st.act&&st.active?st.active:(z?z.e:0);let T=n,touched=false,note='';
  const pre=same===1&&st.act?NM[st.act]+' is already running and cannot be switched off on its own. To change activity, tap Cancel and then tap the new one. ':'';
@@ -1116,13 +1138,17 @@ function walkStatus(){const a0=all(),n=Date.now(),l=a0[a0.length-1];let since=so
  if(l){const busy=!!st.active&&st.act!=='r',gap=busy?0:n-l.e;since=gap>=9*H?l.e:shiftStart(a0)-2*H}
  return (st.walks||[]).filter(x=>x.t>=since).sort((x,y)=>y.t-x.t)[0]||null}
 function wkUpdate(){
- const w=walkStatus(),act=st.act;let h;
- if(!w)h=`<button class="wkb nb"><b>Walkaround not done</b><span>${act==='d'?'You are driving and no walkaround is recorded for this shift.':'Do it before you drive. The DVSA expects it before the first drive of the day.'} Tap to start.</span></button>`;
+ const w=walkStatus(),act=st.act,a0=all(),n=Date.now(),l=a0[a0.length-1],busy=!!st.active&&st.act!=='r',gap=l&&!busy?n-l.e:0;
+ const off=!st.active&&(!l||gap>=9*H||!!(st.se&&st.se>=l.e)),dd=st.dd&&st.dd.t>(l?l.e:0)?st.dd.v:'';let h,dot=!w;
+ if(!w&&off&&dd!=='y'){dot=false;
+  h=dd==='n'?`<div class="wkb dn2"><b>No walkaround needed today</b><span>You said you are not driving. <u data-dd="">Change</u></span></div>`
+   :`<div class="wkb"><b>Are you driving today?</b><span>A walkaround check is only needed on a day you drive.</span><div class="tr" style="margin-top:8px"><button class="tg" data-dd="y">Yes</button><button class="tg" data-dd="n">No</button></div></div>`}
+ else if(!w)h=`<button class="wkb nb"><b>Walkaround not done</b><span>${act==='d'?'You are driving and no walkaround is recorded for this shift.':'Do it before you drive. The DVSA expects it before the first drive of the day.'} Tap to start.</span></button>`;
  else{const n=w.D.length,dg=w.D.some(x=>x.d);
   h=n?`<button class="wkb wn"><b>Walkaround done ${hm(w.t)}, ${n} defect${n>1?'s':''}</b><span>${dg?'A dangerous defect is recorded. Do not drive until it is fixed.':'Make sure they are reported in writing.'}</span></button>`
    :`<button class="wkb dn2"><b>Walkaround done ${hm(w.t)}</b><span>No defects, ${esc(w.reg)}</span></button>`}
- set($('wkb'),h);document.querySelector('.tab[data-t="check"]').classList.toggle('dot',!w)}
-$('wkb').onclick=()=>showTab('check');
+ set($('wkb'),h);document.querySelector('.tab[data-t="check"]').classList.toggle('dot',dot)}
+$('wkb').onclick=e=>{const d=e.target.closest('[data-dd]');if(d){const v=d.dataset.dd;if(v)st.dd={t:Date.now(),v};else delete st.dd;save();wkUpdate();return}if(!e.target.closest('.dn2')||e.target.closest('button'))showTab('check')};
 /* Account storage: the record is kept in the page's database, private to the signed-in driver. The phone copy is a fallback. */
 function syncNote(){const el=$('sync');if(!el)return;const m=syncMsg||(cloudReady?'✓ Saved to your account':lsOk?'':'Could not save on this phone.');if(el.textContent!==m){el.textContent=m;clearTimeout(syncT);if(m){el.classList.add('on');syncT=setTimeout(()=>el.classList.remove('on'),3000)}else el.classList.remove('on')}}
 let syncT=0;
