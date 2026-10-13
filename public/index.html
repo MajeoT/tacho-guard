@@ -308,7 +308,7 @@ body{letter-spacing:-.003em}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-12-61';
+const APPV='tg-2026-10-12-62';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -628,20 +628,30 @@ function placeBreak(N,t0,t1){
  save();render();
 }
 
-function chkLong(){if(!MO.hidden||!st||!st.sessions)return;const n=Date.now();
- const x=st.sessions.filter(y=>!y.bq&&(y.t||'d')!=='r'&&(y.t||'d')!=='p'&&(y.chk||y.e>n-36*H)&&y.e-y.s>((y.t||'d')==='d'?270:360)*M).sort((a,b)=>b.e-a.e)[0];
- if(x)longAsk(x)}
-function longAsk(x){const t=x.t||'d',L=(t==='d'?270:360)*M,dv=t==='d',dur=x.e-x.s;
- const f0=Math.min(x.s+L,x.e-45*M>x.s?x.e-45*M:x.s+Math.floor(dur/2));let N=45;
- mo(`<h3>Did you have a break?</h3><p>${NM[t]} from <b>${tt(x.s)}</b> to <b>${tt(x.e)}</b> is <b>${fmt(dur)}</b> in one go. ${dv?'After 4h 30m of driving you need a 45 minute break (or 15 then 30).':'After 6 hours of work you need a break of at least 30 minutes (45 if you work over 9 hours).'} If you stopped for a break, say when so your log stays right.</p><div class="tr"><label>Break from<input type="time" id="lq1" value="${hm(f0)}"></label><label>to<input type="time" id="lq2" value="${hm(f0+N*M)}"></label></div><div class="note">Quick length:</div><div class="tr" style="gap:6px">${[15,30,45,60].map(m=>`<button class="tg" data-k="n${m}">${m} min</button>`).join('')}</div><div class="note bad" id="lqe"></div><button class="tg big" data-k="ok">Save break</button><button class="tg big" data-k="no">No break, leave it as it is</button>`);
- const T=()=>{const a=$('lq1').value,b=$('lq2').value;if(!a||!b)return null;const s0=atT(a,x.s-1),e0=atT(b,s0+1);return[s0,e0]};
- mcb={no:()=>{x.bq=1;delete x.chk;save();moX();render()},ok:()=>{const r=T(),E=$('lqe');
-  if(!r){E.textContent='Enter when the break started and finished.';return}
-  const[s0,e0]=r;if(s0<x.s||e0>x.e){E.textContent='The break has to be inside '+hm(x.s)+' to '+hm(x.e)+'.';return}
+function longFind(){const n=Date.now(),A=st.sessions.filter(y=>(y.t||'d')!=='r').sort((a,b)=>a.s-b.s);
+ let dd=0,ww=0,q=false,rs=null,pe=null;
+ for(const x of A){const t=x.t||'d';
+  if(pe!==null){const g=x.s-pe;if(g>=45*M||(q&&g>=30*M)){dd=0;q=false}else if(g>=15*M)q=true;if(g>=30*M){ww=0;rs=null}}
+  if(rs===null)rs=x.s;
+  const d0=dd,w0=ww;
+  if(t==='d'){dd+=x.e-x.s;ww+=x.e-x.s}else if(t==='x'||t==='w')ww+=x.e-x.s;
+  pe=Math.max(pe||0,x.e);
+  if(x.bq){dd=0;ww=0;q=false;rs=null;continue}
+  const bd=dd>270*M,bw=ww>360*M;
+  if(t!=='p'&&(bd||bw)&&(x.chk||x.e>n-36*H)){const L=bd?270*M:360*M,pr=bd?d0:w0;return{x,rs:Math.min(rs,x.s),c:x.s+Math.max(0,L-pr),kind:bd?'d':'w',dd,ww}}}
+ return null}
+function chkLong(){if(!MO.hidden||!st||!st.sessions)return;const r=longFind();if(r)longAsk(r)}
+function longAsk(r){const x=r.x,dv=r.kind==='d',lo=r.rs,hi=x.e;let N=45;
+ const f0=Math.max(lo,Math.min(r.c,hi-N*M));
+ mo(`<h3>Did you have a break?</h3><p>You have ${dv?fmt(r.dd)+' of driving':fmt(r.ww)+' of work'} logged up to <b>${tt(x.e)}</b> with no break. ${dv?'After 4h 30m of driving a break has to be taken (45 minutes, or 15 then 30).':'After 6 hours of work a break of at least 30 minutes has to be taken.'} When was it? The time below is a guess, change it if needed.</p><div class="tr"><label>Break from<input type="time" id="lq1" value="${hm(f0)}"></label><label>to<input type="time" id="lq2" value="${hm(f0+N*M)}"></label></div><div class="tr" style="gap:6px">${[15,30,45,60].map(m=>`<button class="tg" data-k="n${m}">${m} min</button>`).join('')}</div><div class="note bad" id="lqe"></div><button class="tg big" data-k="ok">Add this break</button><button class="tg big" data-k="no">No break, leave it as it is</button>`);
+ const T=()=>{const a=$('lq1').value,b=$('lq2').value;if(!a||!b)return null;const s0=atT(a,lo-1),e0=atT(b,s0+1);return[s0,e0]};
+ mcb={no:()=>{x.bq=1;delete x.chk;save();moX();render()},ok:()=>{const t=T(),E=$('lqe');
+  if(!t){E.textContent='Enter when the break started and finished.';return}
+  const[s0,e0]=t;if(s0<lo||e0>hi){E.textContent='The break has to be between '+hm(lo)+' and '+hm(hi)+'.';return}
   if(e0-s0<M){E.textContent='The break is too short.';return}
   clear(s0,e0,1);st.sessions.push({s:s0,e:e0,t:'r'});fixOv();
   bu=[];flash='Break of '+fmt(e0-s0)+' added from '+hm(s0)+' to '+hm(e0)+'.';setTimeout(()=>{flash='';live()},6000);save();moX();render()}};
- [15,30,45,60].forEach(m=>mcb['n'+m]=()=>{const a=$('lq1').value;if(!a)return;const s0=atT(a,x.s-1);N=m;$('lq2').value=hm(s0+m*M)})}
+ [15,30,45,60].forEach(m=>mcb['n'+m]=()=>{const a=$('lq1').value;if(!a)return;$('lq2').value=hm(atT(a,lo-1)+m*M)})}
 function fire(m){if(!st.alerts)return;$('alert').textContent=m+' (tap to dismiss)';$('alert').hidden=false;try{navigator.vibrate&&navigator.vibrate([400,200,400])}catch(e){}beep();notify(m)}
 function notify(m){try{if(!('Notification' in window)||Notification.permission!=='granted')return;const o={body:m,tag:'tg-alert',renotify:true,vibrate:[400,200,400],icon:'icons/icon-192.png',badge:'icons/icon-192.png'};
  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(r=>{if(r)r.showNotification('TachoGuard',o);else new Notification('TachoGuard',o)}).catch(()=>{try{new Notification('TachoGuard',o)}catch(e){}});else new Notification('TachoGuard',o)}catch(e){}}
