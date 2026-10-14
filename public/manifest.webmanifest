@@ -7,8 +7,8 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#eef0f2",
-  "theme_color": "#0b4f9c",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
   "lang": "en-GB",
   "categories": ["productivity", "utilities"],
   "icons": [
