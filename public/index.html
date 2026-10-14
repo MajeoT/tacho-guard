@@ -403,22 +403,24 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-12-76';
+const APPV='tg-2026-10-14-77';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
-const u0=st.u||0;
 if(st.active&&!st.act)st.act='d';
 const lay=a=>{a=a.filter(x=>x.e>x.s).sort((x,y)=>x.s-y.s);let m=-Infinity,ov=false;for(const x of a){if(x.s<m){ov=true;break}m=Math.max(m,x.e)}if(!ov)return a;let o=[];a.forEach(x=>{const n=[];o.forEach(y=>{if(y.e<=x.s||y.s>=x.e){n.push(y);return}if(y.s<x.s)n.push(Object.assign({},y,{e:x.s}));if(y.e>x.e)n.push(Object.assign({},y,{s:x.e,d:0,a:null}))});n.push(x);o=n});return o.sort((x,y)=>x.s-y.s)};
 const mrg=l=>{const o=[];l.forEach(x=>{const p=o[o.length-1];if(p&&(p.t||'d')===(x.t||'d')&&(p.j||'')===(x.j||'')&&x.s-p.e<M)o[o.length-1]=Object.assign({},p,{e:Math.max(p.e,x.e),d:((p.d||0)+(x.d||0))||p.d,z:x.z||p.z});else o.push(x)});return o};
 const fixOv=()=>{[x=>(x.t||'d')!=='r',x=>x.t==='r'].forEach(nr=>{const w=st.sessions.filter(nr),l=mrg(lay(w));if(l.length!==w.length||l.some(x=>!w.includes(x)))st.sessions=st.sessions.filter(x=>!nr(x)).concat(l)})};
 fixOv();
 let lsOk=true,cloud=null,cloudReady=false,pushT=0,pushing=null,pushAgain=false,lastPush=0,lastMain='',syncMsg='';const remW=new Map();
-const save=()=>{fixOv();st.u=Date.now();try{localStorage.setItem(K,JSON.stringify(st));lsOk=true}catch(e){lsOk=false}queuePush();syncNote()};
+let dirty=false;
+const save=()=>{fixOv();st.u=Date.now();dirty=true;try{localStorage.setItem(K,JSON.stringify(st));lsOk=true}catch(e){lsOk=false}queuePush();syncNote()};
+/* GPS updates arrive every few seconds while driving: keep them on the phone and let them ride along with the next account save. */
+const saveLocal=()=>{st.u=Date.now();try{localStorage.setItem(K,JSON.stringify(st));lsOk=true}catch(e){lsOk=false}};
 const $=id=>document.getElementById(id);
 const set=(el,h)=>{if(el._h!==h){el.innerHTML=h;el._h=h}};
 const NM={d:'Driving',x:'Driving (no tacho)',w:'Other work',p:'POA',r:'Break'},IC={d:'🚛',x:'🚚',w:'⚒',p:'◪',r:'🛏'};
-const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/'/g,'&#39;');
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
 const JCOL=['#3b82f6','#f59e0b','#a855f7'],JS={};
 const jobs=()=>st.jobs&&st.jobs.length?st.jobs:[{id:'j1',n:'Main job',tc:true}];
 const jobI=id=>Math.max(0,jobs().findIndex(j=>j.id===id)),jobC=id=>jobs()[jobI(id)],multi=()=>jobs().length>1,jobsOn=()=>!!(st.jobs&&st.jobs.length);
@@ -444,7 +446,7 @@ tac:`Driver card data must be downloaded at least every 28 days and vehicle unit
 INFO.about=`TachoGuard is a planning aid. Your tachograph is always the legal record. Your hours and walkaround checks are saved on this phone and work with no signal. When you are signed in they are also saved to your account database, so they are kept if you change phone. The account copy is the master: every signed in copy of the app updates from it. Defect photos stay on the phone that took them.<br><b>Limits Used</b> 9h driving per shift (10h twice a week), 56h a week, 90h a fortnight, a 45 minute break after 4h 30m (15 then 30 also counts), 11h daily rest (9h reduced) and 45h weekly rest. Working time uses the 6 hour rule from the Road Transport (Working Time) Regulations 2005.<br><b>Not Tracked</b> Split daily rest (3h plus 9h). The limit of 3 reduced daily rests between weekly rests. Weekly rest compensation, and the rule that a weekly rest starts within 6 days. Two drivers (multi-manning), ferry or train rests, and unforeseen event extensions. Working time breaks made of three 15 minute parts. Weeks run Monday to Sunday by your phone clock, and a tachograph records in UTC. Only a break counts as rest, not other work or POA. Always check the tachograph and the law.<br><b>Distance</b> GPS is off by default. Turn it on in Settings. It only updates while this page is open, so keep your phone unlocked.`;
 INFO.signs=`Simplified drawings of UK road signs, motorway and gantry signals, road markings and vehicle markings, with what each one means. The meanings follow the Highway Code and the Traffic Signs Manual, and the For HGV Drivers notes add what matters for a lorry. Real signs can differ in layout and colour, and plates under a sign can change its meaning, so always read the whole sign. The For HGV Drivers notes are general advice unless they cite a Rule number. An orange Check this box means I could not confirm that point, so verify it before relying on it. Every entry has a Source link to the gov.uk page it comes from.`;
 INFO.poa=`POA means Period of Availability. It is waiting time where you do not have to stay at your workstation, but you must be ready to start or carry on driving or other work, and you must know how long the wait will last in advance. Examples: waiting on a ferry, or waiting while others load or unload your vehicle.<br><b>Working Time</b> POA is not working time. It does not count towards the 48 hour average or the 6 hour rule. It is also not a break, so it does not count towards your 45 minutes or rest. On the tachograph it is the POA symbol.<br><b>Pay</b> The working time rules do not set pay. Whether you are paid for POA is a matter for your contract. Being paid for it does not turn it into working time, and being unpaid does not stop a wait being working time. So a company can pay for POA without it touching your 48 hour average.<br><b>Limits</b> You cannot call a wait POA if you did not know how long it would last. A wait of unknown length is working time, so log it as Work.<br><span class="note">Source: gov.uk drivers hours rules for goods vehicles, Annex 2, and the Road Transport (Working Time) Regulations 2005. Not legal advice.</span>`;
-let open=null;
+let infoK=null;
 let cp=false;try{cp=localStorage.getItem('tachoguard.compact')==='1'}catch(e){}
 const cpUi=()=>{document.body.classList.toggle('cp',cp);$('cpb').textContent='Compact';$('cpb').classList.toggle('on',cp);$('cpb').setAttribute('aria-pressed',cp)};
 $('cpb').onclick=()=>{cp=!cp;try{localStorage.setItem('tachoguard.compact',cp?'1':'0')}catch(e){}cpUi()};cpUi();
@@ -483,7 +485,9 @@ const tt=x=>new Date(x).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',m
 const hm=x=>new Date(x).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
 const mi=m=>(m/1609.34).toFixed(1)+' mi';
 const hav=(a,b)=>{const r=Math.PI/180,x=(b.lat-a.lat)*r,y=(b.lon-a.lon)*r,q=Math.sin(x/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(y/2)**2;return 12742000*Math.asin(Math.sqrt(q))};
-const all=()=>{const a=st.sessions.map(x=>Object.assign({t:'d'},x)).filter(x=>x.t!=='r');if(st.active&&st.act!=='r')a.push({s:st.active,e:Date.now(),t:st.act,live:1,j:st.cj});return lay(a)};
+/* all() is called many times in one screen update, so live() turns on a cache for the length of that update only. Callers must not change the array. */
+let allC=null,allOn=0;
+const all=()=>{if(allOn&&allC)return allC;const a=st.sessions.map(x=>Object.assign({t:'d'},x)).filter(x=>x.t!=='r');if(st.active&&st.act!=='r')a.push({s:st.active,e:Date.now(),t:st.act,live:1,j:st.cj});const r=lay(a);if(allOn)allC=r;return r};
 const sum=(a,f,t)=>a.reduce((n,x)=>n+Math.max(0,Math.min(x.e,t)-Math.max(x.s,f)),0);
 const sod=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x.getTime()};
 const mon=()=>{const x=new Date(sod(Date.now()));x.setDate(x.getDate()-((x.getDay()+6)%7));return x.getTime()};
@@ -491,11 +495,13 @@ const wkS=ts=>{const d=new Date(ts);d.setHours(0,0,0,0);d.setDate(d.getDate()-((
 const nwk=w=>{const d=new Date(w);d.setDate(d.getDate()+7);return d.getTime()};
 function archive(){const cut=Date.now()-365*864e5,keep=[];let ch=0;
  st.sessions.forEach(x=>{if(x.e<cut){ch=1;const k=x.t||'d';if(k==='d'||k==='w'||k==='x'){let w=wkS(x.s);while(w<x.e){const g=Math.min(x.e,nwk(w))-Math.max(x.s,w);if(g>0){const a=st.arch[w]=st.arch[w]||{w:0,d:0};a.w+=g;if(k==='d')a.d+=g}w=nwk(w)}}}else keep.push(x)});
+ /* planner records for days over 400 days old are no longer shown or checked, so drop them to stop the record growing forever */
+ const pc=ymd(Date.now()-400*864e5);
+ if(st.plan&&st.plan.some(p=>p.d<pc)){st.plan=st.plan.filter(p=>!(p.d<pc));ch=1}
+ const pid=new Set((st.plan||[]).map(p=>p.id)),old=k=>{const i=k.indexOf('|');return i<0?!pid.has(k):k.slice(i+1)<pc};
+ if(st.pls&&Object.keys(st.pls).some(old)){const o={};Object.keys(st.pls).forEach(k=>{if(!old(k))o[k]=st.pls[k]});st.pls=o;ch=1}
+ if(st.plx&&st.plx.some(old)){st.plx=st.plx.filter(k=>!old(k));ch=1}
  if(ch){st.sessions=keep;save()}}
-function totals(){const T={};Object.keys(st.arch).forEach(k=>{T[k]={w:st.arch[k].w,d:st.arch[k].d}});
- all().forEach(x=>{if(x.t==='p')return;let w=wkS(x.s);while(w<x.e){const g=Math.min(x.e,nwk(w))-Math.max(x.s,w);if(g>0){const a=T[w]=T[w]||{w:0,d:0};a.w+=g;if(x.t==='d')a.d+=g}w=nwk(w)}});return T}
-function avg17(T){let w=wkS(Date.now());const ws=[];for(let i=0;i<17;i++){ws.push(w);const d=new Date(w);d.setDate(d.getDate()-7);w=d.getTime()}
- const ks=Object.keys(T).map(Number),fw=ks.length?Math.min(...ks):Infinity,use=ws.filter(x=>x>=fw),s=use.reduce((n,x)=>n+(T[x]?T[x].w:0),0);return{avg:use.length?s/use.length:0,ws,cnt:use.length}}
 function cnt(a,T,f){let d=0,p=false,L=[];const step=g=>{if(g>=T*M||(p&&g>=(T-15)*M)){d=0;p=false;L=[]}else if(g>=15*M&&d>0)p=true};
  a.forEach((x,i)=>{if(i)step(x.s-a[i-1].e);if(f(x)){d+=x.e-x.s;L.push(x)}});
  const l=a[a.length-1],q=p;if(l&&!l.live)step(Date.now()-l.e);return{d,p,q,L}}
@@ -507,7 +513,7 @@ function brkInfo(a,ss){let p=false,k=0,d=0,last=0;if(!ss)return{k,last};const n=
  const l=s[s.length-1];if(l&&!l.live)step(n-l.e,n);return{k,last}}
 function card(k,label,val,lim,t,over,soft,xtra,on,jk){const SJ=JS[jk||k];const c=val>=(soft||lim)?'bad':val/lim>=.8?'warn':'ok';
  return `<div class="g cd${on===true?' on':on===false?' off':''}"><div class="row"><span class="lbl">${label.replace(/\s(\S+)$/,' <span class="nw">$1 ')}${/\s\S+$/.test(label)?ib(k)+'</span>':' '+ib(k)}${on===true?CNT:''}</span><span class="num ${c}">${fmt(val)} <small>/ ${lim/H}h</small></span></div><div class="bar">${SJ&&multi()&&SJ.length?SJ.map(q=>`<i style="float:left;width:${Math.min(100,q[1]/lim*100).toFixed(1)}%;background:${q[0]};border-radius:0!important"></i>`).join(''):`<i style="width:${Math.round(Math.min(100,val/lim*100))}%;background:var(--${c})"></i>`}</div><div class="note">${val>=lim?over:fmt(lim-val)+' left. '+t}</div>${xtra||''}${ex(k)}</div>`}
-let lock=false,jkOpen=false;document.addEventListener('toggle',e=>{if(e.target.classList&&e.target.classList.contains('jkey'))jkOpen=e.target.open},true);let dArm=null,dT=0,lim=14,tab='today',esFor=0,ed=null,wid=null,last=null,gmsg='',wl=null,flash='',prog=0,ac=null,fired={};
+let lock=false;let dArm=null,dT=0,lim=14,tab='today',esFor=0,ed=null,wid=null,last=null,gmsg='',wl=null,flash='',prog=0,ac=null,fired={};
 const beep=()=>{try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume();const o=ac.createOscillator();o.frequency.value=880;o.connect(ac.destination);o.start();o.stop(ac.currentTime+.4)}catch(e){}};
 async function wake(){if(!st.gps)return;try{if(navigator.wakeLock)wl=await navigator.wakeLock.request('screen')}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(st.act==='d'&&document.visibilityState==='visible')wake()});
@@ -520,7 +526,7 @@ function gpsOn(){
   const c={lat:p.coords.latitude,lon:p.coords.longitude};gmsg='GPS on';
   if(!st.as)st.as=c;
   if(last){const d=hav(last,c);if(d>15){st.ad+=d;last=c}}else last=c;
-  st.ae=c;save();
+  st.ae=c;saveLocal();
  },e=>{gmsg=e.code===1?'Location is blocked. Allow location for this site in Chrome to track distance.':'Waiting for a GPS signal...'},{enableHighAccuracy:true,maximumAge:5000});
 }
 function gpsOff(){if(wid!==null)navigator.geolocation.clearWatch(wid);wid=null;last=null;gmsg='';if(wl){wl.release().catch(()=>{});wl=null}}
@@ -541,14 +547,14 @@ function undo(){moX();if(snap){st=JSON.parse(snap);snap=null}if(st.act==='d'){gp
 function legalStart(t){t=t||'d';
  const a0=all(),rs=st.rs||0,a=a0.filter(x=>x.e>rs).map(x=>x.s<rs?Object.assign({},x,{s:rs}):x),dr=a.filter(x=>x.t==='d'),dr0=a0.filter(x=>x.t==='d'),n=Date.now(),w=mon(),l=a[a.length-1];
  if(!l)return{R:[],n};
- const gap=n-l.e,ss=gap>=9*H?null:shiftStart(a),day=ss?sum(dr,ss,n+1):0,wkd=sum(dr0,w,n+1),fn=sum(dr0,w-7*864e5,n+1),sw=ss?sum(a.filter(x=>x.t!=='p'),ss,n+1):0;
+ const gap=n-l.e,ss=gap>=9*H?null:shiftStart(a),day=ss?sum(dr,ss,n+1):0,wkd=sum(dr0,w,n+1),fn=sum(dr0,add7(w,-1),n+1),sw=ss?sum(a.filter(x=>x.t!=='p'),ss,n+1):0;
  const b=cnt(a,45,x=>x.t==='d'),wc=cnt(a,sw>9*H?45:30,x=>x.t!=='p');
  const S=shifts(a0),cur=ss?S[S.length-1]:null,isx=z=>z.s>=w&&z.d>9*H+M,used=S.filter(isx).length,prev=used-(cur&&isx(cur)?1:0),extLeft=prev<2,e=l.e,R=[];
  if(b.d>=270*M)R.push([e+(b.q?30:45)*M,'You have driven '+fmt(b.d)+' since your last full break, so you need a '+(b.q?'30':'45')+' minute break before driving',1]);
  if(wc.d>=6*H)R.push([e+(wc.q?(sw>9*H?30:15):(sw>9*H?45:30))*M,'You have worked '+fmt(wc.d)+' without a working time break, so you need a break first',2]);
  if(day>=(extLeft?10:9)*H)R.push([e+11*H,'You have driven '+fmt(day)+' this shift, which is your daily limit, so you need your daily rest before driving again (11 hours, or 9 if reduced)',1]);
  if(ss&&n>ss+15*H)R.push([e+9*H,'Your shift started at '+tt(ss)+'. A daily rest of at least 9 hours has to be finished within 24 hours of the end of your last rest, by about '+tt(ss+24*H)+', so there is no time left to start again before resting',0]);
- if(wkd>=56*H||fn>=90*H)R.push([w+7*864e5,wkd>=56*H?'You have driven '+fmt(wkd)+' this week, the 56 hour weekly limit':'You have driven '+fmt(fn)+' over two weeks, the 90 hour fortnight limit',1]);
+ if(wkd>=56*H||fn>=90*H)R.push([nwk(w),wkd>=56*H?'You have driven '+fmt(wkd)+' this week, the 56 hour weekly limit':'You have driven '+fmt(fn)+' over two weeks, the 90 hour fortnight limit',1]);
  const D=t==='d';return{R:R.filter(x=>x[0]>n&&(D||!x[2]||(x[2]===2&&t!=='p'))).sort((x,y)=>y[0]-x[0]),l,ss,n,t}}
 function gapAsk(le,n,next){
  mo(`<h3>Time since your last activity</h3><p>Your last activity ended ${tt(le)}, ${fmt(n-le)} ago. What were you doing?</p><button class="tg big" data-k="rest">Resting or a day off</button><button class="tg big" data-k="work">Working elsewhere</button><button class="tg big" data-k="skip">Not sure, leave it blank</button>`);
@@ -567,20 +573,6 @@ function warnAsk(t,L,re){
 function resumeAsk(t,l,next){const n=Date.now(),a=all(),ss=shiftStart(a);
  mo(`<h3>Your shift has ended</h3><p>You ended your shift at <b>${tt(l.e)}</b>, ${fmt(n-l.e)} ago, so the app is counting your daily rest. It is not a full rest yet: the earliest your next shift can start is ${tt(l.e+9*H)} with a reduced 9h rest, or ${tt(l.e+11*H)} after a regular 11h rest.</p><p>If you start ${NM[t]} now, the time since ${hm(l.e)} becomes a break and this carries on the same shift, which started at ${tt(ss)}. You must still take a daily rest of at least 9 hours, finished within 24 hours of the end of your last rest (by about ${tt(ss+24*H)}).</p><button class="tg big" data-k="go">Carry on the same shift</button><button class="tg big" data-k="fx">The end time was wrong, fix entries</button><button class="tg big" data-k="no">Do not start</button>`);
  mcb={no:undo,go:()=>{delete st.se;moX();next()},fx:()=>{delete st.se;fixAsk(t,null,null,Date.now(),next,'',()=>{st.se=l.e;resumeAsk(t,l,next)})}}}
-function truthAsk(t,L){
- mo(`<h3>Check your last shift</h3><p>The app has your last shift as ${hm(L.ss)} to ${hm(L.l.e)}. Starting early can mean a rest was cut short, so make sure these times are the true ones.</p><div class="tr"><label>Shift started<input type="time" id="t1" value="${hm(L.ss)}"></label><label>Shift ended<input type="time" id="t2" value="${hm(L.l.e)}"></label></div><div class="note bad" id="terr"></div><button class="tg big" data-k="ok">Update times and start driving</button><button class="tg big" data-k="same">Times are correct, start driving</button><button class="tg big" data-k="no">Cancel</button>`);
- mcb={no:undo,same:()=>begin(t),ok:()=>{
-  if(!$('t1').value||!$('t2').value){$('terr').textContent='Enter both times.';return}
-  const ns=nearT($('t1').value,L.ss),ne=nearT($('t2').value,L.l.e);
-  if(!(ne>ns)){$('terr').textContent='The end must be after the start.';return}
-  if(ne>Date.now()){$('terr').textContent='The end time is in the future.';return}
-  const fi=()=>st.sessions.filter(x=>x.t!=='r'&&Math.abs(x.s-L.ss)<1000)[0];
-  if(ne<L.l.e)clear(ne,L.l.e);
-  const last=st.sessions.filter(x=>x.t!=='r').sort((x,y)=>y.e-x.e)[0];
-  if(ne>L.l.e&&last&&last.e===L.l.e)last.e=ne;
-  if(ns>L.ss)clear(L.ss,ns);
-  else if(ns<L.ss&&fi()){clear(ns,L.ss);const f=fi();if(f)f.s=ns}
-  save();begin(t)}}}
 function setAct(t){
  if(t==='d'&&!isTc())t='x';
  if(t==='r'&&st.act!=='r'&&lock){flash='Break is locked. You have had your full break this shift. It unlocks when a break is due or you pass 9h driving.'+(st.act?' To stop '+NM[st.act]+', change to another activity or tap End Shift.':'');setTimeout(()=>{flash='';live()},8000);live();return}
@@ -588,7 +580,7 @@ function setAct(t){
  const n=Date.now(),was=st.act,ps=st.active;snap=JSON.stringify(st);bd=0;
  commit(n);
  if(was===t){snap=null;save();render();return}
- const rs=st.rs||0,ends=st.sessions.filter(x=>x.e>rs).map(x=>x.e),le=ends.length?Math.max(...ends):0;
+ const rs=st.rs||0;
  const chk1=()=>{if(t!=='r'){const L=legalStart(t);if(L.R.length){warnAsk(t,L,chk1);return}}begin(t)},chk0=()=>{if(t==='x'&&isTc())t='d';if(t==='d'&&!isTc())t='x';const a1=all(),l1=a1[a1.length-1],n1=Date.now();if(t!=='r'&&st.se&&l1&&!l1.live&&st.se>=l1.e&&n1-l1.e<9*H){resumeAsk(t,l1,chk1);return}chk1()};
  if(was&&ps)swapAsk(t,was,ps,n,chk0);
  else{const zs=st.sessions.filter(x=>x.t!=='r'&&x.e>rs),z=zs.length?zs.reduce((a,b)=>b.e>a.e?b:a):null,gp=()=>{const e2=st.sessions.filter(x=>x.e>rs).map(x=>x.e),l2=e2.length?Math.max(...e2):0;if(l2&&n-l2>=60*M&&(st.gq||0)<l2&&!(st.se&&st.se>=l2&&n-l2<9*H))gapAsk(l2,n,chk);else chk()};
@@ -631,7 +623,7 @@ function fixAsk(t,was,ps,n,next,v,back){
  const V=rows.map(r=>({s:r.s,e:Math.min(r.e,n)})),Z={x:n};
  if(v){const x0=Math.min(nearT(v,n),n);Z.x=x0;V.forEach(o=>{o.s=Math.min(o.s,x0);o.e=Math.min(o.e,x0)})}
  const op=k=>Object.keys(NM).map(c=>`<option value="${c}"${c===k?' selected':''}>${NM[c]}</option>`).join('')+'<option value="x">Remove this entry</option>';
- mo(`<h3>Edit earlier entries</h3><p>Correct anything that was logged wrong, for example a Break or Other work you forgot to swap off. Changing one time moves the time next to it to match, and a time cannot be set before the start of the entry it belongs to or follows. ${NM[t]} then starts at the time shown, and anything logged after that time is cut off there.</p><div class="tr"><label>${NM[t]} started<input type="time" id="fxx" value="${hm(Z.x)}"></label></div><div class="note" style="margin-bottom:8px">${NM[t]} will count from this time up to now and keep running. Leave it as now if ${NM[t]} is only just starting.</div>${rows.length?rows.map((r,i)=>`<div class="bx" id="fxb${i}"><div class="tr" style="margin:0"><select id="fxt${i}" aria-label="Activity for entry ${i+1}" style="flex:1;min-width:0">${op(r.t||'d')}</select><button type="button" class="del bad" id="fxd${i}" style="flex:none">Delete</button></div><div class="note" id="fxn${i}" hidden>This entry will be deleted when you save.</div><div class="tr" id="fxr${i}" style="margin:8px 0 0"><label>Start<input type="time" id="fxs${i}" value="${hm(V[i].s)}"></label><label>End<input type="time" id="fxe${i}" value="${hm(V[i].e)}"></label></div><div class="note warn" id="fxz${i}" hidden>No time is left in this entry, so it will be removed when you save.</div></div>`).join(''):'<p class="note">Nothing is logged in the last 24 hours.</p>'}<div class="note bad" id="fxerr"></div><button class="tg big" data-k="ok">Save and start ${NM[t]}</button><button class="tg big" data-k="bk">Back</button><button class="tg big" data-k="no">Cancel, stay on ${NM[was]}</button>`);
+ mo(`<h3>Edit earlier entries</h3><p>Correct anything that was logged wrong, for example a Break or Other work you forgot to swap off. Changing one time moves the time next to it to match, and a time cannot be set before the start of the entry it belongs to or follows. ${NM[t]} then starts at the time shown, and anything logged after that time is cut off there.</p><div class="tr"><label>${NM[t]} started<input type="time" id="fxx" value="${hm(Z.x)}"></label></div><div class="note" style="margin-bottom:8px">${NM[t]} will count from this time up to now and keep running. Leave it as now if ${NM[t]} is only just starting.</div>${rows.length?rows.map((r,i)=>`<div class="bx" id="fxb${i}"><div class="tr" style="margin:0"><select id="fxt${i}" aria-label="Activity for entry ${i+1}" style="flex:1;min-width:0">${op(r.t||'d')}</select><button type="button" class="del bad" id="fxd${i}" style="flex:none">Delete</button></div><div class="note" id="fxn${i}" hidden>This entry will be deleted when you save.</div><div class="tr" id="fxr${i}" style="margin:8px 0 0"><label>Start<input type="time" id="fxs${i}" value="${hm(V[i].s)}"></label><label>End<input type="time" id="fxe${i}" value="${hm(V[i].e)}"></label></div><div class="note warn" id="fxz${i}" hidden>No time is left in this entry, so it will be removed when you save.</div></div>`).join(''):'<p class="note">Nothing is logged in the last 24 hours.</p>'}<div class="note bad" id="fxerr"></div><button class="tg big" data-k="ok">Save and start ${NM[t]}</button><button class="tg big" data-k="bk">Back</button><button class="tg big" data-k="no">${was?'Cancel, stay on '+NM[was]:'Cancel'}</button>`);
  const gone=i=>$('fxt'+i).value==='x';
  const draw=()=>{rows.forEach((r,i)=>{$('fxs'+i).value=hm(V[i].s);$('fxe'+i).value=hm(V[i].e);$('fxz'+i).hidden=gone(i)||V[i].e>V[i].s});$('fxx').value=hm(Z.x)};
  const fix=(i,k,val)=>{const E=$('fxerr');E.textContent='';if(!val){draw();return}
@@ -792,7 +784,7 @@ function sfAsk(){const P=refP(Date.now()),b=st.rpb&&st.rpb.p===P.s?st.rpb:null;
   if(!tv){$('sferr').textContent='Enter the date.';return}
   let to=new Date(tv+'T00:00').getTime();to=Math.min(Math.max(to,P.s),Date.now());
   st.rpb={p:P.s,avg:a,to,lv:isNaN(l)?0:Math.max(0,l)};save();moX();rpUi();live()}}}
-function wrInfo(){const W=st.wr;if(!W)return null;const n=Date.now(),A=all().sort((a,b)=>a.s-b.s);let anc=null;
+function wrInfo(){const W=st.wr;if(!W)return null;const n=Date.now(),A=all();let anc=null;
  if(W.fresh){const bf=A.filter(x=>x.s<=W.t),lb=bf[bf.length-1];
   if(lb&&(lb.live||W.t-lb.e<9*H)){let i=A.indexOf(lb);while(i>0&&A[i].s-A[i-1].e<9*H)i--;anc=A[i].s}else{const af=A.find(x=>x.s>W.t);anc=af?af.s:null}}
  else anc=W.e;
@@ -852,21 +844,22 @@ function wrSetup(){const W=st.wr||{};let mode=W.fresh?'f':'k',red=!!W.red;let fo
     mcb.logx=()=>{force=1;mcb.ok();openDay(sod(cx.s),'today')};return}
    st.wr={e,red:red?1:0,len,t:Date.now()}}
   save();moX();render()}}}
-function live(){
- if(pend&&MO.hidden){const[r,ru]=pend;pend=null;if(ru>(st.u||0))adopt(r,ru);else baseU=Math.max(baseU,ru)}
+function live(){allOn++;allC=null;try{liveRun()}finally{if(!--allOn)allC=null}}
+function liveRun(){
+ if(pend&&MO.hidden){const[r,ru,lo]=pend;pend=null;if(ru>(st.u||0))adopt(r,ru,lo);else baseU=Math.max(baseU,ru)}
  const a0=all(),rs=st.rs||0,a=a0.filter(x=>x.e>rs).map(x=>x.s<rs?Object.assign({},x,{s:rs}):x),dr=a.filter(x=>x.t==='d'),dr0=a0.filter(x=>x.t==='d'),n=Date.now(),w=mon(),act=st.act,busy=!!act&&act!=='r',l=a[a.length-1];
  const gap=l&&!busy?n-l.e:0,fresh=!l||gap>=9*H,ss=fresh?null:shiftStart(a),endd=!busy&&!!l&&(fresh||!!(st.se&&st.se>=l.e));
- const day=ss?sum(dr,ss,n+1):0,wkd=sum(dr0,w,n+1),fn=sum(dr0,w-7*864e5,n+1),sw=ss?sum(a.filter(x=>x.t!=='p'),ss,n+1):0;
+ const w1=add7(w,-1),day=ss?sum(dr,ss,n+1):0,wkd=sum(dr0,w,n+1),fn=sum(dr0,w1,n+1),sw=ss?sum(a.filter(x=>x.t!=='p'),ss,n+1):0;
  const b=cnt(a,45,x=>x.t==='d'),wc=cnt(a,sw>9*H?45:30,x=>x.t!=='p');
  {const jsg=(L,f,t)=>{const m={};L.forEach(x=>{const o=Math.max(0,Math.min(x.e,t)-Math.max(x.s,f));if(o>0){const j=jobC(x.j).id;m[j]=(m[j]||0)+o}});return jobs().filter(j=>m[j.id]).map(j=>[JCOL[jobI(j.id)],m[j.id]])};
-  JS.brk=jsg(b.L,0,n+1);JS.wrk=jsg(wc.L,0,n+1);JS.day=ss?jsg(dr,ss,n+1):[];JS.wk=jsg(dr0,w,n+1);JS.fn=jsg(dr0,w-7*864e5,n+1)}
- const T7=totals(),R17=avg17(T7),RP=refAvg(),S=shifts(a0),cur=ss?S[S.length-1]:null,isx=z=>z.s>=w&&z.d>9*H+M,used=S.filter(isx).length,prev=used-(cur&&isx(cur)?1:0),extLeft=prev<2;
+  JS.brk=jsg(b.L,0,n+1);JS.wrk=jsg(wc.L,0,n+1);JS.day=ss?jsg(dr,ss,n+1):[];JS.wk=jsg(dr0,w,n+1);JS.fn=jsg(dr0,w1,n+1)}
+ const RP=refAvg(),S=shifts(a0),cur=ss?S[S.length-1]:null,isx=z=>z.s>=w&&z.d>9*H+M,used=S.filter(isx).length,prev=used-(cur&&isx(cur)?1:0),extLeft=prev<2;
  prog=brkp(a);
  SEG={brk:['Driving Since Last Break',b.L,0,n,'Driving since your last full break (45 minutes, or 15 then 30 minutes). Other work and POA do not reset it.'],
   wrk:['Working Time Since Last Break',wc.L,0,n,'Driving and other work since your last working time break. POA is not counted.'],
   day:['Driving This Shift',ss?dr:[],ss||n,n,ss?'Driving since this shift started, '+tt(ss)+'. A shift carries on until you have a rest of 9 hours or more, or you tap Reset Day. So driving from earlier today or last night is included if there was no 9 hour rest after it.':'No shift is running.'],
   wk:['Driving This Week',dr0,w,n,'Driving since Monday 00:00.'],
-  fn:['Driving This Fortnight',dr0,w-7*864e5,n,'Driving since Monday 00:00 of last week.']};
+  fn:['Driving This Fortnight',dr0,w1,n,'Driving since Monday 00:00 of last week.']};
  const bi=brkInfo(a,ss);lock=isTc()&&bi.k>0&&day<9*H&&b.d<270*M&&wc.d<6*H;
  const dOn=act==='d',wOn=act==='d'||act==='w'||act==='x',bOn=!busy,so=(x,y)=>x?y:'';
  document.querySelectorAll('.act').forEach(x=>{const o=x.dataset.a===(act==='x'?'d':act);x.classList.toggle('on',o);x.setAttribute('aria-pressed',o);x.classList.toggle('lk',x.dataset.a==='r'&&lock&&act!=='r')});
@@ -901,12 +894,12 @@ function live(){
   if(l){if(b.d>=270*M)R.push([e+(b.q?30:45)*M,'45 minute break']);
    if(wc.d>=6*H)R.push([e+(wc.q?(sw>9*H?30:15):(sw>9*H?45:30))*M,'working time break']);
    if(day>=(extLeft?10:9)*H)R.push([e+11*H,'daily rest (9h if reduced)'])}
-  if(wkd>=56*H||fn>=90*H)R.push([w+7*864e5,'weekly or fortnight limit']);
+  if(wkd>=56*H||fn>=90*H)R.push([nwk(w),'weekly or fortnight limit']);
   const r=R.filter(x=>x[0]>n).sort((x,y)=>y[0]-x[0]);
   nx=r.length?['Next Legal Start',tt(r[0][0]),'Waiting on: '+r.map(x=>x[1]).join(', ')+'.']:['Next Legal Start','Now','Nothing is stopping you driving or working.']}
  let h='';
  if(l){const dw=x=>{const d=Math.round((sod(x)-sod(n))/864e5);return (d<=0?'Today':d===1?'Tomorrow':new Date(x).toLocaleDateString('en-GB',{weekday:'long'}))+' '+hm(x)},le=l.live?n:l.e,
-  ns=gap>=11*H?['Now','Your daily rest is done.']:[dw(le+11*H),(busy?'If you stop now. ':'')+'Regular 11h rest. With a reduced 9h rest (max 3 per week): '+dw(le+9*H)+'.'];
+  ns=gap>=11*H?['Now','Your daily rest is done.']:[dw(le+11*H),(busy?'If you stop now. ':'')+'Regular 11h rest. With a reduced 9h rest (max 3 between weekly rests): '+dw(le+9*H)+'.'];
   nsv=ns}
 
  const bl=endd?'Rest':'On break',bks=Math.floor(be/1000),bkc=be>=0&&(be<9*H||endd)?(bks>=3600?Math.floor(bks/3600)+':':'')+String(Math.floor(bks%3600/60)).padStart(bks>=3600?2:1,'0')+':'+String(bks%60).padStart(2,'0'):'';
@@ -942,7 +935,7 @@ function live(){
  set($('s1'),h);
  const dt=extLeft?'You can extend to 10h ('+(2-prev)+' left this week).':'No 10h extensions left this week.';
  const td=sod(n),poaD=sum(a0.filter(x=>x.t==='p'),td,n+1),poaW=sum(a0.filter(x=>x.t==='p'),w,n+1),paidD=sum(a0.filter(x=>x.t!=='r'),td,n+1);
- set($('s2'),(onS||poaD?`<div class="g cd w${act==='p'?' on':act?' off':''}"><div class="row"><span class="lbl">POA ${ib('poa')}</span><span class="num">${fmt(poaD)}</span></div><div class="note">Today. ${fmt(poaW)} this week. All paid time today, with driving and work: ${fmt(paidD)}.</div></div>`:'')+'<div class="cs">Working Time</div>'+(onS?sg('wrk',card('wrk','Working Time Since Last Break',wc.d,6*H,'Then take a '+(sw>9*H?45:30)+' minute break.','Take a break now.',0,SGH,wOn).replace('g cd','g cd w')):'')+(()=>{const wkW=T7[w]?T7[w].w:0,tdW=sum(a0.filter(x=>x.t!=='p'),td,n+1),v=onS?sw:tdW;
+ set($('s2'),(onS||poaD?`<div class="g cd w${act==='p'?' on':act?' off':''}"><div class="row"><span class="lbl">POA ${ib('poa')}</span><span class="num">${fmt(poaD)}</span></div><div class="note">Today. ${fmt(poaW)} this week. All paid time today, with driving and work: ${fmt(paidD)}.</div></div>`:'')+'<div class="cs">Working Time</div>'+(onS?sg('wrk',card('wrk','Working Time Since Last Break',wc.d,6*H,'Then take a '+(sw>9*H?45:30)+' minute break.','Take a break now.',0,SGH,wOn).replace('g cd','g cd w')):'')+(()=>{const wkW=sum(a0.filter(x=>x.t!=='p'),w,n+1),tdW=sum(a0.filter(x=>x.t!=='p'),td,n+1),v=onS?sw:tdW;
   return `<div class="g cd${wOn?' on':''}"><div class="row"><span class="lbl">${onS?'Worked This Shift':'Worked Today'} ${ib('wsh')}</span></div><div class="num ok">${fmt(v)}</div><div class="note">Driving plus other work${onS?' since '+hm(ss):' today'}. POA and breaks are not counted.</div></div>`+card('wkw','Worked This Week',wkW,60*H,'Monday to Sunday. No single week can go over 60h.','60 hour weekly limit reached.',0,'',wOn)})()+'<div class="cs">Driving Limits</div>'+
   (onS?sg('day',card('day','Driving This Shift',day,9*H,dt,extLeft&&day<10*H?'Over 9h, so this uses one of your 2 extensions. Stop by 10h.':extLeft?'10h limit reached.':'9h reached. No extensions left this week.',extLeft?10*H:0,SGH,dOn).replace('g cd','g cd w')):'')+
   
@@ -960,7 +953,7 @@ const nxd=w=>{const d=new Date(w);d.setDate(d.getDate()+1);return d.getTime()};
 function dayTot(){const D={};all().forEach(x=>{const k=x.t==='x'?'w':(x.t||'d');let w=sod(x.s);while(w<x.e){const n2=nxd(w),s=Math.max(x.s,w),e=Math.min(x.e,n2);if(e>s){const o=D[w]=D[w]||{d:0,w:0,p:0,r:0};o[k]+=e-s}w=n2}});return D}
 const od={};
 const dd=w=>new Date(w).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'}),ymd=w=>{const q=new Date(w);return q.getFullYear()+'-'+pad(q.getMonth()+1)+'-'+pad(q.getDate())};
-const lk=(p,t)=>p?` <a href="https://www.google.com/maps?q=${p.lat},${p.lon}" target="_blank" rel="noopener">${t}</a>`:'';
+const lk=(p,t)=>p&&isFinite(p.lat)&&isFinite(p.lon)?` <a href="https://www.google.com/maps?q=${+p.lat},${+p.lon}" target="_blank" rel="noopener">${t}</a>`:'';
 const emptyD=()=>({T:{d:0,w:0,p:0,r:0},I:[],m:0});
 let dayView=null;
 function buildD(){const D={};const SS=st.sessions.slice();if(st.active&&st.act&&Date.now()>st.active)SS.push({s:st.active,e:Date.now(),t:st.act,live:1});SS.forEach(x=>{const k=x.t==='x'?'w':(x.t||'d');let w=sod(x.s);while(w<x.e){const n2=nxd(w),s=Math.max(x.s,w),e=Math.min(x.e,n2);if(e>s){const o=D[w]=D[w]||emptyD();o.T[k]+=e-s;if(x.s>=w)o.m+=x.d||0;o.I.push({x,s,e,c:x.s<w})}w=n2}});return D}
@@ -986,13 +979,12 @@ function showTab(k){if(cloudReady&&pushT)queuePush(true);tab=k;dayView=null;ed=n
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
 document.querySelectorAll('.act').forEach(b=>b.onclick=()=>setAct(b.dataset.a));
 $('s1').addEventListener('click',e=>{if(e.target.closest('[data-wr]')){wrSetup();return}if(e.target.closest('[data-wrd]')&&!e.target.closest('[data-i]')){wrDetail();return}const b=e.target.closest('[data-m]');if(b&&!b.disabled)breakAsk(+b.dataset.m);else if(e.target.closest('[data-ub]'))unBreak()});
-document.addEventListener('click',e=>{const b=e.target.closest('[data-i]'),s=$('sheet');if(b){const k=b.dataset.i;if(open===k){open=null;s.hidden=true}else{open=k;s.innerHTML=(k.startsWith('c:')?infoCk(k.slice(2)):boxify(INFO[k]))+(ISRC[k]?'<div class="srcs">'+srcH(ISRC[k])+'</div>':'')+'<div class="note" style="margin-top:6px">Tap to close.</div>';s.hidden=false}}else if(!s.hidden){open=null;s.hidden=true}});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-i]'),s=$('sheet');if(b){const k=b.dataset.i;if(infoK===k){infoK=null;s.hidden=true}else{infoK=k;s.innerHTML=(k.startsWith('c:')?infoCk(k.slice(2)):boxify(INFO[k]))+(ISRC[k]?'<div class="srcs">'+srcH(ISRC[k])+'</div>':'')+'<div class="note" style="margin-top:6px">Tap to close.</div>';s.hidden=false}}else if(!s.hidden){infoK=null;s.hidden=true}});
 const goAvg=e=>{if(e.target.closest('[data-i]')||e.target.closest('details')||!e.target.closest('[data-go]'))return;if(e.type==='keydown'&&e.key!=='Enter')return;showTab('hours');const el=$('wkc');if(el)el.scrollIntoView({block:'start'})};$('s2').addEventListener('click',goAvg);$('s2').addEventListener('keydown',goAvg);
 const segClick=e=>{if(e.target.closest('button,a,input'))return;const c=e.target.closest('[data-seg]');if(!c||(e.type==='keydown'&&e.key!=='Enter'))return;segShow(c.dataset.seg)};['s1','s2'].forEach(i=>{$(i).addEventListener('click',segClick);$(i).addEventListener('keydown',segClick)});
 const edFix=e=>{if(e.target.id!=='e1'&&e.target.id!=='e2')return;const x=st.sessions.find(y=>y.s===ed),a=$('e1'),b=$('e2');if(x&&a&&b&&a.value&&b.value&&sod(x.s)===sod(x.e)&&b.value<a.value){b.value=a.value;$('eerr').textContent='The end cannot be before the start, so it was set to the start time.'}};$('list').addEventListener('change',edFix);$('dayc').addEventListener('change',edFix);
 $('hrs').onclick=e=>{const b=e.target.closest('[data-day]');if(!b)return;openDay(+b.dataset.day)};
 $('alert').onclick=()=>{$('alert').hidden=true};
-let rdT=0;
 const doReset=()=>{const sv=JSON.stringify(st);st.rs=Date.now();st.bdone=0;fired={};moX();flash='Day reset. Breaks, shift and working time start again from now. <button class="tg" data-ur="1" style="margin-left:6px">Undo</button>';rsnap=sv;setTimeout(()=>{if(rsnap===sv)rsnap=null;flash='';live()},20000);save();showTab('today');live()};
 let rsnap=null;
 const rdF=()=>{mo('<h3>Reset Day?</h3><p>This starts your breaks, shift and working time again from now. Your logged entries are kept in the log, but they stop counting towards today.</p><p class="note">Only use this if the app has the wrong idea of your day. It does not change your tachograph.</p><button class="tg big bad" data-k="ok">Continue</button><button class="tg big" data-k="no">Cancel</button>');
@@ -1053,7 +1045,7 @@ const listClick=e=>{
 $('list').onclick=listClick;$('dayc').onclick=listClick;
 $('dback').onclick=()=>showTab(dayFrom);$('tlog').onclick=()=>openDay(sod(Date.now()),'today');
 $('dform').onsubmit=e=>{e.preventDefault();const dv=ymd(dayView),s=new Date(dv+'T'+$('ds').value).getTime(),en=new Date(dv+'T'+$('de').value).getTime();if(!(en>s)){$('derr').textContent='The end time must be after the start time, on the same day. For an overnight entry, use the Log tab.';return}$('derr').textContent='';clear(s,en,1);st.sessions.push({s,e:en,t:$('dt').value,chk:1});save();$('ds').value='';$('de').value='';render()};
-$('esb').onclick=()=>{const v=$('est').value;if(!v)return;const[h,m]=v.split(':').map(Number),q=new Date(),n=Date.now();q.setHours(h,m,0,0);let x=q.getTime();if(x>n)x-=864e5;const say=t=>{flash=t;setTimeout(()=>{flash='';live()},6000);esFor=0;save();render()};if(n-x>12*H){say('That time is later than now. Pick a time before now.');return}if(st.active&&st.act!=='r'){if(x<st.active)clear(x,st.active);st.active=x;if(st.rs&&x<st.rs)st.rs=x;say(NM[st.act]+' start changed to '+hm(x)+'.');return}const rs=st.rs||0;let k=null;st.sessions.forEach(y=>{if((y.t||'d')!=='r'&&y.e>rs&&(!k||y.e>k.e))k=y});if(k&&n-k.e>=9*H)k=null;if(k){if(x<=k.s){say('Pick a time after your last activity started ('+hm(k.s)+') and before now.');return}k.e=x;if(rs&&x<=rs)st.rs=Math.max(k.s,x-1)}else if(!st.active)return;if(st.active)st.active=x;say('Break start changed to '+hm(x)+'.')};
+$('esb').onclick=()=>{const v=$('est').value;if(!v)return;const[h,m]=v.split(':').map(Number),q=new Date(),n=Date.now();q.setHours(h,m,0,0);let x=q.getTime();const fut=x>n;if(fut)x-=864e5;const say=t=>{flash=t;setTimeout(()=>{flash='';live()},6000);esFor=0;save();render()};if(fut&&n-x>12*H){say('That time is later than now. Pick a time before now.');return}if(st.active&&st.act!=='r'){if(x<st.active)clear(x,st.active);st.active=x;if(st.rs&&x<st.rs)st.rs=x;say(NM[st.act]+' start changed to '+hm(x)+'.');return}const rs=st.rs||0;let k=null;st.sessions.forEach(y=>{if((y.t||'d')!=='r'&&y.e>rs&&(!k||y.e>k.e))k=y});if(k&&n-k.e>=9*H)k=null;if(k){if(x<=k.s){say('Pick a time after your last activity started ('+hm(k.s)+') and before now.');return}k.e=x;if(rs&&x<=rs)st.rs=Math.max(k.s,x-1)}else if(!st.active)return;if(st.active)st.active=x;say('Break start changed to '+hm(x)+'.')};
 const pad=n=>String(n).padStart(2,'0'),now=new Date();
 $('d').value=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
 $('f').onsubmit=e=>{
@@ -1066,10 +1058,15 @@ $('f').onsubmit=e=>{
 };
 
 const bm=t=>{$('bm').textContent=t};
-const bkJ=()=>{const o=Object.assign({},st);delete o.u;return JSON.stringify(o)};
+const bkJ=()=>{const o=Object.assign({},st);delete o.u;delete o.owner;return JSON.stringify(o)};
 $('bc').onclick=()=>{const t=bkJ();const ok=()=>bm('Backup copied. Paste it into a note or message to yourself.');if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,()=>{$('bt').value=t;$('bt').select();bm('Copy was blocked. The backup is in the box below: select all and copy it.')});else{$('bt').value=t;$('bt').select();bm('The backup is in the box below: select all and copy it.')}};
 let bArm=0;
-const doImport=txt=>{let p;try{p=JSON.parse(txt)}catch(e){bm('That is not a valid backup.');return}if(!p||!Array.isArray(p.sessions)){bm('That is not a valid backup.');return}if(!bArm){bArm=1;$('bi').textContent='Tap Again to Replace Data';bm('This replaces your logged activity with the backup ('+p.sessions.length+' entries).');setTimeout(()=>{bArm=0;$('bi').textContent='Import'},5000);return}bArm=0;$('bi').textContent='Import';delete p.u;Object.assign(st,{sessions:[],active:null,act:null,arch:{}},p);if(st.active&&!st.act)st.act='d';gpsOff();fixOv();save();esFor=0;$('tc').value=(st.tc||{}).c||'';$('tu').value=(st.tc||{}).u||'';render();bm('Backup imported.')};
+const doImport=txt=>{let p;try{p=JSON.parse(txt)}catch(e){bm('That is not a valid backup.');return}if(!p||typeof p!=='object'||!Array.isArray(p.sessions)){bm('That is not a valid backup.');return}
+ /* keep only well formed entries, so a damaged or edited file cannot break the app */
+ p.sessions=p.sessions.filter(x=>x&&typeof x==='object'&&isFinite(x.s)&&isFinite(x.e)&&+x.e>+x.s&&(!x.t||NM[x.t])).map(x=>Object.assign({},x,{s:+x.s,e:+x.e}));
+ if(p.walks!==undefined)p.walks=Array.isArray(p.walks)?p.walks.filter(r=>r&&typeof r.t==='number'&&Array.isArray(r.D)):[];
+ if(!p.tc||typeof p.tc!=='object')delete p.tc;if(!p.arch||typeof p.arch!=='object')delete p.arch;delete p.owner;
+ if(!bArm){bArm=1;$('bi').textContent='Tap Again to Replace Data';bm('This replaces your logged activity with the backup ('+p.sessions.length+' entries).');setTimeout(()=>{bArm=0;$('bi').textContent='Import'},5000);return}bArm=0;$('bi').textContent='Import';delete p.u;Object.assign(st,{sessions:[],active:null,act:null,arch:{}},p);if(st.active&&!st.act)st.act='d';gpsOff();fixOv();save();esFor=0;$('tc').value=(st.tc||{}).c||'';$('tu').value=(st.tc||{}).u||'';render();bm('Backup imported.')};
 $('bi').onclick=()=>{const f=$('bf').files[0],t=$('bt').value.trim();if(t)doImport(t);else if(f){const r=new FileReader();r.onload=()=>doImport(r.result);r.readAsText(f)}else bm('Choose a file or paste a backup first.')};
 const KN={hgv:'HGV Tractor Unit and Trailer',rigid:'HGV Rigid',van:'7.5t Box Van or Fridge',car:'Car or Small Van',wav:'Mobility Vehicle'};
 const BN={curtain:'Curtainsider',box:'Box or Van Body',flat:'Flatbed',skel:'Skeletal or Container',tip:'Tipper',tank:'Tanker',fridge:'Refrigerated',cart:'Car Transporter'};
@@ -1244,9 +1241,6 @@ const T={
 'Hand Controls':['Where fitted: work smoothly','If fitted, hand controls replace the foot pedals.','Operate each control and check it moves smoothly and returns.',P.B,'Mark N/A if not fitted.']
 };
 const TC={'Engine Oil':'Between the marks','Coolant':'Between the marks, engine cold','Tyres':'Tread at least 1.6mm, no cuts or bulges, correct pressure','Footbrake':'Pedal firm and does not sink','Power Steering Fluid':'Where fitted: between the marks','Brake Fluid':'Between min and max','Fuel Leaks':'Nothing dripping or wet underneath','Oil Leaks':'Nothing dripping or wet underneath','Horn':'Works','Steering':'No excessive play, no noises','Wheels and Nuts':'No cracks, nuts tight','Seatbelts':'No cuts or fraying, latch and retract'};
-const sec=(n,a)=>[n,a];
-const FLU=['Fluids (Engine Off)',['Engine Oil','Coolant','Power Steering Fluid','Brake Fluid','Clutch Fluid','Screen Wash','AdBlue']];
-const ENG=['Engine Bay and Fuel (Engine Off)',['Fuel Level','Fuel Cap','Battery','Drive Belts','Hoses','Fuel Leaks','Oil Leaks','High Voltage Cut-Off','Alternative Fuel System']];
 const CABE=['Cab Entry (Engine Off)',['Cab Doors','Cab Steps and Handles','Seatbelts']];
 const BON=['Under the Bonnet or Cab (Engine Off)',['Engine Oil','Coolant','Power Steering Fluid','Brake Fluid','Clutch Fluid','Screen Wash','Battery','Drive Belts','Hoses','Oil Leaks','Fuel Leaks','Cab Mountings and Tilt Lock','High Voltage Cut-Off','Alternative Fuel System']];
 const IGN=['Ignition On (Engine Off)',['Dashboard Warning Lights','Fuel Level','AdBlue','Tachograph','Printer Paper','Horn']];
@@ -1338,11 +1332,13 @@ let _db;const idb=()=>_db||(_db=new Promise((res,rej)=>{try{const q=indexedDB.op
 const idbp=(m,f)=>idb().then(db=>new Promise((res,rej)=>{const t=db.transaction('p',m),r=f(t.objectStore('p'));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error)}));
 const phPut=(id,b)=>idbp('readwrite',s=>s.put(b,id)),phGet=id=>idbp('readonly',s=>s.get(id)),phDel=id=>idbp('readwrite',s=>s.delete(id)).catch(()=>{});
 function phShrink(f){return new Promise((res,rej)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{const m=1280,s=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>b?res(b):rej(new Error('x')),'image/jpeg',.72)};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('x'))};im.src=u})}
-async function phThumbs(root){for(const im of root.querySelectorAll('img[data-ph]')){try{const b=await phGet(im.dataset.ph);if(b)im.src=URL.createObjectURL(b);else im.style.display='none'}catch(e){im.style.display='none'}}}
+/* blob URLs hold the photo in memory until revoked, and the list is redrawn on every tap, so let each one go once it has loaded */
+const phSrc=(im,b)=>{const u=URL.createObjectURL(b);im.onload=im.onerror=()=>URL.revokeObjectURL(u);im.src=u};
+async function phThumbs(root){for(const im of root.querySelectorAll('img[data-ph]')){try{const b=await phGet(im.dataset.ph);if(b)phSrc(im,b);else im.style.display='none'}catch(e){im.style.display='none'}}}
 const phs=(ids,k,own)=>(ids||[]).map(id=>`<img class="th" data-ph="${id}" data-pv="${id}"${own?` data-pk="${k}"`:''} alt="Defect photo">`).join('');
 async function phView(id,own,key){let b;try{b=await phGet(id)}catch(e){}
  if(!b)return;mo(`<h3>Defect Photo</h3><img id="pvimg" style="width:100%;border-radius:8px;margin-bottom:10px" alt="Defect photo">${own?'<button class="tg big" data-k="rm">Remove Photo</button>':''}<button class="tg big" data-k="x">Close</button>`);
- document.getElementById('pvimg').src=URL.createObjectURL(b);
+ phSrc(document.getElementById('pvimg'),b);
  mcb={x:moX,rm:()=>{const w=st.wd,r=w&&w.it[key];if(r&&r.p)r.p=r.p.filter(x=>x!==id);if(!ckRec())phDel(id);save();moX();ckRender()}}}
 let ckVO=false;
 function ckRender(){
@@ -1452,9 +1448,9 @@ function mxUpdate(){const L=mxList(),el=$('mx');if(!el)return;if(!L||(st.mx||0)>
  set(el,`<div class="wkb wn" data-mx="1" role="button" tabindex="0"><b>Tacho manual entries to add</b><span>${L.items.length} entr${L.items.length>1?'ies':'y'} from your no-tacho work since ${tt(L.wd||L.items[0].s)}..</span></div>`)}
 function mxShow(){const L=mxList();if(!L)return;const P=[];let c=L.wd||L.items[0].s;
  L.items.forEach(x=>{if(x.s-c>=M)P.push({t:'r',s:c,e:x.s});P.push({t:x.t,s:Math.max(x.s,c),e:x.e,j:x.j});c=x.e});if(L.ins-c>=M)P.push({t:'r',s:c,e:L.ins});
- const D=[];P.forEach(p=>{let s0=p.s;while(s0<p.e){const nd=sod(s0)+864e5,e0=Math.min(p.e,nd);let g=D[D.length-1];if(!g||g.d!==sod(s0)){g={d:sod(s0),r:[]};D.push(g)}g.r.push({t:p.t,s:s0,e:e0,j:p.j});s0=e0}});
+ const D=[];P.forEach(p=>{let s0=p.s;while(s0<p.e){const nd=nxd(sod(s0)),e0=Math.min(p.e,nd);let g=D[D.length-1];if(!g||g.d!==sod(s0)){g={d:sod(s0),r:[]};D.push(g)}g.r.push({t:p.t,s:s0,e:e0,j:p.j});s0=e0}});
  const lab=r=>MXN[r.t]||['⚒','Other work'];
- mo(`<h3>Tacho manual entries</h3><p class="note">${L.wd?'Your card was last used until about <b>'+tt(L.wd)+'</b>. ':''}You started on the tacho at <b>${tt(L.ins)}</b>. When you insert your card, the tachograph asks if you want to add manual entries for the time since it was last taken out. Enter these periods in order. The tachograph's own screens may word the steps a little differently.</p>${D.map(g=>`<div class="cs" style="margin-top:12px">${new Date(g.d).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</div>${g.r.map(r=>`<div class="item"><div><div class="lbl">${lab(r)[0]} ${lab(r)[1]}</div><div class="note">${hm(r.s)} to ${r.e-sod(r.s)>=864e5?'24:00':hm(r.e)}${r.j&&r.t!=='r'?' · '+esc(jobC(r.j).n):''}${r.t==='x'?' · driving with no tacho':''}</div></div><div class="lbl" style="white-space:nowrap;margin-left:8px">${fmt(r.e-r.s)}</div></div>`).join('')}`).join('')}<p class="note" style="margin-top:10px">Work for another employer, and driving a vehicle outside the tacho rules, is recorded as <b>Other work</b>. Time off is <b>Rest</b>. <a class="src" href="https://www.legislation.gov.uk/eur/2006/561/article/6" target="_blank" rel="noopener noreferrer" aria-label="Source: Regulation 561/2006, Article 6. Opens in a new tab.">Source &#8599;</a></p><p class="note">Not sure how your employer wants long periods away (holidays, weeks off) entered? Check with your transport manager.</p><button class="tg big" data-k="done">I've entered these</button><button class="tg big" data-k="dis">Dismiss</button><button class="tg big" data-k="no">Close</button>`);
+ mo(`<h3>Tacho manual entries</h3><p class="note">${L.wd?'Your card was last used until about <b>'+tt(L.wd)+'</b>. ':''}You started on the tacho at <b>${tt(L.ins)}</b>. When you insert your card, the tachograph asks if you want to add manual entries for the time since it was last taken out. Enter these periods in order. The tachograph's own screens may word the steps a little differently.</p>${D.map(g=>`<div class="cs" style="margin-top:12px">${new Date(g.d).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</div>${g.r.map(r=>`<div class="item"><div><div class="lbl">${lab(r)[0]} ${lab(r)[1]}</div><div class="note">${hm(r.s)} to ${r.e>=nxd(sod(r.s))?'24:00':hm(r.e)}${r.j&&r.t!=='r'?' · '+esc(jobC(r.j).n):''}${r.t==='x'?' · driving with no tacho':''}</div></div><div class="lbl" style="white-space:nowrap;margin-left:8px">${fmt(r.e-r.s)}</div></div>`).join('')}`).join('')}<p class="note" style="margin-top:10px">Work for another employer, and driving a vehicle outside the tacho rules, is recorded as <b>Other work</b>. Time off is <b>Rest</b>. <a class="src" href="https://www.legislation.gov.uk/eur/2006/561/article/6" target="_blank" rel="noopener noreferrer" aria-label="Source: Regulation 561/2006, Article 6. Opens in a new tab.">Source &#8599;</a></p><p class="note">Not sure how your employer wants long periods away (holidays, weeks off) entered? Check with your transport manager.</p><button class="tg big" data-k="done">I've entered these</button><button class="tg big" data-k="dis">Dismiss</button><button class="tg big" data-k="no">Close</button>`);
  mcb={no:moX,done:()=>{st.mx=L.key;save();moX();mxUpdate()},dis:()=>{st.mx=L.key;save();moX();mxUpdate()}}}
 $('mx').onclick=e=>{if(e.target.closest('[data-mx]'))mxShow()};
 $('wkb').onclick=e=>{const d=e.target.closest('[data-dd]');if(d){const v=d.dataset.dd;if(v)st.dd={t:Date.now(),v};else delete st.dd;save();wkUpdate();return}if(!e.target.closest('.dn2')||e.target.closest('button'))showTab('check')};
@@ -1464,18 +1460,19 @@ function syncNote(){const el=$('sync');if(!el)return;const m=syncMsg||(lsOk?'':'
 let syncT=0;
 const mainJ=()=>{const o=Object.assign({},st);delete o.walks;delete o.u;return JSON.stringify(o)};
 let baseU=0,pend=null;
-function adopt(r,ru,lost){if(!MO.hidden){pend=[r,ru];return}
- const lw=st.walks||[],wx=[...new Set([...(st.wx||[]),...(r.wx||[])])];
- Object.keys(st).forEach(k=>{if(!(k in r)&&k!=='walks')delete st[k]});Object.assign(st,r);st.walks=lw;st.wx=wx;st.u=ru;baseU=ru;
+function adopt(r,ru,lost){if(!MO.hidden){pend=[r,ru,lost];return}
+ /* checks deleted on another phone (listed in wx) are removed here too, so they are not uploaded again */
+ const wx=[...new Set([...(st.wx||[]),...(r.wx||[])])],gone=new Set(wx.map(String)),lw=(st.walks||[]).filter(x=>{if(!gone.has(String(x.t)))return true;recPh(x).forEach(phDel);return false});
+ Object.keys(st).forEach(k=>{if(!(k in r)&&k!=='walks')delete st[k]});Object.assign(st,r);st.walks=lw;st.wx=wx;st.u=ru;baseU=ru;dirty=false;
  if(!st.tc)st.tc={c:'',u:''};if(!st.arch)st.arch={};if(st.active&&!st.act)st.act='d';fixOv();lastMain=mainJ();
  try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}
  if(st.act==='d'){gpsOn();wake()}else gpsOff();
  snap=null;bu=[];esFor=0;ed=null;$('tc').value=st.tc.c;$('tu').value=st.tc.u;
  if(lost){flash='Updated from your account record, which had changed. The change you just made on this screen was not kept, so check it and do it again.';setTimeout(()=>{flash='';live()},12000)}
- render()}
+ render();if(cloudReady)pullWalks()}
 function fromAcc(s){try{if(!s||!s.exists)return;const d=s.data(),ru=d.u||0;if(ru<=baseU)return;
   if(d.j===lastMain){baseU=ru;return}
-  if(ru>(st.u||0)){const r=JSON.parse(d.j);if(r&&Array.isArray(r.sessions))adopt(r,ru)}}catch(e){}}
+  if(ru>(st.u||0)){const r=JSON.parse(d.j);if(r&&Array.isArray(r.sessions))adopt(r,ru,dirty&&mainJ()!==lastMain)}}catch(e){}}
 function queuePush(now){if(!cloudReady)return;clearTimeout(pushT);pushT=setTimeout(doPush,now?0:Math.max(1200,15000-(Date.now()-lastPush)))}
 const KEEP=['wr','wrp','jobs','rp','rpb','na','cj'];
 function keepKeys(r){let ch=0;if(r)KEEP.forEach(k=>{if(r[k]!==undefined&&r[k]!==null&&st[k]===undefined){st[k]=r[k];ch=1}});if(ch){try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}}return ch}
@@ -1489,9 +1486,9 @@ function doPush(){if(!cloudReady)return;if(pushing){pushAgain=true;return}
    const have=new Set();
    for(const r of(st.walks||[]).slice()){const id=String(r.t),wj=JSON.stringify(r);have.add(id);if(remW.get(id)!==wj){await cloud.walks.doc(id).set({v:1,t:r.t,j:wj});remW.set(id,wj)}}
    for(const id of[...remW.keys()])if(!have.has(id)){await cloud.walks.doc(id).delete();remW.delete(id)}
-   syncMsg=''}
-  catch(e){const c=e&&e.code;syncMsg=c==='quota_exceeded'?'Account storage is full. Delete old checks to keep saving. Kept on this phone for now.':(c==='invalid_argument'||c==='revoked'||c==='not_granted')?'You are signed out. Sign in again in Settings to keep saving to your account. Kept on this phone for now.':'Could not reach your account just now. Kept on this phone and will retry.';
-   if(c==='invalid_argument'||c==='revoked'||c==='not_granted')cloudReady=false;else if(c!=='quota_exceeded')setTimeout(()=>queuePush(),20000)}
+   syncMsg='';if((st.u||0)===u)dirty=false}
+  catch(e){const c=e&&e.code;syncMsg=(c==='quota_exceeded'||c==='23514'||(e&&e.status===413))?'Account storage is full. Delete old checks to keep saving. Kept on this phone for now.':(c==='invalid_argument'||c==='revoked'||c==='not_granted')?'You are signed out. Sign in again in Settings to keep saving to your account. Kept on this phone for now.':'Could not reach your account just now. Kept on this phone and will retry.';
+   if(c==='invalid_argument'||c==='revoked'||c==='not_granted')cloudReady=false;else if(c!=='quota_exceeded'&&c!=='23514')setTimeout(()=>queuePush(),20000)}
   pushing=null;syncNote();if(pushAgain){pushAgain=false;queuePush()}})()}
 /* Accounts and database: this talks to the Supabase Auth and REST APIs directly with fetch, so there is no library to download or cache. */
 const CFG=window.TG_CONFIG||{},SBU=String(CFG.url||'').replace(/\/+$/,''),SBK=CFG.key||'',AK='tachoguard.auth.v1',LK='tachoguard.local.v1';
@@ -1506,13 +1503,17 @@ async function token(){if(!sess){const e=new Error('Signed out');e.code='revoked
  if(!refreshing)refreshing=authReq('token?grant_type=refresh_token',{refresh_token:sess.rt}).then(d=>{setS(d)}).finally(()=>{refreshing=null});
  try{await refreshing}catch(e){if(e.status===400||e.status===401||e.status===403){saveSess(null);cloudReady=false;cloud=null;acctUi();const x=new Error('Signed out');x.code='revoked';throw x}throw e}
  return sess.at}
-async function rest(method,path,body,prefer){const t=await token();const r=await fetch(SBU+'/rest/v1/'+path,{method,headers:Object.assign({apikey:SBK,Authorization:'Bearer '+t,'Content-Type':'application/json'},prefer?{Prefer:prefer}:{}),body:body?JSON.stringify(body):undefined});
- if(!r.ok){if(r.status===401&&sess){sess.exp=0}const d=await r.json().catch(()=>({}));throw sbErr(r,d)}
+async function rest(method,path,body,prefer,again){const t=await token();const r=await fetch(SBU+'/rest/v1/'+path,{method,headers:Object.assign({apikey:SBK,Authorization:'Bearer '+t,'Content-Type':'application/json'},prefer?{Prefer:prefer}:{}),body:body?JSON.stringify(body):undefined});
+ if(!r.ok){if(r.status===401&&sess&&!again){sess.exp=0;return rest(method,path,body,prefer,1)}/* expired sign in: refresh it once and try again */
+  const d=await r.json().catch(()=>({}));throw sbErr(r,d)}
  return r.status===204?null:await r.json().catch(()=>null)}
 function mkCloud(uid){const q='user_id=eq.'+uid,M='resolution=merge-duplicates,return=minimal';
  return{main:{get:async()=>{const a=await rest('GET','tg_state?'+q+'&select=u,j'),d=a&&a[0];return{exists:!!d,data:()=>({u:Number(d.u),j:d.j})}},
+   ver:async()=>{const a=await rest('GET','tg_state?'+q+'&select=u'),d=a&&a[0];return d?Number(d.u):0},/* just the change time, so the regular check downloads a few bytes, not the whole record */
    set:async o=>{await rest('POST','tg_state?on_conflict=user_id',[{user_id:uid,u:o.u,j:o.j,updated_at:new Date().toISOString()}],M)}},
   walks:{limit:()=>({get:async()=>{const a=await rest('GET','tg_walks?'+q+'&select=id,j&limit=1000');return{docs:(a||[]).map(x=>({id:x.id,data:()=>({j:x.j})}))}}}),
+   ids:async()=>{const a=await rest('GET','tg_walks?'+q+'&select=id&limit=1000');return(a||[]).map(x=>String(x.id))},
+   some:async ids=>{const a=await rest('GET','tg_walks?'+q+'&select=id,j&id=in.'+encodeURIComponent('('+ids.map(i=>'"'+String(i).replace(/["\\]/g,'')+'"').join(',')+')'));return a||[]},
    doc:id=>({set:async o=>{let w={};try{w=JSON.parse(o.j)}catch(e){}const D=w.D||[];await rest('POST','tg_walks?on_conflict=user_id,id',[{user_id:uid,id:String(id),checked_at:new Date(o.t||w.t||Date.now()).toISOString(),reg:w.reg||null,vehicle:w.k||null,defects:D.length,dangerous:D.some(x=>x.d),j:o.j,updated_at:new Date().toISOString()}],M)},
     delete:async()=>{await rest('DELETE','tg_walks?'+q+'&id=eq.'+encodeURIComponent(id),null,'return=minimal')}})}}}
 const freshSt=()=>({sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null});
@@ -1524,12 +1525,24 @@ async function bootCloud(){
   if(st.owner&&st.owner!==uid){const o=freshSt();Object.keys(st).forEach(k=>delete st[k]);Object.assign(st,o);hadLocal=false;lastMain='';remW.clear()}
   const main=cloud.main,[ms,ws]=await Promise.all([main.get(),cloud.walks.limit(1000).get()]);
   let remote=null;if(ms.exists){try{remote=JSON.parse(ms.data().j);remote.u=ms.data().u||0}catch(e){}}
-  const hasLocal=hadLocal||st.sessions.length>0||(st.walks||[]).length>0,lu=st.u||0;
-  const lw=st.walks||[];let changed=false;
-  if(remote&&Array.isArray(remote.sessions)&&(!hasLocal||(remote.u||0)>lu)){
-   const wx=[...new Set([...(st.wx||[]),...(remote.wx||[])])];Object.assign(st,remote);st.walks=lw;st.wx=wx;changed=true}
+  const hasLocal=hadLocal||st.sessions.length>0||(st.walks||[]).length>0,lu=st.u||0,rOk=!!remote&&Array.isArray(remote.sessions);let changed=false;
+  const wx=[...new Set([...(st.wx||[]),...((rOk&&remote.wx)||[])])],gone=new Set(wx.map(String));
+  const lw=(st.walks||[]).filter(x=>{if(!gone.has(String(x.t)))return true;recPh(x).forEach(phDel);changed=true;return false});
+  if(rOk&&!st.owner&&hasLocal&&remote.sessions.length){
+   /* This phone was used as a guest, then signed in to an account that already has a record. Put the two together so neither is lost. */
+   const ks=x=>x.s+'|'+x.e+'|'+(x.t||'d'),seen=new Set(remote.sessions.map(ks)),add=st.sessions.filter(x=>!seen.has(ks(x))),mineNewer=lu>(remote.u||0);
+   const lv={};['active','act','ad','as','ae','cj','tm','tmt','se','rs','dd','wd'].forEach(k=>{if(st[k]!==undefined)lv[k]=st[k]});
+   const lp=st.plan||[],lpat=st.pat||[],la=st.arch||{};
+   Object.assign(st,remote);st.sessions=remote.sessions.concat(add);
+   const pi=new Set((st.plan||[]).map(x=>x.id)),ri=new Set((st.pat||[]).map(x=>x.id));
+   if(lp.length)st.plan=(st.plan||[]).concat(lp.filter(x=>!pi.has(x.id)));if(lpat.length)st.pat=(st.pat||[]).concat(lpat.filter(x=>!ri.has(x.id)));
+   st.arch=Object.assign({},la,st.arch||{});if(mineNewer)Object.assign(st,lv);
+   if(add.length){flash=add.length+(add.length>1?' entries':' entry')+' from this phone added to your account. Check the log in case anything was logged twice.';setTimeout(()=>{flash='';live()},15000)}
+   changed=true}
+  else if(rOk&&(!hasLocal||(remote.u||0)>lu)){Object.assign(st,remote);changed=true}
   else if(remote&&keepKeys(remote))changed=true;
-  const gone=new Set((st.wx||[]).map(String)),mine=new Set(lw.map(x=>String(x.t)));
+  st.walks=lw;st.wx=wx;
+  const mine=new Set(lw.map(x=>String(x.t)));
   ws.docs.forEach(d=>{let r=null;try{r=JSON.parse(d.data().j)}catch(e){}remW.set(d.id,r?d.data().j:'');
    if(r&&typeof r.t==='number'&&Array.isArray(r.D)){if(!mine.has(d.id)){if(!gone.has(d.id)){st.walks.push(r);changed=true}}
     else if(!hasLocal||(remote&&(remote.u||0)>lu)){const i=st.walks.findIndex(x=>String(x.t)===d.id);if(JSON.stringify(st.walks[i])!==d.data().j){st.walks[i]=r;changed=true}}}});
@@ -1539,12 +1552,22 @@ async function bootCloud(){
   save();queuePush(true);syncNote()}
  catch(e){cloud=null;cloudReady=false;syncMsg=e&&e.code==='revoked'?'You are signed out. Sign in again in Settings to save to your account. Kept on this phone for now.':'Saved on this phone only. It will save to your account when you are online.';syncNote()}
  booting=false}
+/* After the account record changes on another phone, fetch any walkaround checks saved there. Only the list of ids is downloaded, then just the new checks. */
+let pulling=false;
+async function pullWalks(){if(!cloudReady||!cloud||pulling)return;pulling=true;const c=cloud;
+ try{const gone=new Set((st.wx||[]).map(String)),mine=new Set((st.walks||[]).map(x=>String(x.t))),ids=(await c.walks.ids()).filter(id=>!mine.has(id)&&!gone.has(id));
+  if(!ids.length||c!==cloud)return;let ch=0;
+  for(let i=0;i<ids.length;i+=50)(await c.walks.some(ids.slice(i,i+50))).forEach(x=>{let r=null;try{r=JSON.parse(x.j)}catch(e){}
+   if(r&&typeof r.t==='number'&&Array.isArray(r.D)&&!(st.walks||[]).some(y=>y.t===r.t)){(st.walks=st.walks||[]).push(r);remW.set(String(x.id),x.j);ch=1}});
+  if(ch&&c===cloud){try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}const ae=document.activeElement;if(tab==='check'&&!(ae&&$('ck').contains(ae)&&ae.tagName==='INPUT'))ckRender();live()}}
+ catch(e){}finally{pulling=false}}
+const pollAcc=()=>{if(!cloudReady||!cloud)return;const c=cloud;c.main.ver().then(u=>{if(u>baseU&&c===cloud)return c.main.get().then(fromAcc)}).catch(()=>{})};
 /* Sign in screen */
 const AU=$('auth'),AB=$('authb');
 const closeAuth=()=>{AU.hidden=true;AB.innerHTML=''};
 const ampMsg=(t,bad)=>{const m=$('amsg');if(m){m.textContent=t;m.className='note'+(bad?' bad':'')}};
 function showAuth(msg,mode){const rec=mode==='recover';
- AB.innerHTML=`<h3>${rec?'Set a New Password':'TachoGuard'}</h3><p>${rec?'Enter a new password for your account.':'Sign in to save your hours and walkaround checks to your account, so they are kept if you change phone. Or continue as a guest and keep everything on this phone only. The app works with no signal either way.'}</p>${rec?'':'<label for="aem">Email</label><input type="email" id="aem" autocomplete="username" inputmode="email">'}<label for="apw">${rec?'New Password':'Password'}</label><input type="password" id="apw" autocomplete="${rec?'new-password':'current-password'}"><div class="note${msg&&msg.bad?' bad':''}" id="amsg" role="alert" style="margin-bottom:8px">${msg?msg.t:''}</div>${rec?'<button class="tg big" data-a="ok">Save Password</button>':'<button class="tg big" data-a="in">Sign In</button><button class="tg big" data-a="up">Create Account</button><button class="tg big" data-a="fg">Forgot Password</button><button class="tg big" data-a="lo">Continue as Guest</button><p class="note" style="margin:6px 0 0">Guest keeps everything on this phone only. Nothing is sent to an account.</p>'}`;
+ AB.innerHTML=`<h3>${rec?'Set a New Password':'TachoGuard'}</h3><p>${rec?'Enter a new password for your account.':'Sign in to save your hours and walkaround checks to your account, so they are kept if you change phone. Or continue as a guest and keep everything on this phone only. The app works with no signal either way.'}</p>${rec?'':'<label for="aem">Email</label><input type="email" id="aem" autocomplete="username" inputmode="email">'}<label for="apw">${rec?'New Password':'Password'}</label><input type="password" id="apw" autocomplete="${rec?'new-password':'current-password'}"><div class="note${msg&&msg.bad?' bad':''}" id="amsg" role="alert" style="margin-bottom:8px">${msg?esc(msg.t):''}</div>${rec?'<button class="tg big" data-a="ok">Save Password</button>':'<button class="tg big" data-a="in">Sign In</button><button class="tg big" data-a="up">Create Account</button><button class="tg big" data-a="fg">Forgot Password</button><button class="tg big" data-a="lo">Continue as Guest</button><p class="note" style="margin:6px 0 0">Guest keeps everything on this phone only. Nothing is sent to an account.</p>'}`;
  AU.hidden=false}
 const aErr=e=>/Failed to fetch|NetworkError|Load failed/i.test(e.message||'')||e instanceof TypeError?'You need a signal to do this. Try again when you are online.':(e.message||'Something went wrong.');
 AB.onclick=async e=>{const b=e.target.closest('[data-a]');if(!b)return;const k=b.dataset.a,em=($('aem')||{}).value,pw=($('apw')||{}).value,red='redirect_to='+encodeURIComponent(location.origin+'/');
@@ -1580,13 +1603,13 @@ acctUi();instUi();
 if(!SBU){syncMsg='Saved on this phone only.';syncNote()}
 else if(!sess){syncMsg='Saved on this phone only. Sign in (Settings) to back up.';syncNote();let lo=false;try{lo=!!localStorage.getItem(LK)}catch(e){}if(!lo&&AU.hidden)showAuth()}
 else bootCloud();
-setInterval(()=>{if(SBU&&sess&&!cloudReady)bootCloud();else if(cloudReady&&document.visibilityState==='visible')cloud.main.get().then(fromAcc).catch(()=>{})},30000);
+setInterval(()=>{if(SBU&&sess&&!cloudReady)bootCloud();else if(cloudReady&&document.visibilityState==='visible')pollAcc()},30000);
 window.addEventListener('online',()=>{if(cloudReady)queuePush(true);else bootCloud()});
-document.addEventListener('visibilitychange',()=>{if(!cloudReady)return;if(document.visibilityState==='hidden'){clearTimeout(pushT);doPush()}else cloud.main.get().then(fromAcc).catch(()=>{})});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')live();if(!cloudReady)return;if(document.visibilityState==='hidden'){clearTimeout(pushT);doPush()}else pollAcc()});
 
 archive();
 if(st.act==='d'){gpsOn();wake()}
-render();setInterval(live,1000);
+render();setInterval(()=>{if(!document.hidden)live()},1000);/* no need to redraw a screen nobody can see */
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 (function dsk(){try{const touch=navigator.maxTouchPoints>0,sw=Math.min(screen.width,screen.height),wide=window.innerWidth>sw*1.4;if(!touch||!wide||sw>820||sessionStorage.getItem('tgDsk'))return;
  const d=document.createElement('div');d.id='dsk';d.setAttribute('role','alert');d.style.cssText='position:sticky;top:0;z-index:70;background:var(--bad);color:#fff;padding:14px 16px;font-size:16px;line-height:1.4';

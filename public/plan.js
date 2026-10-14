@@ -19,7 +19,9 @@ function plOcc(from,to){const out=[],X=new Set(st.plx||[]),S=st.pls||{};
 
 /* Spans: logged activity (not rest) plus planned shifts that have not happened yet. */
 function plSpans(extra,skipId){const n=Date.now(),sp=[];
- all().forEach(x=>{if(x.t==='r')return;sp.push({s:x.s,e:Math.min(x.e,n),w:x.t==='p'?0:x.e-x.s,dv:x.t==='d'?Math.min(x.e,n)-x.s:0,tc:x.t==='d'||onCard(x),log:1})});
+ /* the checks only look back to the start of the working time period and the fortnight before this week, so older logs are left out (much faster with a year of records) */
+ const cut=Math.min(refP(n).s,wkS(n)-21*864e5);
+ all().forEach(x=>{if(x.t==='r'||x.e<cut)return;sp.push({s:x.s,e:Math.min(x.e,n),w:x.t==='p'?0:x.e-x.s,dv:x.t==='d'?Math.min(x.e,n)-x.s:0,tc:x.t==='d'||onCard(x),log:1})});
  const lastLog=sp.length?Math.max(...sp.map(x=>x.e)):0;
  plOcc(n-14*864e5,n+400*864e5).forEach(o=>{if(o.oid===skipId||o.st==='skip'||o.st==='done')return;if(o.E<=n)return;
   const s=Math.max(o.S,o.S<n?Math.max(n,lastLog):o.S);if(o.E<=s)return;const j=jobC(o.j),tc=j.tc!==false,w=Math.max(0,o.E-s-(o.br||0)*M);
@@ -35,7 +37,6 @@ function plCheck(sp){const I=new Map(),add=(x,lv,t)=>{if(x.log)return;const k=x.
  /* weekly rest anchor */
  const WI=typeof wrInfo==='function'?wrInfo():null;let lastWE=WI&&WI.anc!==null&&WI.lastEnd?WI.lastEnd:null,prevRed=WI&&WI.anc!==null?!!WI.prevRed:false,redD=0;
  if(lastWE===null)lastWE=SH[0].s;
- const owe=[];
  SH.forEach((c,ci)=>{const pl=c.sp.filter(x=>!x.log),first=c.sp[0];
   /* rest before this shift */
   const regAhead=dl=>{for(let k=ci+1;k<SH.length;k++){const gs2=SH[k].s-SH[k].gap;if(gs2>dl)return false;if(SH[k].gap>=45*H)return true}return SH[SH.length-1].e<=dl};
@@ -65,7 +66,7 @@ function plCheck(sp){const I=new Map(),add=(x,lv,t)=>{if(x.log)return;const k=x.
  /* weekly totals: working time 60h, driving 56h, fortnight 90h, 10h days */
  const W={};const wk=(t)=>wkS(t);sp.forEach(x=>{let a=x.s;while(a<x.e){const w0=wk(a),w1=nwk(w0),b=Math.min(x.e,w1),f=(b-a)/(x.e-x.s||1);const o=W[w0]=W[w0]||{w:0,d:0,sp:[],ext:0};o.w+=x.w*f;o.d+=x.dv*f;o.sp.push(x);a=b}});
  SH.forEach(c=>{if(c.ext){const o=W[wk(c.s)];if(o)o.ext++}});
- Object.keys(W).map(Number).sort().forEach(k=>{const o=W[k],pr=W[k-7*864e5]||W[wkS(k-3*864e5)];
+ Object.keys(W).map(Number).sort((a,b)=>a-b).forEach(k=>{const o=W[k],pr=W[k-7*864e5]||W[wkS(k-3*864e5)];
   if(o.w>60*H)o.sp.forEach(x=>add(x,'r','Working time in the week of '+dlong(k)+' would be '+fmt(o.w)+', over the 60 hour weekly maximum.'));
   if(o.d>56*H)o.sp.forEach(x=>add(x,'r','Driving in the week of '+dlong(k)+' would be '+fmt(o.d)+', over 56 hours.'));
   if(pr&&o.d+pr.d>90*H)o.sp.forEach(x=>add(x,'r','Driving over this week and last would be '+fmt(o.d+pr.d)+', over the 90 hour fortnight limit.'));
@@ -132,7 +133,7 @@ function plForm(p){p=p||{};const isNew=!p.id;
   I.forEach((A,k)=>{if(k==='new')return;const o=sp.find(x=>x.id===k);A.forEach(x=>{if(x.lv!=='i'&&!(I0.get(k)||[]).some(y=>y.t===x.t))L.push({lv:x.lv,t:'Knock-on for your '+(o&&o.o?esc(jobC(o.o.j).n)+' shift on '+dlong(o.s):'other shift')+': '+x.t})})});
   $('pfiss').innerHTML=L.length?L.map(x=>`<div class="note ${x.lv==='r'?'bad':x.lv==='a'?'warn':''}" style="margin-top:4px">${x.lv==='r'?'✕ ':x.lv==='a'?'⚠ ':'ℹ '}${x.t}</div>`).join(''):'<div class="note ok">✓ No rules broken.</div>';return L};
  mcb={no:()=>{moX();if(p.d)plDay(pdt(p.d))},chk:()=>{const q=build();if(q)show(q)},ok:()=>{const q=build();if(!q)return;
-  if(+$('pfr').value){const wd=(new Date(pdt(q.d)).getDay()+6)%7;st.pat=(st.pat||[]).concat({id:plId(),j:q.j,days:[wd],s:q.s,e:q.e,br:q.br,dr:q.dr,from:q.d,ev:+$('pfr').value});if(!isNew)st.plan=(st.plan||[]).filter(x=>x.id!==p.id)}
+  if(+$('pfr').value){const wd=(new Date(pdt(q.d)).getDay()+6)%7;st.pat=(st.pat||[]).concat({id:plId(),j:q.j,days:[wd],s:q.s,e:q.e,br:q.br,dr:q.dr,from:q.d,ev:+$('pfr').value});if(!isNew)st.plan=(st.plan||[]).filter(x=>x.id!==p.id);if(p.fromPat)st.plx=(st.plx||[]).concat(p.fromPat)}
   else{if(p.fromPat)st.plx=(st.plx||[]).concat(p.fromPat);st.plan=(st.plan||[]).filter(x=>x.id!==q.id).concat(q)}
   save();plRender();plDay(pdt(q.d))}}}
 function plPatList(){const R=st.pat||[],D=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];

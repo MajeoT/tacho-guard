@@ -75,7 +75,7 @@ add('Information','Parking',`<rect x="6" y="6" width="88" height="88" rx="8" fil
 add('Information','Hospital',`<rect x="6" y="6" width="88" height="88" rx="8" fill="${BL}"/><rect x="20" y="20" width="60" height="60" fill="#fff"/><path d="M50 28v44M28 50h44" stroke="${BL}" stroke-width="12"/>`,'The way to a hospital, or the hospital itself. Take care for ambulances and pedestrians.','');
 add('Information','Lane Direction Signs',rc(BL,'#fff','<path d="M34 70V36M34 36l-8 10M34 36l8 10M66 70V36M66 36l-8 10M66 36l8 10" stroke="#fff" stroke-width="5" fill="none"/>'),'Arrows on a blue panel show which lanes go where. Get in the right lane in good time.','Use your mirrors and signal early so other traffic can see a long vehicle changing lane.');
 /* ---- Extra signs (Highway Code traffic signs section) ---- */
-const K='#111',W='#fff',GR='#0b7a3b',BR='#7a4a1b',GY='#8a929b';
+const K='#111',W='#fff';
 const slash=`<line x1="22" y1="22" x2="78" y2="78" stroke="${R}" stroke-width="8"/>`;
 const bent=(dir)=>`<g transform="${dir==='l'?'translate(100 0) scale(-1 1)':''}"><path d="M40 78V46H60M52 34l14 12-14 12" stroke="${K}" stroke-width="8" fill="none" stroke-linejoin="round"/></g>`;
 const lane=(x,c='#fff')=>`<rect x="${x}" y="14" width="2.5" height="72" fill="${c}" opacity=".7"/>`;
