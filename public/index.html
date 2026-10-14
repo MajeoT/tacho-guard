@@ -286,7 +286,7 @@ body{letter-spacing:-.003em}
 <div class="g"><div class="tr"><span><span class="lbl">Distance Tracking</span><br><span class="note">Off by default. When on, it uses your location only while Driving is on, and the screen stays awake.</span></span><button class="tg" id="gp"></button></div><div class="row" style="margin-top:14px"><span class="lbl">Distance This Drive</span><span class="num" id="gd"></span></div><div class="note" id="gs"></div></div>
 <p class="note">Distance only updates while this page is open, so keep your phone unlocked. If location is blocked, allow it for this site in Chrome.</p>
 <h2>Settings</h2>
-<div class="g"><div class="tr"><span><span class="lbl">Alerts</span><br><span class="note">Sound, vibration and a phone notification at your limits and break milestones (15, 30 and 45 minutes). Alerts need the app open or running in the background, so keep it open while you drive.</span></span><button class="tg" id="al"></button></div>
+<div class="g" hidden><div class="tr"><span><span class="lbl">Alerts</span><br><span class="note">Sound, vibration and a phone notification at your limits and break milestones (15, 30 and 45 minutes). Alerts need the app open or running in the background, so keep it open while you drive.</span></span><button class="tg" id="al"></button></div>
 <div style="margin-top:14px"><label for="da">Driving Alarm</label><select id="da"><option value="0">Off</option></select><div class="note">Alerts you when your driving since your last break reaches this time.</div></div>
 <div class="tr" style="margin-top:14px"><span><span class="lbl">Notifications</span><br><span class="note" id="nn"></span></span><button class="tg" id="nt"></button></div>
 </div>
@@ -309,7 +309,7 @@ body{letter-spacing:-.003em}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-12-66';
+const APPV='tg-2026-10-12-67';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -653,7 +653,7 @@ function longAsk(r){const x=r.x,dv=r.kind==='d',lo=r.rs,hi=x.e;let N=45;
   clear(s0,e0,1);st.sessions.push({s:s0,e:e0,t:'r'});fixOv();
   bu=[];flash='Break of '+fmt(e0-s0)+' added from '+hm(s0)+' to '+hm(e0)+'.';setTimeout(()=>{flash='';live()},6000);save();moX();render()}};
  [15,30,45,60].forEach(m=>mcb['n'+m]=()=>{const a=$('lq1').value;if(!a)return;$('lq2').value=hm(atT(a,lo-1)+m*M)})}
-function fire(m){if(!st.alerts)return;$('alert').textContent=m+' (tap to dismiss)';$('alert').hidden=false;try{navigator.vibrate&&navigator.vibrate([400,200,400])}catch(e){}beep();notify(m)}
+function fire(m){return; /* in-app alerts switched off until phone push alerts exist */if(!st.alerts)return;$('alert').textContent=m+' (tap to dismiss)';$('alert').hidden=false;try{navigator.vibrate&&navigator.vibrate([400,200,400])}catch(e){}beep();notify(m)}
 function notify(m){try{if(!('Notification' in window)||Notification.permission!=='granted')return;const o={body:m,tag:'tg-alert',renotify:true,vibrate:[400,200,400],icon:'icons/icon-192.png',badge:'icons/icon-192.png'};
  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(r=>{if(r)r.showNotification('TachoGuard',o);else new Notification('TachoGuard',o)}).catch(()=>{try{new Notification('TachoGuard',o)}catch(e){}});else new Notification('TachoGuard',o)}catch(e){}}
 function ntUi(){const s=!('Notification' in window)?'na':Notification.permission;$('nt').textContent=s==='granted'?'Send Test':s==='denied'?'Blocked':s==='na'?'Not Supported':'Turn On';$('nt').disabled=s==='denied'||s==='na';
