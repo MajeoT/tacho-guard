@@ -106,9 +106,9 @@ a{color:var(--tx)}
 /* ===== TachoGuard skin: slate panels, hairline borders, sky accent, Chakra Petch + Barlow ===== */
 :root{--r:14px;--display:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--body:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
  --bg:#eef2f7;--card:#ffffff;--tx:#0f172a;--mut:#58677c;--bd:#d6dee8;--bd2:#c3cfdc;--ok:#0d8a56;--warn:#b45309;--bad:#c2352b;--acc:#0369a1;--onacc:#ffffff;--okt:#ffffff;
- --pan:rgba(255,255,255,.9);--panb:#ffffff;--glow:rgba(3,105,161,.0);--soft:rgba(3,105,161,.09);--sub:rgba(15,23,42,.045)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1220;--card:#131c2e;--tx:#e2e8f0;--mut:#94a3b8;--bd:rgba(148,163,184,.2);--bd2:rgba(148,163,184,.3);--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--acc:#38bdf8;--onacc:#06202e;--okt:#04130a;--pan:rgba(30,41,59,.55);--panb:#131c2e;--glow:rgba(56,189,248,.2);--soft:rgba(56,189,248,.13);--sub:rgba(148,163,184,.08)}}
-:root[data-theme="dark"]{--bg:#0b1220;--card:#131c2e;--tx:#e2e8f0;--mut:#94a3b8;--bd:rgba(148,163,184,.2);--bd2:rgba(148,163,184,.3);--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--acc:#38bdf8;--onacc:#06202e;--okt:#04130a;--pan:rgba(30,41,59,.55);--panb:#131c2e;--glow:rgba(56,189,248,.2);--soft:rgba(56,189,248,.13);--sub:rgba(148,163,184,.08)}
+ --tx2:#475569;--pan:rgba(255,255,255,.9);--panb:#ffffff;--glow:rgba(3,105,161,.0);--soft:rgba(3,105,161,.09);--sub:rgba(15,23,42,.045)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1220;--card:#131c2e;--tx:#e2e8f0;--mut:#94a3b8;--tx2:#aab6c6;--bd:rgba(148,163,184,.2);--bd2:rgba(148,163,184,.3);--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--acc:#38bdf8;--onacc:#06202e;--okt:#04130a;--pan:rgba(30,41,59,.55);--panb:#131c2e;--glow:rgba(56,189,248,.2);--soft:rgba(56,189,248,.13);--sub:rgba(148,163,184,.08)}}
+:root[data-theme="dark"]{--bg:#0b1220;--card:#131c2e;--tx:#e2e8f0;--mut:#94a3b8;--tx2:#aab6c6;--bd:rgba(148,163,184,.2);--bd2:rgba(148,163,184,.3);--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--acc:#38bdf8;--onacc:#06202e;--okt:#04130a;--pan:rgba(30,41,59,.55);--panb:#131c2e;--glow:rgba(56,189,248,.2);--soft:rgba(56,189,248,.13);--sub:rgba(148,163,184,.08)}
 html{background:var(--bg)}
 body{font-family:var(--body);font-size:16px;line-height:1.45;background:radial-gradient(900px 520px at 10% -8%,rgba(56,189,248,.16),transparent 62%),radial-gradient(700px 480px at 100% 0,rgba(16,185,129,.1),transparent 58%),var(--bg);background-attachment:fixed;-webkit-font-smoothing:antialiased}
 :root:not([data-theme="dark"]) body{background:radial-gradient(900px 520px at 10% -8%,rgba(3,105,161,.08),transparent 62%),var(--bg)}
@@ -251,23 +251,21 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .h-state.rd{color:#6ee7b7;background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.45)}
 .cp .h-state{font-size:22px;padding:6px 14px;margin-top:8px}
 .cd .num.ok,.num.ok{color:var(--ok)}
-#ck .ft{font:600 12.5px var(--body);letter-spacing:.02em;color:var(--mut);margin:18px 0 4px}
-#ck .cs{color:var(--mut);font-size:13px!important;font-weight:600!important}
-#ck .cs>span{color:var(--mut)}
-#ck .pls .pl{background:transparent;border:0;border-radius:8px;min-height:40px;justify-content:flex-start;text-align:left;padding:6px 6px 6px 32px;position:relative;font-weight:500;color:var(--tx);box-shadow:none}
-#ck .pls .pl::before{content:"";position:absolute;left:6px;top:50%;width:16px;height:16px;margin-top:-8px;border-radius:50%;border:2px solid var(--bd2);box-sizing:border-box}
-#ck .pls .pl.on{background:var(--soft);color:var(--acc);font-weight:700}
-#ck .pls .pl.on::before{border-color:var(--acc);background:radial-gradient(circle,var(--acc) 0 38%,transparent 42%)}
-#ck .pls .pl:disabled{opacity:.6}
+#ck .ft{font:600 12.5px var(--body);letter-spacing:.02em;color:var(--mut);margin:18px 0 6px}
+#ck .gl .cs,#ck .gl .cs>span{color:var(--tx);font-size:17px!important;font-weight:700!important}
+
 #ck .gl{display:block}
-#ck .gl .cs{margin:22px 0 2px;justify-content:flex-start}#ck .gl .cs>span{flex:none}
+#ck .gl .cs{margin:22px 0 2px;justify-content:space-between}#ck .gl .cs>span{flex:1 1 auto;min-width:0}#ck .gl .cs::after{display:none}
 #ck .ci{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;border:0;border-top:1px solid var(--bd);border-radius:0;padding:11px 0;background:transparent}
 #ck .gl .cs+.ci{border-top:0}
-#ck .ci .lbl{flex:1 1 130px;min-width:0;font-size:15px;font-weight:600;color:var(--tx)}
+#ck .ci .lbl{flex:1 1 130px;min-width:0;font-size:14px;font-weight:500;color:var(--tx2)}
 #ck .cb{flex:none;width:182px;margin:0}
 #ck .cb button{padding:7px 2px;font-size:12.5px;border-radius:8px}
 #ck .ci>.dn,#ck .ci>.dl,#ck .ci>.ph{flex:1 1 100%}
 #ck .ci.bd{border-left:3px solid var(--bad);padding-left:10px;grid-column:auto}
+.vh>summary{list-style:none;display:flex;align-items:center;gap:10px;cursor:pointer;min-height:44px}.vh>summary::-webkit-details-marker{display:none}
+.vl{font:600 12.5px var(--body);color:var(--mut);flex:none}.vs{flex:1;min-width:0;font-weight:600;font-size:15px;color:var(--tx)}.vc{flex:none;font:600 13px var(--body);color:var(--acc);border:1px solid var(--acc);border-radius:999px;padding:4px 12px}
+.vh[open]>summary .vc{background:var(--soft)}.vh[open]>summary .vc::after{content:" \25B2";font-size:9px}.vh:not([open])>summary .vc::after{content:" \25BC";font-size:9px}
 /* structure kept from before */
 .i{position:relative}.i::after{content:'';position:absolute;inset:-12px}.dbody ul{margin:0;padding-left:18px}.dbody li{margin:0 0 8px}.srcs{margin-top:8px;line-height:1.1}.src{display:inline-block;margin:0 6px 4px 0;padding:2px 6px;font-size:11px;color:var(--mut);text-decoration:none;border:1px solid var(--bd)}.src:hover,.src:focus{color:var(--tx);text-decoration:underline}.wn{margin-top:8px;font-size:13px;padding:6px 8px;color:var(--tx)}.lg{margin-top:6px;font-size:13px;padding:6px 8px;color:var(--tx)}.lg-law{border-left-color:var(--bad)}.lg-adv{border-left-color:var(--warn)}.lg-sh{border-left-color:var(--warn)}.lg-warn{border-left-color:var(--warn)}.lg-info{border-left-color:var(--mut)}.lg-veh{border-left-color:var(--acc)}
 .sgc img{flex:none;width:84px;height:84px;object-fit:contain}.sgc img.fl{transform:scaleX(-1)}
@@ -398,7 +396,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-12-70';
+const APPV='tg-2026-10-12-71';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -1331,19 +1329,22 @@ async function phView(id,own,key){let b;try{b=await phGet(id)}catch(e){}
  if(!b)return;mo(`<h3>Defect Photo</h3><img id="pvimg" style="width:100%;border-radius:8px;margin-bottom:10px" alt="Defect photo">${own?'<button class="tg big" data-k="rm">Remove Photo</button>':''}<button class="tg big" data-k="x">Close</button>`);
  document.getElementById('pvimg').src=URL.createObjectURL(b);
  mcb={x:moX,rm:()=>{const w=st.wd,r=w&&w.it[key];if(r&&r.p)r.p=r.p.filter(x=>x!==id);if(!ckRec())phDel(id);save();moX();ckRender()}}}
+let ckVO=false;
 function ckRender(){
  const w=st.wd=st.wd||wdef();w.it=w.it||{};
  if(w.rt){const cur=walkStatus();if(!ckRec()||(!w.op&&(!cur||cur.t!==w.rt)&&!ckSync().length)){ckBack();save();return ckRender()}}
  const sr=ckRec(),sv=!!sr,dis=sv?' disabled':'';
- let h=`<div class="g" style="margin-top:0"><div class="ft">Vehicle Type</div><div class="pls">${Object.keys(KN).map(k=>`<button class="pl${w.k===k?' on':''}" data-k="${k}"${dis}>${KN[k]}</button>`).join('')}</div>`;
+ const vs=[KN[w.k],(w.k==='hgv'||w.k==='rigid'||w.k==='van')&&w.b?BN[w.b]:'',w.tl?'Tail lift':''].filter(Boolean).join(' · ');
+ let h=`<div class="g" style="margin-top:0"><details class="vh"${ckVO||!w.k?' open':''}><summary><span class="vl">Vehicle</span><span class="vs">${esc(vs||'Choose a vehicle')}</span><span class="vc">Change</span></summary><div class="ft" style="margin-top:10px">Vehicle Type</div><div class="pls">${Object.keys(KN).map(k=>`<button class="pl${w.k===k?' on':''}" data-k="${k}"${dis}>${KN[k]}</button>`).join('')}</div>`;
  if(w.k==='hgv'||w.k==='rigid'||w.k==='van')h+=`<div class="ft">${w.k==='hgv'?'Trailer Type':'Body Type'}</div><div class="pls">${w.k==='van'?'':`<button class="pl${w.b===''?' on':''}" data-b=""${dis}>Other or None</button>`}${(w.k==='van'?['box','fridge']:Object.keys(BN)).map(k=>`<button class="pl${w.b===k?' on':''}" data-b="${k}"${dis}>${BN[k]}</button>`).join('')}</div><div class="ft">Extras</div><div class="pls"><button class="pl${w.tl?' on':''}" data-tl="1"${dis}>Tail Lift Fitted</button></div>`;
  if(sv)h+='<div class="note" style="margin-top:8px">Vehicle type is fixed for a saved check. Start a new check to change it.</div>';
+ h+='</details>';
  h+=`<div class="ft">Details</div><div class="g2"><label>Registration<input data-f="reg" value="${esc(w.reg)}" autocapitalize="characters"></label>${w.k==='hgv'?`<label>Trailer Number<input data-f="trl" value="${esc(w.trl||'')}" autocapitalize="characters"></label>`:`<label>Odometer (Optional)<input data-f="odo" value="${esc(w.odo||'')}" inputmode="numeric"></label>`}<label>Gross Weight (Optional)<input data-f="gw" value="${esc(w.gw||'')}" inputmode="decimal" placeholder="${w.k==='van'?'e.g. 7500 kg':'e.g. 38000 kg'}"></label></div></div>`;
  const L=buildList(w);let tot=0,done=0,body='';
  L.forEach(([sn,items],si)=>{body+=`<div class="cs"><span>${sn}</span>${sv?'':`<button class="pl" data-sec="${si}">All OK</button>`}</div>`+items.map(([ti,hi])=>{tot++;const r=w.it[ti]||{},k=esc(ti);if(r.s)done++;
   return `<div class="ci${r.s==='bad'?' bd':''}"><div class="lbl">${ti} ${ib('c:'+ti)}</div><div class="cb"><button class="ok${r.s==='ok'?' on':''}" data-ck="ok" data-key="${k}">OK</button><button class="bad${r.s==='bad'?' on':''}" data-ck="bad" data-key="${k}">Defect</button><button class="na${r.s==='na'?' on':''}" data-ck="na" data-key="${k}">N/A</button></div>${r.s==='bad'?`<input type="text" class="dn" data-nk="${k}" placeholder="What is wrong?" value="${esc(r.n||'')}"><label class="dl"><input type="checkbox" data-dk="${k}"${r.d?' checked':''}> Dangerous, do not drive</label><div class="ph">${phs(r.p,k,1)}<label class="pl">Take Photo<input type="file" accept="image/*" capture="environment" hidden data-pf="${k}"></label><label class="pl">From Gallery<input type="file" accept="image/*" multiple hidden data-pf="${k}"></label></div>`:''}</div>`}).join('')});
  h+=`<div class="g"><div class="row"><span class="lbl">Checklist</span><span class="note">${done} of ${tot} done</span></div><div class="bar"><i style="width:${Math.round(done/tot*100)}%;background:var(--acc)"></i></div>${sv?`<div class="bx"><div class="bt ok">${w.op?'Opened from Recent Checks. ':''}Saved ${w.op?new Date(sr.t).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' ':''}${hm(sr.t)}${(sr.h||[]).length?', edited '+hm(sr.h[sr.h.length-1].t):''}</div>${Object.keys(sr.it||{}).length>=(sr.n||0)?'':'This check was saved before full records were kept, so only its defects are filled in. '}Your answers are kept. You can still change any of them, add a defect, a note or a photo. Nothing is saved until you tap Confirm Changes. Confirmed changes go in the edit history of this check, under Recent Checks, with the date and time of each one.</div>`:''}<div class="gl">${body}</div>${w.k==='wav'?'<p class="note">Before each passenger journey: wheelchair brakes on, tie-downs tight, belt fitted and adjusted.</p>':''}<div class="err" id="ckerr" role="alert" style="margin-top:10px"></div>${sv?`<div class="bx pd" id="ckp" hidden></div><button class="add" style="width:100%;margin-top:10px" data-act="new">${st.wds?(newArm?'Tap Again to Go Back':'Back to the Check in Progress'):(newArm?'Tap Again to Start a New Check':'Start a New Check')}</button><p class="note" style="margin:6px 0 0">The saved check stays in Recent Checks.</p>`:`<div class="pls" style="margin-top:10px"><button class="pl" data-act="allok">Mark the Rest OK</button><button class="pl" data-act="clr">Clear Answers</button></div><button class="add" style="width:100%;margin-top:10px" data-act="save">Save Walkaround</button>`}</div>`;
- $('ck').innerHTML=h;phThumbs($('ck'));ckPend();ckHist()}
+ $('ck').innerHTML=h;{const dv=$('ck').querySelector('details.vh');if(dv)dv.ontoggle=()=>{ckVO=dv.open}}phThumbs($('ck'));ckPend();ckHist()}
 function ckBack(){const d=st.wds;delete st.wds;if(d){st.wd=d}else{const w=st.wd;w.it={};w.rt=null;delete w.op}}
 function ckOpen(t){const r=(st.walks||[]).find(x=>String(x.t)===String(t));if(!r)return;const c=st.wd||wdef();
  if(c.rt===r.t){showCk();return}
