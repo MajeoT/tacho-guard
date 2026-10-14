@@ -240,6 +240,34 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 @font-face{font-family:Inter;font-weight:600;font-style:normal;font-display:swap;src:url(fonts/inter-SemiBold.woff) format('woff')}
 @font-face{font-family:Inter;font-weight:700;font-style:normal;font-display:swap;src:url(fonts/inter-Bold.woff) format('woff')}
 @font-face{font-family:Inter;font-weight:800;font-style:normal;font-display:swap;src:url(fonts/inter-ExtraBold.woff) format('woff')}
+/* round 2 tweaks */
+.tab{grid-column:span 4}.tab:nth-child(n+4){grid-column:span 3}
+@media (min-width:560px){.tab,.tab:nth-child(n+4){grid-column:auto}}
+.tab[data-t=check]{font-size:13px!important;padding-right:2px!important}
+.tab.dot::after{top:5px;right:6px}
+.h-state{display:inline-flex;align-items:center;gap:10px;margin-top:14px;padding:9px 18px;border-radius:14px;font:800 28px var(--body);letter-spacing:-.02em;line-height:1.1;border:1px solid}
+.h-state::before{content:"";width:10px;height:10px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor}
+.h-state.rs{color:#7dd3fc;background:rgba(56,189,248,.12);border-color:rgba(56,189,248,.45)}
+.h-state.rd{color:#6ee7b7;background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.45)}
+.cp .h-state{font-size:22px;padding:6px 14px;margin-top:8px}
+.cd .num.ok,.num.ok{color:var(--ok)}
+#ck .ft{font:600 12.5px var(--body);letter-spacing:.02em;color:var(--mut);margin:18px 0 4px}
+#ck .cs{color:var(--mut);font-size:13px!important;font-weight:600!important}
+#ck .cs>span{color:var(--mut)}
+#ck .pls .pl{background:transparent;border:0;border-radius:8px;min-height:40px;justify-content:flex-start;text-align:left;padding:6px 6px 6px 32px;position:relative;font-weight:500;color:var(--tx);box-shadow:none}
+#ck .pls .pl::before{content:"";position:absolute;left:6px;top:50%;width:16px;height:16px;margin-top:-8px;border-radius:50%;border:2px solid var(--bd2);box-sizing:border-box}
+#ck .pls .pl.on{background:var(--soft);color:var(--acc);font-weight:700}
+#ck .pls .pl.on::before{border-color:var(--acc);background:radial-gradient(circle,var(--acc) 0 38%,transparent 42%)}
+#ck .pls .pl:disabled{opacity:.6}
+#ck .gl{display:block}
+#ck .gl .cs{margin:22px 0 2px;justify-content:flex-start}#ck .gl .cs>span{flex:none}
+#ck .ci{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;border:0;border-top:1px solid var(--bd);border-radius:0;padding:11px 0;background:transparent}
+#ck .gl .cs+.ci{border-top:0}
+#ck .ci .lbl{flex:1 1 130px;min-width:0;font-size:15px;font-weight:600;color:var(--tx)}
+#ck .cb{flex:none;width:182px;margin:0}
+#ck .cb button{padding:7px 2px;font-size:12.5px;border-radius:8px}
+#ck .ci>.dn,#ck .ci>.dl,#ck .ci>.ph{flex:1 1 100%}
+#ck .ci.bd{border-left:3px solid var(--bad);padding-left:10px;grid-column:auto}
 /* structure kept from before */
 .i{position:relative}.i::after{content:'';position:absolute;inset:-12px}.dbody ul{margin:0;padding-left:18px}.dbody li{margin:0 0 8px}.srcs{margin-top:8px;line-height:1.1}.src{display:inline-block;margin:0 6px 4px 0;padding:2px 6px;font-size:11px;color:var(--mut);text-decoration:none;border:1px solid var(--bd)}.src:hover,.src:focus{color:var(--tx);text-decoration:underline}.wn{margin-top:8px;font-size:13px;padding:6px 8px;color:var(--tx)}.lg{margin-top:6px;font-size:13px;padding:6px 8px;color:var(--tx)}.lg-law{border-left-color:var(--bad)}.lg-adv{border-left-color:var(--warn)}.lg-sh{border-left-color:var(--warn)}.lg-warn{border-left-color:var(--warn)}.lg-info{border-left-color:var(--mut)}.lg-veh{border-left-color:var(--acc)}
 .sgc img{flex:none;width:84px;height:84px;object-fit:contain}.sgc img.fl{transform:scaleX(-1)}
@@ -370,7 +398,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-12-69';
+const APPV='tg-2026-10-12-70';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -888,7 +916,7 @@ function live(){
   const pr=Math.min(100,Math.round(b.d/(270*M)*100)),pc2=pr>=100?'#ff6b5e':pr>=80?'#ffb020':'#3ecf7b';
   const tl1=act0==='d'?`<div class="h-t"><div class="h-k">${nx[0]} ${ib('next')}</div><div class="h-v">${nx[1]}</div></div>`:'';
   const tl2=nsv?`<div class="h-t"><div class="h-k">Next shift from ${ib('ns')}</div><div class="h-v">${nsv[0]}</div></div>`:'';
-  set($('hero'),`<div class="h-top"><span class="h-chip"><i style="background:${dc}"></i>${ac}${since&&act0?' since '+since:''}</span>${jobsOn()?`<span class="h-chip" data-job="1" role="button" tabindex="0" style="cursor:pointer"><i style="background:${JCOL[jobI(st.cj)]}"></i>${esc(jobC(st.cj).n)}${isTc()?'':' · no tacho'} ▾</span>`:''}${bkc?`<span class="h-chip"><i style="background:#9aa6b5"></i>${bl} ${bkc}</span>`:''}</div><div class="h-big">${big}</div><div class="h-cap${!act0&&big!=='Ready'?' rs':''}">${cap}${sub?'<span> '+sub+'</span>':''}</div><div class="h-bar">${multi()&&JS.brk&&JS.brk.length?JS.brk.map(q=>`<i style="float:left;width:${Math.min(100,q[1]/(270*M)*100).toFixed(1)}%;background:${q[0]}"></i>`).join(''):`<i style="width:${pr}%;background:${pc2}"></i>`}</div><div class="h-bl"><span>Driving since last break</span><span>${fmt(b.d)} / 4h 30m</span></div>${tl1||tl2?`<div class="h-ts${tl1&&tl2?'':' one'}">${tl1}${tl2}</div>`:''}`)}
+  set($('hero'),`<div class="h-top"><span class="h-chip"><i style="background:${dc}"></i>${ac}${since&&act0?' since '+since:''}</span>${jobsOn()?`<span class="h-chip" data-job="1" role="button" tabindex="0" style="cursor:pointer"><i style="background:${JCOL[jobI(st.cj)]}"></i>${esc(jobC(st.cj).n)}${isTc()?'':' · no tacho'} ▾</span>`:''}${bkc?`<span class="h-chip"><i style="background:#9aa6b5"></i>${bl} ${bkc}</span>`:''}</div>${big==='Resting'||big==='Ready'?`<div class="h-state ${big==='Ready'?'rd':'rs'}">${big}</div>`:`<div class="h-big">${big}</div>`}<div class="h-cap${!act0&&big!=='Ready'?' rs':''}">${cap}${sub?'<span> '+sub+'</span>':''}</div><div class="h-bar">${multi()&&JS.brk&&JS.brk.length?JS.brk.map(q=>`<i style="float:left;width:${Math.min(100,q[1]/(270*M)*100).toFixed(1)}%;background:${q[0]}"></i>`).join(''):`<i style="width:${pr}%;background:${pc2}"></i>`}</div><div class="h-bl"><span>Driving since last break</span><span>${fmt(b.d)} / 4h 30m</span></div>${tl1||tl2?`<div class="h-ts${tl1&&tl2?'':' one'}">${tl1}${tl2}</div>`:''}`)}
  if(!busy&&l){
   const c=gap>=11*H?'ok':gap>=9*H?'warn':'acc';
   let t=gap>=45*H?'Weekly rest done.':gap>=11*H?'Regular daily rest done. Weekly rest of 45h is at '+tt(l.e+45*H)+'.':gap>=9*H?'Reduced daily rest done (allowed 3 times between weekly rests). Regular 11h at '+tt(l.e+11*H)+'.':'Reduced 9h rest at '+tt(l.e+9*H)+', regular 11h at '+tt(l.e+11*H)+'.';
@@ -910,7 +938,7 @@ function live(){
  const dt=extLeft?'You can extend to 10h ('+(2-prev)+' left this week).':'No 10h extensions left this week.';
  const td=sod(n),poaD=sum(a0.filter(x=>x.t==='p'),td,n+1),poaW=sum(a0.filter(x=>x.t==='p'),w,n+1),paidD=sum(a0.filter(x=>x.t!=='r'),td,n+1);
  set($('s2'),(onS||poaD?`<div class="g cd w${act==='p'?' on':act?' off':''}"><div class="row"><span class="lbl">POA ${ib('poa')}</span><span class="num">${fmt(poaD)}</span></div><div class="note">Today. ${fmt(poaW)} this week. All paid time today, with driving and work: ${fmt(paidD)}.</div></div>`:'')+'<div class="cs">Working Time</div>'+(onS?sg('wrk',card('wrk','Working Time Since Last Break',wc.d,6*H,'Then take a '+(sw>9*H?45:30)+' minute break.','Take a break now.',0,SGH,wOn).replace('g cd','g cd w')):'')+(()=>{const wkW=T7[w]?T7[w].w:0,tdW=sum(a0.filter(x=>x.t!=='p'),td,n+1),v=onS?sw:tdW;
-  return `<div class="g cd${wOn?' on':''}"><div class="row"><span class="lbl">${onS?'Worked This Shift':'Worked Today'} ${ib('wsh')}</span></div><div class="num">${fmt(v)}</div><div class="note">Driving plus other work${onS?' since '+hm(ss):' today'}. POA and breaks are not counted.</div></div>`+card('wkw','Worked This Week',wkW,60*H,'Monday to Sunday. No single week can go over 60h.','60 hour weekly limit reached.',0,'',wOn)})()+'<div class="cs">Driving Limits</div>'+
+  return `<div class="g cd${wOn?' on':''}"><div class="row"><span class="lbl">${onS?'Worked This Shift':'Worked Today'} ${ib('wsh')}</span></div><div class="num ok">${fmt(v)}</div><div class="note">Driving plus other work${onS?' since '+hm(ss):' today'}. POA and breaks are not counted.</div></div>`+card('wkw','Worked This Week',wkW,60*H,'Monday to Sunday. No single week can go over 60h.','60 hour weekly limit reached.',0,'',wOn)})()+'<div class="cs">Driving Limits</div>'+
   (onS?sg('day',card('day','Driving This Shift',day,9*H,dt,extLeft&&day<10*H?'Over 9h, so this uses one of your 2 extensions. Stop by 10h.':extLeft?'10h limit reached.':'9h reached. No extensions left this week.',extLeft?10*H:0,SGH,dOn).replace('g cd','g cd w')):'')+
   
   sg('wk',card('wk','Driving This Week',wkd,56*H,'Monday to Sunday.','No more driving this week.',0,'<div class="note" style="margin-top:4px">10h days used: <b>'+used+' of 2</b> '+ib('ext')+'</div>'+SGH,dOn))+sg('fn',card('wk','Driving This Fortnight',fn,90*H,'This week plus last week.','No more driving this fortnight.',0,SGH,dOn,'fn'))+'<div class="cs">Working Time Average</div>'+avgCard(RP,1));
