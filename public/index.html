@@ -396,7 +396,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-12-71';
+const APPV='tg-2026-10-12-72';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -1240,13 +1240,14 @@ const TC={'Engine Oil':'Between the marks','Coolant':'Between the marks, engine 
 const sec=(n,a)=>[n,a];
 const FLU=['Fluids (Engine Off)',['Engine Oil','Coolant','Power Steering Fluid','Brake Fluid','Clutch Fluid','Screen Wash','AdBlue']];
 const ENG=['Engine Bay and Fuel (Engine Off)',['Fuel Level','Fuel Cap','Battery','Drive Belts','Hoses','Fuel Leaks','Oil Leaks','High Voltage Cut-Off','Alternative Fuel System']];
-const CABE=['Cab Entry',['Cab Doors','Cab Steps and Handles','Cab Mountings and Tilt Lock','Seatbelts']];
-const DASH=['Dashboard and Controls (Engine On)',['Tachograph','Printer Paper','Dashboard Warning Lights','Steering','Horn']];
+const CABE=['Cab Entry (Engine Off)',['Cab Doors','Cab Steps and Handles','Seatbelts']];
+const BON=['Under the Bonnet or Cab (Engine Off)',['Engine Oil','Coolant','Power Steering Fluid','Brake Fluid','Clutch Fluid','Screen Wash','Battery','Drive Belts','Hoses','Oil Leaks','Fuel Leaks','Cab Mountings and Tilt Lock','High Voltage Cut-Off','Alternative Fuel System']];
+const DASH=['Back in the Cab (Engine On)',['Dashboard Warning Lights','Fuel Level','AdBlue','Tachograph','Printer Paper','Steering','Horn','Exhaust Smoke']];
 const VIS=['Windscreen, Mirrors and Wipers',['Windscreen','Mirrors','Wipers','Washers']];
 const KIT=['Safety Kit',['Warning Triangle','Hi-Vis Clothing']];
 const LITH=['Lights (Switch All On)',['Headlights','Main Beam','Sidelights','Front Indicators','Hazard Lights','Marker Lights','Reflectors','Rear Lights','Stop Lamps','Rear Indicators','Reversing Light','Rear Fog Light','Number Plate Lights']];
 const WHH=['Wheels and Suspension',['Tyres','Wheels and Nuts','Springs and Air Bags','Shock Absorbers']];
-const BODH=['Body and Markings',['Body Panels and Wings','Sideguards','Spray Suppression','Rear Underrun Guard','Front Number Plate','Rear Number Plate','Rear Markings','Hazard Panels','Exhaust Smoke']];
+const BODH=['Body, Fuel Tank and Markings',['Front Number Plate','Body Panels and Wings','Fuel Cap','Sideguards','Spray Suppression','Hazard Panels','Rear Underrun Guard','Rear Number Plate','Rear Markings']];
 const TRLS=['Trailer and Coupling',['Fifth Wheel Coupling','Landing Legs','Air Lines and Couplings','Trailer Parking Brake','Trailer Electrical Lead','Trailer Tyres','Trailer Wheels and Nuts','Trailer Marker Lights','Trailer Reflectors']];
 const TAILS=['Tail Lift',['Tail Lift Operation','Tail Lift Markings and Flaps','Tail Lift Examination']];
 const LOADS=['Load and Equipment',['Load Security','Other Equipment']];
@@ -1265,24 +1266,25 @@ const CIN=['Inside (Engine On)',['Seatbelts','Dashboard Warning Lights','Horn','
 const CLIT=['Lights (Switch All On)',['Headlights','Main Beam','Sidelights','Indicators','Hazard Lights','Brake Lights','Rear Lights','Reversing Light','Rear Fog Light','Number Plate Lights']];
 const CWHL=['Wheels and Body',['Tyres','Wheels and Nuts','Number Plates','Bodywork','Oil Leaks','Fuel Leaks']];
 const CGO=['Before You Drive Off',['Footbrake','Handbrake','Steering']];
-const CARL=[CFLU,CENG,CIN,VIS,CLIT,CWHL,CGO];
-const WAVL=[CFLU,CENG,CIN,VIS,CLIT,CWHL,
+const CARL=[CFLU,CENG,CLIT,VIS,CWHL,CIN,CGO];
+const WAVL=[CFLU,CENG,CLIT,VIS,CWHL,
 ['Ramp or Lift',['Ramp or Lift Operation','Ramp or Lift Surface','Ramp Alarm','Handbrake Interlock','Manual Override','Rear Door']],
 ['Winch',['Winch Operation','Winch Strap or Rope','Winch Hook','Winch Latch','Winch Mounting','Winch Emergency Release']],
 ['Wheelchair Restraint',['Wheelchair Tie-Downs','Floor Tracks','Anchor Points','Occupant Seatbelt','Wheelchair Clamps','Spare Restraints','Belt Cutter']],
 ['Passenger Area',['Passenger Seats','Passenger Seatbelts','Handrails','Grab Handles','Interior Lights','Step Lights','Fire Extinguisher','First Aid Kit']],
+CIN,
 ['Before You Drive Off',['Footbrake','Handbrake','Steering','Hand Controls']]];
 const isC=w=>w.k==='car'||w.k==='wav';
 const hintFor=(t,w)=>(isC(w)&&TC[t])||(T[t]?T[t][0]:'');
 function buildList(w){
  let S;
  if(w.k==='car')S=CARL;else if(w.k==='wav')S=WAVL;
- else{S=[FLU,ENG,CABE,DASH,VIS,KIT,LITH,WHH,BODH];
+ else{S=[CABE,BON,LITH,VIS,WHH,BODH];
   if(w.k==='hgv')S.push(TRLS);
   if(w.k==='van'&&w.b==='fridge')S.push(BODY.box);
   if(w.b&&BODY[w.b])S.push(BODY[w.b]);
   if(w.tl)S.push(TAILS);
-  S.push(LOADS,BACK)}
+  S.push(LOADS,DASH,KIT,BACK)}
  return S.map(([n,a])=>[n,a.map(t=>[t,hintFor(t,w)])])}
 function infoCk(t){const c=T[t];if(!c)return '<div class="st">'+t+'</div>';
  const w=st.wd||wdef();let h='<b>Why Check It</b> '+c[1];
