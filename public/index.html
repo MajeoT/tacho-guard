@@ -309,7 +309,7 @@ body{letter-spacing:-.003em}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-12-63';
+const APPV='tg-2026-10-12-64';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -584,7 +584,7 @@ function brkp(a){bgc=0;bp=false;const c0=cnt(a,45,x=>x.t==='d');if(c0.d===0&&a.s
 function ovTxt(t0,t1){let m=0;st.sessions.forEach(x=>{if((x.t||'d')!=='r')m+=Math.max(0,Math.min(x.e,t1)-Math.max(x.s,t0))});if(st.active&&st.act&&st.act!=='r')m+=Math.max(0,t1-Math.max(st.active,t0));return m>=M?'The '+fmt(m)+' of driving or work logged in that time now counts as break.':''}
 let ot='';
 function fillBreak(N){ot='';
- if(lock||prog>=45*M||(N===15&&prog>=15*M))return;
+ if(lock||(isTc()&&(prog>=45*M||(N===15&&prog>=15*M))))return;
  if(bu.length&&bu[bu.length-1].g!==bsig())bu=[];
  const u0=JSON.stringify(st);
  const n=Date.now(),busy=st.act&&st.act!=='r',B=busy?st.active:n,full=N>=45||(prog>=15*M&&N>=30),rs=st.rs||0;
@@ -602,7 +602,7 @@ function fillBreak(N){ot='';
  save();render();
 }
 function breakAsk(N){
- if(lock||prog>=45*M||(N===15&&prog>=15*M))return;
+ if(lock||(isTc()&&(prog>=45*M||(N===15&&prog>=15*M))))return;
  const n=Date.now(),onB=st.act==='r'&&st.active,lim=onB?st.active:n;
  mo(`<h3>When did you take this ${N} minute break?</h3><p>Enter the time the break started. It is put into your log at that time, and whatever was logged then is moved out of the way: the entry before it ends when the break starts, and the entry after it starts when the break ends.</p><div class="tr"><label>Break started<input type="time" id="bk1" value="${hm(lim-N*M)}"></label></div><div class="note" id="bkn" style="margin-bottom:8px"></div><div class="note bad" id="bkerr"></div><button class="tg big" data-k="ok">Add ${N} minute break</button><button class="tg big" data-k="auto">Not sure, put it before what I am doing now</button><button class="tg big" data-k="no">Cancel</button>`);
  const at=()=>{const v=$('bk1').value;return v?nearT(v,lim-N*M):null};
@@ -759,10 +759,10 @@ function live(){
   day:['Driving This Shift',ss?dr:[],ss||n,n,ss?'Driving since this shift started, '+tt(ss)+'. A shift carries on until you have a rest of 9 hours or more, or you tap Reset Day. So driving from earlier today or last night is included if there was no 9 hour rest after it.':'No shift is running.'],
   wk:['Driving This Week',dr0,w,n,'Driving since Monday 00:00.'],
   fn:['Driving This Fortnight',dr0,w-7*864e5,n,'Driving since Monday 00:00 of last week.']};
- const bi=brkInfo(a,ss);lock=bi.k>0&&day<9*H&&b.d<270*M&&wc.d<6*H;
+ const bi=brkInfo(a,ss);lock=isTc()&&bi.k>0&&day<9*H&&b.d<270*M&&wc.d<6*H;
  const dOn=act==='d',wOn=act==='d'||act==='w'||act==='x',bOn=!busy,so=(x,y)=>x?y:'';
  document.querySelectorAll('.act').forEach(x=>{const o=x.dataset.a===(act==='x'?'d':act);x.classList.toggle('on',o);x.setAttribute('aria-pressed',o);x.classList.toggle('lk',x.dataset.a==='r'&&lock&&act!=='r')});
- const qd=m=>lock||prog>=45*M||(m===15&&prog>=15*M);
+ const qd=m=>lock||(isTc()&&(prog>=45*M||(m===15&&prog>=15*M)));const nd=sw>9*H?45:30;
  $('al').textContent=st.alerts?'Alerts On':'Alerts Off';
  const al=[['b15',act==='d'&&b.d>=255*M,'15 minutes until you need a 45 minute break.'],['b0',act==='d'&&b.d>=270*M,'4h 30m of driving reached. Take a break now.'],
   ['w15',busy&&act!=='p'&&wc.d>=345*M,'15 minutes until your 6 hour working limit.'],['w0',busy&&act!=='p'&&wc.d>=6*H,'6 hours of work reached. Take a break now.'],
@@ -770,9 +770,9 @@ function live(){
  if(document.activeElement!==$('da'))$('da').value=String(st.da||0);
  const lb=[...a].reverse().find(x=>x.t!=='r'&&!x.live),be=!busy&&lb?n-lb.e:-1,inW=(x,y)=>!endd&&be>=x*M&&be<y*M;
  al.push(['da',!!st.da&&act==='d'&&b.d>=st.da*M,'Driving alarm: you have driven '+fmt(b.d)+' since your last break.'],
-  ['k15',inW(15,20),'15 minutes of break done. Take 30 more to finish a split break, or carry on to 45.'],
-  ['k30',inW(30,35),'30 minutes of break done. 15 more minutes completes a full 45 minute break.'],
-  ['k45',inW(45,50),'45 minutes of break done. Your driving break is complete.']);
+  ['k15',isTc()&&inW(15,20),'15 minutes of break done. Take 30 more to finish a split driving break, or carry on to 45.'],
+  ['k30',inW(30,35),isTc()?'30 minutes of break done. Your working time break is complete. 15 more minutes completes a full 45 minute driving break.':(nd===30?'30 minutes of break done. Your working time break is complete.':'30 minutes of break done. 15 more minutes completes your working time break.')],
+  ['k45',inW(45,50),isTc()?'45 minutes of break done. Your driving break and working time break are complete.':'45 minutes of break done. Your working time break is complete.']);
  al.forEach(([k,c,m])=>{if(c&&!fired[k])fire(m);fired[k]=c});
  const L=[];
  $('gp').textContent=st.gps?'GPS On':'GPS Off';$('gd').textContent=act==='d'&&st.gps?mi(st.ad):'Not tracking';$('gs').textContent=!st.gps?'GPS is off. Turn it on above to track distance.':act==='d'?(gmsg||'Starting GPS...'):'GPS is on and starts when you start driving.';
@@ -827,7 +827,8 @@ function live(){
  if(!onS&&l&&n-l.e<7*864e5){const ls0=shiftStart(a),LS=a.filter(x=>x.s>=ls0),sd=LS.filter(x=>x.t==='d').reduce((q,x)=>q+x.e-x.s,0),sw2=LS.filter(x=>x.t==='w'||x.t==='x').reduce((q,x)=>q+x.e-x.s,0),sp=LS.filter(x=>x.t==='p').reduce((q,x)=>q+x.e-x.s,0);
   h+=`<div class="g cd w offs"><div class="row"><span class="lbl">Last Shift</span><span class="num">${fmt(sd+sw2)} <small>worked</small></span></div><div class="note">${tt(ls0)} to ${tt(l.e)}. ${fmt(sd)} driving, ${fmt(sw2)} other work${sp?', '+fmt(sp)+' POA':''}. Tap Today's Log or the Hours tab for the detail.</div></div>`}
  h+=wrCard();
- if(onS&&!isTc())h+='<div class="cs">Breaks</div><div class="g cd w"><div class="row"><span class="lbl">Tacho Driving Break</span><span class="num"><small>Not required</small></span></div><div class="note">This job has no tacho, so the 4h 30m driving break does not apply to it. The working time break below still does. Switch to a tacho job to see the driving break again.</div></div>';
+ if(onS&&!isTc()){const wl=(()=>{let e=0;const q=a.filter(x=>x.t!=='p'&&(!ss||x.s>=ss));q.forEach((x,i)=>{if(i&&x.s-q[i-1].e>=30*M)e=x.s});return e})(),wp=!busy&&be>=0?Math.floor(be/M):0,wd=!busy&&wp>=nd;
+  h+=`<div class="cs">Breaks</div><div class="g cd w${bOn?' on':' off'}"><div class="row"><span class="lbl">Break Time Taken${so(bOn,CNT)}</span><span class="num">${busy?(wl?'Last '+hm(wl):'None yet'):Math.min(wp,nd)} <small>${busy?'':'/ '+nd+' min'}</small></span></div>${!busy?`<div class="bar"><i style="width:${Math.round(Math.min(1,wp/nd)*100)}%;background:var(--${wd?'ok':'acc'})"></i></div>`:''}<div class="note">${busy?(wl?'Your last break of 30 minutes or more ended at '+hm(wl)+'. ':'')+'Working time break due after '+fmt(Math.max(0,6*H-wc.d))+' more work.':wd?'Working time break done.':'A working time break needs '+nd+' minutes in one go.'} This job has no tacho, so the 4h 30m driving break does not apply to it. A break you take still counts towards your driving break if you move to a tacho job. Add break you took without logging it:</div><div class="qf">${[15,30,45].map(m=>`<button data-m="${m}">+${m} min</button>`).join('')}</div>${bu.length&&bu[bu.length-1].g===bsig()?`<button class="tg" data-ub="1" style="display:block;width:100%;margin-top:10px;padding:12px;font-size:16px;border-radius:10px;border-color:var(--bad)">Undo +${bu[bu.length-1].n} min</button>`:''}</div>`}
  if(onS&&isTc())h+='<div class="cs">Breaks</div>'+sg('brk',card('brk','Driving Since Last Break',b.d,270*M,b.q?'Next break must be 30 min or more.':'Take 45 min, or 15 then 30.',b.q?'Take 30 minutes now.':'Take 45 minutes now.',0,bx+SGH,dOn).replace('g cd','g cd w'));
  if(onS&&isTc())h+=`<div class="g cd w${bOn?' on':' off'}"><div class="row"><span class="lbl">Break Time Taken${so(bOn,CNT)}</span><span class="num">${pm} <small>/ 45 min</small></span></div>${bkc?`<div class="row" style="margin-top:6px"><span class="lbl">${endd?'Resting for':'On break for'}</span><span class="num bkc">${bkc}</span></div>`:''}<div class="bar"><i style="width:${Math.round(prog/(45*M)*100)}%;background:var(--${pc})"></i></div><div class="note">${pm>=45?'Full break done.':lock?'Locked. You have had your full break this shift.':(pm?'15 minute part counted. The next part only counts if it is 30 minutes or more.':'Nothing counted yet. A break under 15 minutes does not count.')+(!busy&&bgc>=M?' This break: '+Math.floor(bgc/M)+' min so far'+(bp?(bgc<30*M?', counts at 30.':'.'):(bgc<15*M?', counts at 15.':', full break at 45.')):'')+' Add break you took without logging it:'}</div><div class="qf">${[15,30,45].map(m=>`<button data-m="${m}"${qd(m)?' disabled':''}>+${m} min</button>`).join('')}</div>${bu.length&&bu[bu.length-1].g===bsig()?`<button class="tg" data-ub="1" style="display:block;width:100%;margin-top:10px;padding:12px;font-size:16px;border-radius:10px;border-color:var(--bad)">Undo +${bu[bu.length-1].n} min</button>`:''}</div>`;
  set($('s1'),h);
