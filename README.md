@@ -36,7 +36,11 @@ Open the address in Chrome on Android, create an account, then tap the Chrome me
 
 ### Updating the app
 
-Edit the files in `public/`, change `VERSION` in `public/sw.js` (for example `tg-2026-10-11-1`) so phones pick up the new files, and push to `main`.
+Edit the files in `public/`, change `VERSION` in `public/sw.js` (for example `tg-2026-10-11-1`) so phones pick up the new files, set `APPV` near the top of the script in `public/index.html` to the same value (it is the version shown at the bottom of every page), and push to `main`.
+
+### Updating the database
+
+`supabase/schema.sql` is safe to run again at any time. It adds anything missing (size limits, the `updated_at` trigger) and resets the security rules and permissions to what the app needs.
 
 ## How the data is stored
 

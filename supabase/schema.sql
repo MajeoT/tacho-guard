@@ -1,4 +1,5 @@
 -- TachoGuard database. Run once in Supabase: SQL Editor > New query > paste > Run.
+-- It is safe to run again: it only adds what is missing and resets the security rules.
 -- Every row belongs to one signed in user and row level security stops anyone else reading or changing it.
 
 -- One row per driver: their hours, breaks, rest, settings and archived weeks (stored as JSON text).
@@ -24,6 +25,30 @@ create table if not exists public.tg_walks (
 );
 create index if not exists tg_walks_user_checked on public.tg_walks (user_id, checked_at desc);
 
+-- Size limits. Anyone can create an account, so these stop one account filling the database.
+-- A year of records is about 100 KB, so the limits leave plenty of room.
+alter table public.tg_state drop constraint if exists tg_state_j_size;
+alter table public.tg_state add  constraint tg_state_j_size check (octet_length(j) <= 5000000);
+alter table public.tg_state drop constraint if exists tg_state_u_pos;
+alter table public.tg_state add  constraint tg_state_u_pos  check (u >= 0);
+alter table public.tg_walks drop constraint if exists tg_walks_j_size;
+alter table public.tg_walks add  constraint tg_walks_j_size check (octet_length(j) <= 1000000);
+alter table public.tg_walks drop constraint if exists tg_walks_id_len;
+alter table public.tg_walks add  constraint tg_walks_id_len check (char_length(id) between 1 and 64);
+
+-- updated_at is set by the database clock, not the phone's.
+create or replace function public.tg_touch() returns trigger
+  language plpgsql set search_path = '' as $$
+begin
+  new.updated_at := now();
+  return new;
+end $$;
+revoke execute on function public.tg_touch() from public, anon, authenticated;
+drop trigger if exists tg_state_touch on public.tg_state;
+create trigger tg_state_touch before insert or update on public.tg_state for each row execute function public.tg_touch();
+drop trigger if exists tg_walks_touch on public.tg_walks;
+create trigger tg_walks_touch before insert or update on public.tg_walks for each row execute function public.tg_touch();
+
 alter table public.tg_state enable row level security;
 alter table public.tg_walks enable row level security;
 
@@ -35,5 +60,7 @@ drop policy if exists "own rows" on public.tg_walks;
 create policy "own rows" on public.tg_walks for all to authenticated
   using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 
-revoke all on public.tg_state, public.tg_walks from anon;
+-- Only what the app needs. Supabase grants every privilege by default, including TRUNCATE,
+-- which ignores row level security, so take everything away and give back just these four.
+revoke all on public.tg_state, public.tg_walks from anon, authenticated;
 grant select, insert, update, delete on public.tg_state, public.tg_walks to authenticated;
