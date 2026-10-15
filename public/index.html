@@ -403,7 +403,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-14-77';
+const APPV='tg-2026-10-15-78';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -542,7 +542,10 @@ const atT=(v,after)=>{const[h,m]=v.split(':').map(Number),d=new Date(after);d.se
 const nearT=(v,ref)=>{const[h,m]=v.split(':').map(Number);let b=null;[-1,0,1].forEach(k=>{const d=new Date(ref);d.setDate(d.getDate()+k);d.setHours(h,m,0,0);const x=d.getTime();if(b===null||Math.abs(x-ref)<Math.abs(b-ref))b=x});return b};
 function commit(n){if(st.active){if(n-st.active>=20000)st.sessions.push(rec(st.active,n));if(st.act==='d')gpsOff();st.active=null;st.act=null;st.ad=0;st.as=st.ae=null}}
 let bd=0,usnap=null;
-function begin(t){moX();const us=snap;if(us){const msg=NM[t]+' started at '+hm(Date.now())+'. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';flash=msg;usnap=us;setTimeout(()=>{if(flash===msg){flash='';usnap=null;live()}},12000)}st.active=Date.now();st.act=t;if(bd){const x=bd;bd=0;st.sessions=st.sessions.filter(y=>!(y.e>x&&y.s>=x));st.sessions.forEach(y=>{if(y.e>x)y.e=x});st.active=x}if(t==='d'){gpsOn();wake()}save();render()}
+function begin(t,pl){
+ /* a new shift started after its planned start time: ask if it really started on time (pl: already asked) */
+ if(!pl&&!bd&&t!=='r'&&typeof plDue==='function'){const o=plDue();if(o){plStartAsk(o,t);return}}
+ moX();const us=snap;if(us){const msg=NM[t]+' started at '+hm(bd||Date.now())+'. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';flash=msg;usnap=us;setTimeout(()=>{if(flash===msg){flash='';usnap=null;live()}},12000)}st.active=Date.now();st.act=t;if(bd){const x=bd;bd=0;st.sessions=st.sessions.filter(y=>!(y.e>x&&y.s>=x));st.sessions.forEach(y=>{if(y.e>x)y.e=x});st.active=x;if(st.rs&&x<st.rs)st.rs=x}if(t==='d'){gpsOn();wake()}save();render()}
 function undo(){moX();if(snap){st=JSON.parse(snap);snap=null}if(st.act==='d'){gpsOn();wake()}save();render()}
 function legalStart(t){t=t||'d';
  const a0=all(),rs=st.rs||0,a=a0.filter(x=>x.e>rs).map(x=>x.s<rs?Object.assign({},x,{s:rs}):x),dr=a.filter(x=>x.t==='d'),dr0=a0.filter(x=>x.t==='d'),n=Date.now(),w=mon(),l=a[a.length-1];
@@ -587,7 +590,8 @@ function setAct(t){
   const nsh=!was&&t!=='r'&&jobsOn()&&(!z||n-z.e>=9*H||!!(st.se&&st.se>=z.e))&&(st.tmt||0)<(z?z.e:1),chk=()=>{if(nsh)startAsk(()=>chk0(),0);else chk0()};
   if(!was&&z&&n-z.e>=9*H&&(st.fq||0)<z.e)shiftAsk(z,n,gp,chk);else if(!was)gp();else chk0()}}
 function startAsk(next,chg){
- const J=jobs();let sj=jobC(st.cj).id,tc=st.tm!==undefined&&st.tm!==null&&!chg?!!st.tm:jobC(sj).tc!==false,wk=true;
+ /* a shift planned for now picks its job and tacho setting for you */
+ const J=jobs(),pd=!chg&&typeof plDue==='function'?plDue():null;let sj=jobC(pd?pd.j:st.cj).id,tc=st.tm!==undefined&&st.tm!==null&&!chg&&!pd?!!st.tm:jobC(sj).tc!==false,wk=true;
  const sel=(on,bg,fg)=>on?`style="background:${bg};border-color:${bg};color:${fg||'#fff'};font-weight:700"`:'';
  const draw=()=>{mo(`<h3>${chg?'Change job':'Starting a shift'}</h3>${J.length>1?`<p>Which job is this for?</p>${J.map((j,i)=>`<button class="tg big" data-k="j${i}" ${sel(j.id===sj,JCOL[i])}>${j.id===sj?'✓ ':''}${esc(j.n)}${j.tc===false?' (no tacho)':''}</button>`).join('')}`:''}<p>Are you driving under tacho rules today?</p><button class="tg big" data-k="ty" ${sel(tc,'var(--ok)')}>${tc?'✓ ':''}Yes, tacho</button><button class="tg big" data-k="tn" ${sel(!tc,'var(--warn)','#1b1300')}>${!tc?'✓ ':''}No tacho</button><p class="note">${tc?'Driving counts towards the 4h 30m, 9h and weekly driving limits.':'Driving is logged as Driving (no tacho). It counts as working time and stops your break, but not towards the tacho driving limits. You can convert an entry to tacho driving later.'}</p>${!tc&&!chg?`<p>Do you still need a walkaround check today?</p><button class="tg big" data-k="wy" ${sel(wk,'var(--acc)','var(--onacc)')}>${wk?'✓ ':''}Yes, show it</button><button class="tg big" data-k="wn" ${sel(!wk,'var(--acc)','var(--onacc)')}>${!wk?'✓ ':''}No walkaround needed</button>`:''}<button class="tg big" data-k="ok" style="margin-top:14px;font-weight:700">${chg?'Save':'Start shift'}</button><button class="tg big" data-k="no">← Back</button>`);
   mcb={no:chg?moX:undo,ty:()=>{tc=true;draw()},tn:()=>{tc=false;draw()},wy:()=>{wk=true;draw()},wn:()=>{wk=false;draw()},
@@ -669,13 +673,25 @@ function brkp(a){bgc=0;bp=false;const c0=cnt(a,45,x=>x.t==='d');if(c0.d===0&&a.s
  return q?(gc>=30*M?45*M:15*M):(gc>=45*M?45*M:gc>=15*M?15*M:0)}
 function ovTxt(t0,t1){let m=0;st.sessions.forEach(x=>{if((x.t||'d')!=='r')m+=Math.max(0,Math.min(x.e,t1)-Math.max(x.s,t0))});if(st.active&&st.act&&st.act!=='r')m+=Math.max(0,t1-Math.max(st.active,t0));return m>=M?'The '+fmt(m)+' of driving or work logged in that time now counts as break.':''}
 let ot='';
-function fillBreak(N){ot='';
+/* A break only counts inside the shift. If one is put before the first activity of the shift, the shift must really have
+   started earlier (for example it was started in the app late), so ask when and move the start back before adding the break. */
+const brkBefore=t1=>{const A=all();if(!A.length)return false;const l=A[A.length-1],busy=!!st.active&&st.act!=='r';if(!busy&&Date.now()-l.e>=9*H)return false;return t1<=shiftStart(A)+M};
+function brkShift(t0,t1,go){const A=all(),ss=shiftStart(A),prev=A.filter(x=>x.e<=ss).pop(),pe=prev?prev.e:0,busy=!!st.active&&st.act!=='r';
+ const o=typeof plOcc==='function'?plOcc(sod(ss)-H,ss+M).filter(p=>p.S<t0&&p.S>pe&&p.st!=='skip').sort((a,b)=>b.S-a.S)[0]:null,ps=o?o.s.slice(0,5):'';
+ mo(`<h3>When did your shift start?</h3><p>The app has this shift starting at <b>${hm(ss)}</b>, so a break from ${hm(t0)} to ${hm(t1)} is before it. It would count as rest, not as a break in this shift.</p><p>If you were already working before ${hm(ss)}, set when the shift really started and the break goes in the right place.</p>${o?`<button class="tg big" data-k="pl" style="font-weight:700">My shift started at ${ps}, as planned</button>`:''}<div class="tr" style="margin-top:12px"><label>My shift started at<input type="time" id="bss" value="${ps}"></label><button class="tg" data-k="at">Use time</button></div><div class="note bad" id="bsserr"></div><button class="tg big" data-k="no">Cancel</button>`);
+ const err=m=>{$('bsserr').textContent=m},set=x=>{if(!(x<t0)){err('The shift has to start before the break ('+hm(t0)+').');return}if(x<=pe){err('That is before your last shift ended ('+hm(pe)+').');return}
+  clear(x,ss,1);/* it was work, not rest, from then */
+  if(busy&&st.active===ss)st.active=x;else{const f=st.sessions.find(y=>(y.t||'d')!=='r'&&y.s===ss);if(f)f.s=x}
+  if(st.rs&&x<st.rs)st.rs=x;moX();go()};
+ mcb={no:moX,pl:()=>set(o.S),at:()=>{const v=$('bss').value;if(!v){err('Enter the time your shift started.');return}set(nearT(v,ss))}}}
+function fillBreak(N,pre){ot='';
  if(lock||(isTc()&&(prog>=45*M||(N===15&&prog>=15*M))))return;
  if(bu.length&&bu[bu.length-1].g!==bsig())bu=[];
  const u0=JSON.stringify(st);
  const n=Date.now(),busy=st.act&&st.act!=='r',B=busy?st.active:n,full=N>=45||(prog>=15*M&&N>=30),rs=st.rs||0;
  let k=null;st.sessions.forEach(x=>{if((x.t||'d')!=='r'&&x.e<=B&&x.e>rs&&(!k||x.e>k.e))k=x});
  const g0=k?k.e:gstart(B),gp=B-g0;
+ {const tb=(!busy||(gp>0&&gp<45*M&&n-st.active<10*M))?g0:n-st.active<N*M?st.active:n;if(!pre&&brkBefore(tb)){brkShift(tb-N*M,tb,()=>fillBreak(N,1));return}}
  let t0,t1;
  if(!busy||(gp>0&&gp<45*M&&n-st.active<10*M)){t1=g0;t0=t1-N*M;ot=ovTxt(t0,t1);clear(t0,t1)}
  else if(n-st.active<N*M){t1=st.active;t0=t1-N*M;ot=ovTxt(t0,t1);clear(t0,t1)}
@@ -700,7 +716,8 @@ function breakAsk(N){
   if(t1>n){E.textContent='That break would finish at '+hm(t1)+', which is later than now. Pick an earlier start time.';return}
   if(onB&&t1>st.active){E.textContent='You have been on Break since '+hm(st.active)+', so that time is already counted. Pick a time that finishes before then.';return}
   moX();placeBreak(N,t0,t1)}}}
-function placeBreak(N,t0,t1){
+function placeBreak(N,t0,t1,pre){
+ if(!pre&&brkBefore(t1)){brkShift(t0,t1,()=>placeBreak(N,t0,t1,1));return}
  if(bu.length&&bu[bu.length-1].g!==bsig())bu=[];
  const u0=JSON.stringify(st),full=N>=45||(prog>=15*M&&N>=30),rs=st.rs||0;
  ot=ovTxt(t0,t1);clear(t0,t1,1);
@@ -1045,7 +1062,7 @@ const listClick=e=>{
 $('list').onclick=listClick;$('dayc').onclick=listClick;
 $('dback').onclick=()=>showTab(dayFrom);$('tlog').onclick=()=>openDay(sod(Date.now()),'today');
 $('dform').onsubmit=e=>{e.preventDefault();const dv=ymd(dayView),s=new Date(dv+'T'+$('ds').value).getTime(),en=new Date(dv+'T'+$('de').value).getTime();if(!(en>s)){$('derr').textContent='The end time must be after the start time, on the same day. For an overnight entry, use the Log tab.';return}$('derr').textContent='';clear(s,en,1);st.sessions.push({s,e:en,t:$('dt').value,chk:1});save();$('ds').value='';$('de').value='';render()};
-$('esb').onclick=()=>{const v=$('est').value;if(!v)return;const[h,m]=v.split(':').map(Number),q=new Date(),n=Date.now();q.setHours(h,m,0,0);let x=q.getTime();const fut=x>n;if(fut)x-=864e5;const say=t=>{flash=t;setTimeout(()=>{flash='';live()},6000);esFor=0;save();render()};if(fut&&n-x>12*H){say('That time is later than now. Pick a time before now.');return}if(st.active&&st.act!=='r'){if(x<st.active)clear(x,st.active);st.active=x;if(st.rs&&x<st.rs)st.rs=x;say(NM[st.act]+' start changed to '+hm(x)+'.');return}const rs=st.rs||0;let k=null;st.sessions.forEach(y=>{if((y.t||'d')!=='r'&&y.e>rs&&(!k||y.e>k.e))k=y});if(k&&n-k.e>=9*H)k=null;if(k){if(x<=k.s){say('Pick a time after your last activity started ('+hm(k.s)+') and before now.');return}k.e=x;if(rs&&x<=rs)st.rs=Math.max(k.s,x-1)}else if(!st.active)return;if(st.active)st.active=x;say('Break start changed to '+hm(x)+'.')};
+$('esb').onclick=()=>{const v=$('est').value;if(!v)return;const[h,m]=v.split(':').map(Number),q=new Date(),n=Date.now();q.setHours(h,m,0,0);let x=q.getTime();const fut=x>n;if(fut)x-=864e5;const say=t=>{flash=t;setTimeout(()=>{flash='';live()},6000);esFor=0;save();render()};if(fut&&n-x>12*H){say('That time is later than now. Pick a time before now.');return}if(st.active&&st.act!=='r'){if(x<st.active)clear(x,st.active,1);st.active=x;if(st.rs&&x<st.rs)st.rs=x;say(NM[st.act]+' start changed to '+hm(x)+'.');return}const rs=st.rs||0;let k=null;st.sessions.forEach(y=>{if((y.t||'d')!=='r'&&y.e>rs&&(!k||y.e>k.e))k=y});if(k&&n-k.e>=9*H)k=null;if(k){if(x<=k.s){say('Pick a time after your last activity started ('+hm(k.s)+') and before now.');return}k.e=x;if(rs&&x<=rs)st.rs=Math.max(k.s,x-1)}else if(!st.active)return;if(st.active)st.active=x;say('Break start changed to '+hm(x)+'.')};
 const pad=n=>String(n).padStart(2,'0'),now=new Date();
 $('d').value=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
 $('f').onsubmit=e=>{
