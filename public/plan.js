@@ -159,7 +159,7 @@ function plPending(){const n=Date.now(),out=[],L=all();plOcc(n-14*864e5,n+864e5)
   if(o.E<=n)out.push({o,k:'end'});else if(o.S+60*M<=n&&!st.active)out.push({o,k:'late'})});
  if(out.dirty){delete out.dirty;save()}return out}
 function plBanner(){const el=$('plb');if(!el)return;const P=plPending();
- set(el,P.slice(0,2).map(({o,k})=>{const j=jobC(o.j);return `<div class="wkb wn" style="cursor:default"><b>${k==='end'?'Planned shift: what happened?':'Planned shift not started'}</b><span>${esc(j.n)} ${dlong(o.S)} ${o.s.slice(0,5)}–${o.e.slice(0,5)}. ${k==='end'?'Nothing was logged for it.':'It was due to start at '+o.s.slice(0,5)+'.'}</span><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${k==='end'?`<button class="tg" data-pbk="as:${o.oid}" style="flex:1 1 0;white-space:normal">Worked as planned</button><button class="tg" data-pbk="df:${o.oid}" style="flex:1 1 0;white-space:normal">Different times</button>`:`<button class="tg" data-pbk="go:${o.oid}" style="flex:1 1 0;white-space:normal">Start it now</button>`}<button class="tg" data-pbk="sk:${o.oid}" style="flex:1 1 0;white-space:normal">Didn't work</button></div></div>`}).join(''))}
+ set(el,P.slice(0,2).map(({o,k})=>{const j=jobC(o.j);return `<div class="wkb wn" style="cursor:default"><b>${k==='end'?'Planned shift: what happened?':'Planned shift not started'}</b><span>${esc(j.n)} ${dlong(o.S)} ${o.s.slice(0,5)}–${o.e.slice(0,5)}. ${k==='end'?'Nothing was logged for it.':'It was due to start at '+o.s.slice(0,5)+'.'}</span><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${k==='end'?`<button class="tg" data-pbk="as:${o.oid}" style="flex:1 1 0;white-space:normal">Worked as planned</button><button class="tg" data-pbk="df:${o.oid}" style="flex:1 1 0;white-space:normal">Different times</button>`:`<button class="tg" data-pbk="go:${o.oid}" style="flex:1 1 0;white-space:normal">Start this shift</button>`}<button class="tg" data-pbk="sk:${o.oid}" style="flex:1 1 0;white-space:normal">Didn't work</button></div></div>`}).join(''))}
 function plLog(o,s,e){const br=(o.br||0)*M,mid=s+Math.max(0,(e-s-br)/2),j=jobC(o.j),tc=j.tc!==false,mk=(a,b)=>{if(b>a){const x={s:a,e:b,t:'w'};if(jobsOn()){x.j=j.id;x.c=tc?1:0}clear(a,b,1);st.sessions.push(x)}};
  if(br>0&&e-s>br){mk(s,mid);mk(mid+br,e)}else mk(s,e);st.pls=Object.assign({},st.pls,{[o.oid]:'done'})}
 function plAct(k,oid){const o=plOcc(Date.now()-15*864e5,Date.now()+2*864e5).find(x=>x.oid===oid);if(!o)return;
@@ -169,6 +169,17 @@ function plAct(k,oid){const o=plOcc(Date.now()-15*864e5,Date.now()+2*864e5).find
  if(k==='df'){mo(`<h3>What did you work?</h3><p>${esc(jobC(o.j).n)}, planned ${dlong(o.S)} ${o.s.slice(0,5)}–${o.e.slice(0,5)}.</p><div class="tr"><label>Started<input type="time" id="pas" value="${o.s.slice(0,5)}"></label><label>Finished<input type="time" id="pae" value="${o.e.slice(0,5)}"></label></div><label>Unpaid break (min)<input type="number" id="pab" min="0" max="180" value="${o.br||0}"></label><div class="note bad" id="paerr"></div><button class="tg big" data-k="ok">Log it</button><button class="tg big" data-k="no">Cancel</button>`);
   mcb={no:moX,ok:()=>{const a=$('pas').value,b=$('pae').value;if(!a||!b){$('paerr').textContent='Enter both times.';return}const d=sod(o.S);const s=d+tmin(a)*M;let e=d+tmin(b)*M;if(e<=s)e=nxd(d)+tmin(b)*M;if(e>Date.now()){$('paerr').textContent='The finish is in the future.';return}
    plLog(Object.assign({},o,{br:+$('pab').value||0}),s,e);save();moX();render()}}}}
+
+/* A planned shift whose start time has passed, that has not ended, with nothing logged for it yet. */
+function plDue(){const n=Date.now(),L=all();
+ return plOcc(n-20*H,n+1).filter(o=>!o.st&&o.S<=n-5*M&&o.E>n&&!L.some(x=>x.e>o.S-H&&x.s<o.E)).sort((a,b)=>b.S-a.S)[0]||null}
+/* Starting a shift late against the plan: ask whether it really started at the planned time. */
+function plStartAsk(o,t){const n=Date.now(),j=jobC(o.j),A=all(),pe=A.length?A[A.length-1].e:0,ps=o.s.slice(0,5);
+ mo(`<h3>When did you start?</h3><p>You had <b>${esc(j.n)}</b> planned from <b>${ps}</b> to ${o.e.slice(0,5)} today. If you started at ${ps}, start the shift from then so your hours and breaks count from the right time.</p><button class="tg big" data-k="pl" style="font-weight:700">I started at ${ps}, as planned</button><button class="tg big" data-k="now">I am starting now (${hm(n)})</button><div class="tr" style="margin-top:12px"><label>Or I started at<input type="time" id="pst"></label><button class="tg" data-k="at">Use time</button></div><div class="note bad" id="psterr"></div><button class="tg big" data-k="no">Cancel</button>`);
+ const go=x=>{bd=x;begin(t,1)},err=m=>{$('psterr').textContent=m};
+ mcb={no:undo,now:()=>begin(t,1),pl:()=>go(Math.max(o.S,pe)),at:()=>{const v=$('pst').value;if(!v){err('Enter the time you started.');return}
+  const[h,m]=v.split(':').map(Number),q=new Date(n);q.setHours(h,m,0,0);let x=q.getTime();if(x>n)x-=864e5;
+  if(x<=pe){err('That is before your last activity ended ('+hm(pe)+'). Pick a later time.');return}if(n-x>16*H){err('That is more than 16 hours ago. Check the time.');return}go(x)}}}
 
 /* Wire up */
 document.addEventListener('click',e=>{const b=e.target.closest('[data-pbk]');if(b){const[k,oid]=b.dataset.pbk.split(/:(.*)/s);plAct(k,oid)}});
