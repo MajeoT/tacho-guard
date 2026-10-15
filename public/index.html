@@ -277,6 +277,8 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .i{position:relative}.i::after{content:'';position:absolute;inset:-12px}.dbody ul{margin:0;padding-left:18px}.dbody li{margin:0 0 8px}.srcs{margin-top:8px;line-height:1.1}.src{display:inline-block;margin:0 6px 4px 0;padding:2px 6px;font-size:11px;color:var(--mut);text-decoration:none;border:1px solid var(--bd)}.src:hover,.src:focus{color:var(--tx);text-decoration:underline}.wn{margin-top:8px;font-size:13px;padding:6px 8px;color:var(--tx)}.lg{margin-top:6px;font-size:13px;padding:6px 8px;color:var(--tx)}.lg-law{border-left-color:var(--bad)}.lg-adv{border-left-color:var(--warn)}.lg-sh{border-left-color:var(--warn)}.lg-warn{border-left-color:var(--warn)}.lg-info{border-left-color:var(--mut)}.lg-veh{border-left-color:var(--acc)}
 .sgc img{flex:none;width:84px;height:84px;object-fit:contain}.sgc img.fl{transform:scaleX(-1)}
 .tci{flex:none;vertical-align:-4px}
+.h-top{display:flex;align-items:center;gap:5px;flex-wrap:nowrap;min-width:0}.h-top .h-chip{flex:none;white-space:nowrap;padding:6px 9px;gap:5px;font-size:12.5px}.h-top .h-chip.hj{flex:0 1 auto;min-width:0}.h-chip i{flex:none}.hjn{overflow:hidden;text-overflow:ellipsis;min-width:0}@media (max-width:374px){.h-top .hs{display:none}}
+#tcsw .tg{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:8px;padding:10px;white-space:normal;font-size:14px}
 #esb.pend{background:var(--acc);color:var(--onacc);border-color:var(--acc);font-weight:700}
 .plkey>div{display:flex;align-items:center;gap:8px;font-size:13px;margin:3px 0}.plkey .ki{width:36px;flex:none;display:flex;justify-content:center;align-items:center}.plkey .plw{font-size:11px}
 </style>
@@ -287,10 +289,10 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div class="tabs"><button class="tab on" data-t="today">Today</button><button class="tab" data-t="check">Walkaround</button><button class="tab" data-t="hours">Hours</button><button class="tab" data-t="plan">Plan</button><button class="tab" data-t="tacho">Tacho</button><button class="tab" data-t="signs">Learn</button><button class="tab" data-t="log">Log</button></div>
 <div id="sync" role="status"></div>
 <section id="t-today">
-<p class="sub">Tap what you are doing now, as on the tachograph. Outlined cards are the ones counting.</p><div class="alert" id="alert" hidden></div>
+<div class="alert" id="alert" hidden></div>
 <div id="plb"></div><div id="iss"></div><div id="wkb"></div><div id="mx"></div>
 <div id="hero"></div>
-<div class="acts"><button class="act" data-a="d"><b>🚛</b>Driving</button><button class="act" data-a="w"><b>⚒</b>Work</button><button class="act" data-a="p"><b>◪</b>POA</button><button class="act" data-a="r"><b>🛏</b>Break</button></div>
+<div class="acts"><button class="act" data-a="d"><b>🚛</b>Driving</button><button class="act" data-a="w"><b>⚒</b>Work</button><button class="act" data-a="p"><b>◪</b>POA</button><button class="act" data-a="r"><b>🛏</b>Break</button></div><div id="tcsw"></div>
 <div class="live" id="live"></div><div class="tr" id="es" style="margin-top:10px" hidden><label for="est" id="esl">Started At</label><input type="time" id="est"><button class="tg" id="esb">Change</button></div>
 <div id="s1"></div><div id="s2"></div><button class="tg" id="esh" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">End Shift</button><button class="tg" id="tlog" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">Today's Log</button><p class="note" style="text-align:center;margin:6px 0 0">See and edit today's driving, work, POA and breaks.</p><button class="tg" id="rd2" style="display:block;width:100%;margin-top:30px;padding:14px;font-size:16px;border-radius:12px;color:#fff;background:var(--bad);border-color:var(--bad)">Reset Day</button><p class="note" style="text-align:center;margin:6px 0 0">Starts breaks, shift and working time again from now. Asks twice and can be undone for 20 seconds.</p></section><section id="t-plan" hidden><h2>Shift Planner</h2><p class="note" style="margin-top:-6px">Plan shifts for all your jobs. Each day is checked against the rest, working time and driving rules, using what you have logged so far.</p><div id="plc"></div></section><section id="t-tacho" hidden><h2>Tacho Downloads <button class="i" data-i="tac" aria-label="More info">i</button></h2><div id="tcx"></div><div class="g"><div class="tr"><label for="tc">Driver Card Downloaded</label><input type="date" id="tc"></div><div class="note" id="tcn"></div><div class="tr" style="margin-top:12px"><label for="tu">Vehicle Unit Downloaded</label><input type="date" id="tu"></div><div class="note" id="tun"></div></div>
 
@@ -405,7 +407,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-15-78';
+const APPV='tg-2026-10-15-79';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -883,7 +885,9 @@ function liveRun(){
   fn:['Driving This Fortnight',dr0,w1,n,'Driving since Monday 00:00 of last week.']};
  const bi=brkInfo(a,ss);lock=isTc()&&bi.k>0&&day<9*H&&b.d<270*M&&wc.d<6*H;
  const dOn=act==='d',wOn=act==='d'||act==='w'||act==='x',bOn=!busy,so=(x,y)=>x?y:'';
- document.querySelectorAll('.act').forEach(x=>{const o=x.dataset.a===(act==='x'?'d':act);x.classList.toggle('on',o);x.setAttribute('aria-pressed',o);x.classList.toggle('lk',x.dataset.a==='r'&&lock&&act!=='r')});
+ /* a no-tacho job only needs Work and Break (a running Driving or POA stays visible so it can be seen) */
+ {const nt=!isTc();let nv=0;document.querySelectorAll('.act').forEach(x=>{const o=x.dataset.a===(act==='x'?'d':act),hd=nt&&(x.dataset.a==='d'||x.dataset.a==='p')&&!o;x.hidden=hd;if(!hd)nv++;x.classList.toggle('on',o);x.setAttribute('aria-pressed',o);x.classList.toggle('lk',x.dataset.a==='r'&&lock&&act!=='r')});
+  const ae=document.querySelector('.acts');if(ae)ae.style.gridTemplateColumns='repeat('+nv+',1fr)'}
  const qd=m=>lock||(isTc()&&(prog>=45*M||(m===15&&prog>=15*M)));const nd=sw>9*H?45:30;
  $('al').textContent=st.alerts?'Alerts On':'Alerts Off';
  const al=[['b15',act==='d'&&b.d>=255*M,'15 minutes until you need a 45 minute break.'],['b0',act==='d'&&b.d>=270*M,'4h 30m of driving reached. Take a break now.'],
@@ -924,7 +928,7 @@ function liveRun(){
   nsv=ns}
 
  const bl=endd?'Rest':'On break',bks=Math.floor(be/1000),bkc=be>=0&&(be<9*H||endd)?(bks>=3600?Math.floor(bks/3600)+':':'')+String(Math.floor(bks%3600/60)).padStart(bks>=3600?2:1,'0')+':'+String(bks%60).padStart(2,'0'):'';
- {const act0=act,ac=act0?NM[act0]:'Idle',since=st.active?hm(st.active):'',dc={d:'#3ecf7b',w:'#ffb020',p:'#6fb1ff',r:'#9aa6b5'}[act0]||'#9aa6b5';
+ {const act0=act,since=st.active?hm(st.active):'',dc={d:'#3ecf7b',x:'#3ecf7b',w:'#ffb020',p:'#6fb1ff',r:'#9aa6b5'}[act0]||'#9aa6b5';
   let big,cap,sub='';
   if(act0==='d'&&hc){big=fmt(Math.max(0,hc[0]));cap='left to drive';sub='until your '+hc[1]}
   else if(act0==='w'||act0==='p'||act0==='x'){big=fmt(Math.max(0,6*H-wc.d));cap='of work left';sub='before a '+(sw>9*H?45:30)+' minute break'}
@@ -932,10 +936,12 @@ function liveRun(){
   else if(!act0&&endd&&l&&gap<11*H&&nx[1]==='Now'){big='Ready';cap='to drive or work';sub='Only if you use a reduced 9h rest (1 of your 3 between weekly rests). A regular 11h rest finishes at '+tt(l.e+11*H)+'.'}
   else if(nx[1]==='Now'){big='Ready';cap='to drive or work';sub=nx[2]}
   else{big=nx[1];cap='next legal start';sub=nx[2]}
-  const pr=Math.min(100,Math.round(b.d/(270*M)*100)),pc2=pr>=100?'#ff6b5e':pr>=80?'#ffb020':'#3ecf7b';
+  const pr=Math.min(100,Math.round(b.d/(270*M)*100)),pc2=pr>=100?'#ff6b5e':pr>=80?'#ffb020':'#3ecf7b',pw=Math.min(100,Math.round(wc.d/(6*H)*100)),pc3=pw>=100?'#ff6b5e':pw>=80?'#ffb020':'#3ecf7b';
   const tl1=act0==='d'?`<div class="h-t"><div class="h-k">${nx[0]} ${ib('next')}</div><div class="h-v">${nx[1]}</div></div>`:'';
   const tl2=nsv?`<div class="h-t"><div class="h-k">Next shift from ${ib('ns')}</div><div class="h-v">${nsv[0]}</div></div>`:'';
-  set($('hero'),`<div class="h-top"><span class="h-chip"><i style="background:${dc}"></i>${ac}${since&&act0?' since '+since:''}</span>${jobsOn()?`<span class="h-chip" data-job="1" role="button" tabindex="0" style="cursor:pointer"><i style="background:${JCOL[jobI(st.cj)]}"></i>${esc(jobC(st.cj).n)}${isTc()?tcIco(1,'#6ee7b7'):tcIco(0,'#9fb0c3','#fbbf24','#16243d')} ▾</span>`:''}${bkc?`<span class="h-chip"><i style="background:#9aa6b5"></i>${bl} ${bkc}</span>`:''}</div>${big==='Resting'||big==='Ready'?`<div class="h-state ${big==='Ready'?'rd':'rs'}">${big}</div>`:`<div class="h-big">${big}</div>`}<div class="h-cap${!act0&&big!=='Ready'?' rs':''}">${cap}${sub?'<span> '+sub+'</span>':''}</div><div class="h-bar">${multi()&&JS.brk&&JS.brk.length?JS.brk.map(q=>`<i style="float:left;width:${Math.min(100,q[1]/(270*M)*100).toFixed(1)}%;background:${q[0]}"></i>`).join(''):`<i style="width:${pr}%;background:${pc2}"></i>`}</div><div class="h-bl"><span>Driving since last break</span><span>${fmt(b.d)} / 4h 30m</span></div>${tl1||tl2?`<div class="h-ts${tl1&&tl2?'':' one'}">${tl1}${tl2}</div>`:''}`)}
+  /* one row: what is running (or the break or rest timer), then the job, whose name shortens with ... if the row is too narrow */
+  const sh={d:'Driving',x:'Driving',w:'Work',p:'POA',r:'Break'},c1=bkc&&act0!=='d'&&act0!=='w'&&act0!=='p'&&act0!=='x'?`<span class="h-chip"><i style="background:#9aa6b5"></i>${bl} ${bkc}</span>`:`<span class="h-chip"><i style="background:${dc}"></i><span>${act0?sh[act0]+(since?'<span class="hs"> since</span> '+since:''):'Idle'}</span></span>`;
+  set($('hero'),`<div class="h-top">${c1}${jobsOn()?`<span class="h-chip hj" data-job="1" role="button" tabindex="0" style="cursor:pointer"><i style="background:${JCOL[jobI(st.cj)]}"></i><span class="hjn">${esc(jobC(st.cj).n)}</span>${isTc()?tcIco(1,'#6ee7b7'):tcIco(0,'#9fb0c3','#fbbf24','#16243d')}▾</span>`:''}</div>${big==='Resting'||big==='Ready'?`<div class="h-state ${big==='Ready'?'rd':'rs'}">${big}</div>`:`<div class="h-big">${big}</div>`}<div class="h-cap${!act0&&big!=='Ready'?' rs':''}">${cap}${sub?'<span> '+sub+'</span>':''}</div>${isTc()?`<div class="h-bar">${multi()&&JS.brk&&JS.brk.length?JS.brk.map(q=>`<i style="float:left;width:${Math.min(100,q[1]/(270*M)*100).toFixed(1)}%;background:${q[0]}"></i>`).join(''):`<i style="width:${pr}%;background:${pc2}"></i>`}</div><div class="h-bl"><span>Driving since last break</span><span>${fmt(b.d)} / 4h 30m</span></div>`:`<div class="h-bar">${multi()&&JS.wrk&&JS.wrk.length?JS.wrk.map(q=>`<i style="float:left;width:${Math.min(100,q[1]/(6*H)*100).toFixed(1)}%;background:${q[0]}"></i>`).join(''):`<i style="width:${pw}%;background:${pc3}"></i>`}</div><div class="h-bl"><span>Work since last break</span><span>${fmt(wc.d)} / 6h</span></div>`}${tl1||tl2?`<div class="h-ts${tl1&&tl2?'':' one'}">${tl1}${tl2}</div>`:''}`)}
  if(!busy&&l){
   const c=gap>=11*H?'ok':gap>=9*H?'warn':'acc';
   let t=gap>=45*H?'Weekly rest done.':gap>=11*H?'Regular daily rest done. Weekly rest of 45h is at '+tt(l.e+45*H)+'.':gap>=9*H?'Reduced daily rest done (allowed 3 times between weekly rests). Regular 11h at '+tt(l.e+11*H)+'.':'Reduced 9h rest at '+tt(l.e+9*H)+', regular 11h at '+tt(l.e+11*H)+'.';
@@ -946,6 +952,7 @@ function liveRun(){
  const pm=Math.floor(prog/M),pc=pm>=45?'ok':'acc';
  const room=270*M-b.d,bx=`<div class="note" style="margin-top:6px"><b>Breaks this shift:</b> ${bi.k?bi.k+' full break'+(bi.k>1?'s':'')+', last finished '+hm(bi.last):'no full break yet'}.<br><b>Still required:</b> ${b.d>=270*M?(b.q?'30':'45')+' minutes, due now.':bi.k&&9*H-day<=room?'nothing more for a 9h day. A break is needed if you drive another '+fmt(room)+'.':!busy&&bgc>0&&prog<45*M?Math.ceil(((bp?30:45)*M-bgc)/M)+' more minutes of this break'+(bp?'':', or stop at 15 and take 30 or more later')+'.':(b.p?'30 minutes (15 minute part done)':'45 minutes')+', within '+fmt(room)+' of driving.'}${lock?'<br>Break and +min buttons are locked until a break is due or you pass 9h driving.':''}</div>`;
  const onS=!!st.active||(!!l&&!endd);
+ set($('tcsw'),onS&&jobsOn()&&!isTc()?`<button class="tg" data-tcsw="1">${tcIco(1)}<span>Switch this shift to tacho</span></button>`:'');
  if(!onS&&l&&n-l.e<7*864e5){const ls0=shiftStart(a),LS=a.filter(x=>x.s>=ls0),sd=LS.filter(x=>x.t==='d').reduce((q,x)=>q+x.e-x.s,0),sw2=LS.filter(x=>x.t==='w'||x.t==='x').reduce((q,x)=>q+x.e-x.s,0),sp=LS.filter(x=>x.t==='p').reduce((q,x)=>q+x.e-x.s,0);
   h+=`<div class="g cd w offs"><div class="row"><span class="lbl">Last Shift</span><span class="num">${fmt(sd+sw2)} <small>worked</small></span></div><div class="note">${tt(ls0)} to ${tt(l.e)}. ${fmt(sd)} driving, ${fmt(sw2)} other work${sp?', '+fmt(sp)+' POA':''}. Tap Today's Log or the Hours tab for the detail.</div></div>`}
  h+=wrCard();
@@ -956,7 +963,7 @@ function liveRun(){
  set($('s1'),h);
  const dt=extLeft?'You can extend to 10h ('+(2-prev)+' left this week).':'No 10h extensions left this week.';
  const td=sod(n),poaD=sum(a0.filter(x=>x.t==='p'),td,n+1),poaW=sum(a0.filter(x=>x.t==='p'),w,n+1),paidD=sum(a0.filter(x=>x.t!=='r'),td,n+1);
- set($('s2'),(onS||poaD?`<div class="g cd w${act==='p'?' on':act?' off':''}"><div class="row"><span class="lbl">POA ${ib('poa')}</span><span class="num">${fmt(poaD)}</span></div><div class="note">Today. ${fmt(poaW)} this week. All paid time today, with driving and work: ${fmt(paidD)}.</div></div>`:'')+'<div class="cs">Working Time</div>'+(onS?sg('wrk',card('wrk','Working Time Since Last Break',wc.d,6*H,'Then take a '+(sw>9*H?45:30)+' minute break.','Take a break now.',0,SGH,wOn).replace('g cd','g cd w')):'')+(()=>{const wkW=sum(a0.filter(x=>x.t!=='p'),w,n+1),tdW=sum(a0.filter(x=>x.t!=='p'),td,n+1),v=onS?sw:tdW;
+ set($('s2'),((onS&&isTc())||poaD?`<div class="g cd w${act==='p'?' on':act?' off':''}"><div class="row"><span class="lbl">POA ${ib('poa')}</span><span class="num">${fmt(poaD)}</span></div><div class="note">Today. ${fmt(poaW)} this week. All paid time today, with driving and work: ${fmt(paidD)}.</div></div>`:'')+'<div class="cs">Working Time</div>'+(onS?sg('wrk',card('wrk','Working Time Since Last Break',wc.d,6*H,'Then take a '+(sw>9*H?45:30)+' minute break.','Take a break now.',0,SGH,wOn).replace('g cd','g cd w')):'')+(()=>{const wkW=sum(a0.filter(x=>x.t!=='p'),w,n+1),tdW=sum(a0.filter(x=>x.t!=='p'),td,n+1),v=onS?sw:tdW;
   return `<div class="g cd${wOn?' on':''}"><div class="row"><span class="lbl">${onS?'Worked This Shift':'Worked Today'} ${ib('wsh')}</span></div><div class="num ok">${fmt(v)}</div><div class="note">Driving plus other work${onS?' since '+hm(ss):' today'}. POA and breaks are not counted.</div></div>`+card('wkw','Worked This Week',wkW,60*H,'Monday to Sunday. No single week can go over 60h.','60 hour weekly limit reached.',0,'',wOn)})()+'<div class="cs">Driving Limits</div>'+
   (onS?sg('day',card('day','Driving This Shift',day,9*H,dt,extLeft&&day<10*H?'Over 9h, so this uses one of your 2 extensions. Stop by 10h.':extLeft?'10h limit reached.':'9h reached. No extensions left this week.',extLeft?10*H:0,SGH,dOn).replace('g cd','g cd w')):'')+
   
@@ -1025,6 +1032,16 @@ jobsUi();rpUi();
  if(k==='w17')rp.w=17;else if(k==='w26')rp.w=26;else if(k==='fix')delete rp.s;else if(k==='cus'){if(!rp.s)rp.s=ymd(refP(Date.now()).s)}else if(k==='sf'){sfAsk();return}
  save();rpUi();render()};$(id).onchange=e=>{if(e.target.dataset.rpd&&e.target.value){(st.rp=st.rp||{}).s=e.target.value;save();rpUi();render()}}});
 $('hero').onclick=e=>{if(e.target.closest('[data-job]'))startAsk(()=>{},1)};
+/* Switch a no-tacho shift to tacho rules, for example when asked to drive a vehicle that needs a tachograph. */
+function tcSwitch(){const n=Date.now(),a=all(),ss=a.length?shiftStart(a):n,xs=st.sessions.filter(x=>x.t==='x'&&x.e>ss),xd=xs.reduce((q,x)=>q+x.e-x.s,0)+(st.act==='x'&&st.active?n-st.active:0);
+ mo(`<h3>Switch to tacho rules?</h3><p>Use this if you have been asked to drive a vehicle that needs a tachograph. From now until the end of this shift:</p><ul style="margin:0 0 10px;padding-left:18px"><li>Driving counts towards the 4h 30m break and the daily, weekly and fortnight driving limits, and the tacho break cards come back.</li><li>The Driving and POA buttons come back.</li><li>Put your driver card in before you drive. The work you did earlier in this shift goes on the tachograph as manual entries (other work), and the app lists them for you.</li><li>Do a walkaround check before you drive the vehicle.</li></ul>${xd?`<label class="dl" style="margin:0 0 12px;align-items:flex-start"><input type="checkbox" id="tcsx" style="margin-top:3px"> <span>Also count the ${fmt(xd)} of driving logged earlier in this shift as tacho driving. Only tick this if that vehicle needed a tachograph too.</span></label>`:''}<button class="tg big" data-k="ok" style="font-weight:700">Switch to tacho</button><button class="tg big" data-k="no">Cancel</button><p class="note" style="margin-top:8px">Your job stays ${esc(jobC(st.cj).n)}. To change job or switch back, tap the job name at the top.</p>`);
+ mcb={no:moX,ok:()=>{const conv=!!($('tcsx')&&$('tcsx').checked),t=Date.now();
+  if(conv)st.sessions.forEach(x=>{if(x.t==='x'&&x.e>ss){x.t='d';x.c=1}});
+  /* end what is running at the switch, so the time before it stays as no-tacho and the time after counts as tacho */
+  if(st.active&&st.act&&st.act!=='r'){const a0=st.act;if(a0==='x'&&conv)st.act='d';else{commit(t);st.active=t;st.act=a0==='x'?'d':a0}if(st.act==='d'){gpsOn();wake()}}
+  st.tm=true;st.tmt=t;st.dd={t,v:'y'};save();moX();
+  flash='Switched to tacho rules for the rest of this shift. Put your driver card in before you drive.';setTimeout(()=>{flash='';live()},9000);render()}}}
+$('tcsw').onclick=e=>{if(e.target.closest('[data-tcsw]'))tcSwitch()};
 $('live').addEventListener('click',e=>{if(e.target.closest('[data-ua]')){if(usnap&&snap===usnap){usnap=null;flash='';undo();flash='Undone.';setTimeout(()=>{if(flash==='Undone.'){flash='';live()}},4000);live()}else{flash='';live()}return}const cv=e.target.dataset.cv;if(cv&&st.active){st.act=cv;if(cv==='d'){gpsOn();wake()}else gpsOff();save();render();live();return}if(e.target.dataset.ur&&rsnap){st=JSON.parse(rsnap);rsnap=null;flash='Reset undone.';setTimeout(()=>{flash='';live()},5000);save();render();live()}});
 const endAsk=same=>{const n=Date.now(),a=all(),z=a[a.length-1],fresh0=!z||(!z.live&&n-z.e>=9*H),ss=fresh0?n:shiftStart(a);
  const lo=st.act&&st.active?st.active:(z?z.e:0);let T=n,touched=false,note='';
