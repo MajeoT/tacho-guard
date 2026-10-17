@@ -98,8 +98,9 @@ function plFree(d,base,baseI){const n=Date.now(),D0=Math.max(d,n),D1=nxd(d);if(D
    your last rest is that rest, not a new one). Nothing after that is shown, because it changes as shifts are added. */
 function plRests(sp){const I=typeof wrInfo==='function'?wrInfo():null;if(!I||I.anc===null||I.inWr)return null;
  const L=sp.slice().sort((a,b)=>a.s-b.s).filter(x=>x.e>I.lastEnd),G=[];let cur=null;
- L.forEach(x=>{if(cur!==null&&x.s>cur)G.push({s:cur,e:x.s,len:x.s-cur});cur=cur===null?x.e:Math.max(cur,x.e)});
- G.push({s:cur===null?Math.max(Date.now(),I.lastEnd):cur,e:Infinity,len:Infinity,open:1});
+ const n=Date.now();/* only time that is still ahead can start a rest: a gap that began in the past starts from now */
+ L.forEach(x=>{if(cur!==null&&x.s>cur){const s=Math.max(cur,n);if(x.s>s)G.push({s,e:x.s,len:x.s-s})}cur=cur===null?x.e:Math.max(cur,x.e)});
+ G.push({s:cur===null?Math.max(n,I.lastEnd):Math.max(cur,n),e:Infinity,len:Infinity,open:1});
  const due=I.lastEnd+144*H,ok=G.filter(g=>g.s>=I.lastEnd&&g.s<=due),f45=ok.find(g=>g.len>=45*H)||null,f24=I.full45?null:(ok.find(g=>g.len>=24*H)||null);
  return{f45,f24,due,miss:!f45&&!f24,full45:I.full45}}
 const plHm=t=>hm(t).slice(0,5);
