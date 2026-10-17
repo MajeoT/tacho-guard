@@ -423,7 +423,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-17-91';
+const APPV='tg-2026-10-17-92';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -972,12 +972,12 @@ const dmy=x=>new Date(x).toLocaleDateString('en-GB',{weekday:'short',day:'numeri
 let wpm_k='',wpm_v='';
 function wrPlanned(I){if(typeof plSpans!=='function'||!I||I.anc===null||I.inWr)return '';
  const k=(st.u||0)+'|'+Math.floor(Date.now()/6e4)+'|'+I.lastEnd;if(k===wpm_k)return wpm_v;wpm_k=k;
- const n=Date.now(),sp=plSpans().filter(x=>x.e>n).sort((a,b)=>a.s-b.s),G=[];let cur=Math.max(n,I.lastEnd);
+ const n=Date.now(),sp=plSpans().filter(x=>x.e>n).sort((a,b)=>a.s-b.s),G=[],lst=I.S[I.S.length-1];let cur=Math.max(I.lastEnd,!st.active&&lst&&!lst.live&&lst.e<=n?lst.e:n);/* already resting: the rest counts from the end of your last shift, not from now */
  sp.forEach(x=>{if(x.s>cur)G.push({s:cur,e:x.s,len:x.s-cur});cur=Math.max(cur,x.e)});G.push({s:cur,e:Infinity,len:Infinity,open:1});
  const ok=G.filter(g=>g.s<=I.due&&g.len>=24*H),full=ok.find(g=>g.len>=45*H),red=ok.find(g=>g.len>=24*H);
- const rng=g=>g.open?'from '+dmy(g.s)+' (nothing planned after that)':dmy(g.s)+' to '+dmy(g.e)+', '+fmt(g.len);
+ const rng=g=>g.s<=n?(g.open?'carrying on from the end of your shift ('+dmy(g.s)+') with nothing planned after':'from the end of your shift ('+dmy(g.s)+') to your next planned shift at '+dmy(g.e)+', '+fmt(g.len)+' in all'):g.open?'from '+dmy(g.s)+' (nothing planned after that)':dmy(g.s)+' to '+dmy(g.e)+', '+fmt(g.len);
  let t;
- if(full)t='<b>Planned:</b> '+(full.open?'your plan leaves you free '+rng(full)+', long enough for a full 45h rest.':'a full weekly rest in your plan, '+rng(full)+'.');
+ if(full)t='<b>Planned:</b> '+(full.s<=n?(full.open?'nothing is planned after your shift, so you can rest the full 45h.':'your next planned shift is <b>'+dmy(full.e)+'</b>, which leaves '+fmt(full.len)+' of rest from the end of your shift. That is enough for a full 45h.'):full.open?'your plan leaves you free '+rng(full)+', long enough for a full 45h rest.':'a full weekly rest in your plan, '+rng(full)+'.');
  else if(red&&!I.full45){const owed=45*H-Math.min(red.len,45*H);t='<b>Planned:</b> only a reduced rest, '+rng(red)+'. You would owe '+fmt(owed)+' back, taken with a rest of 9h or more within the next 3 weeks. For a full rest, leave 45h clear before '+dmy(I.due)+'.'}
  else if(red&&I.full45)t='<span class="bad"><b>Planned rest is too short:</b></span> '+rng(red)+'. Your last weekly rest was reduced, so this one must be a full 45h. Leave 45h clear.';
  else{const best=G.filter(g=>g.s<=I.due).sort((a,b)=>b.len-a.len)[0];
