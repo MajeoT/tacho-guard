@@ -398,8 +398,8 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div style="margin-top:14px"><label for="rml">Warn me before a break is due</label><select id="rml"></select><div class="note">For the 4h 30m driving break, the 6 hour working time break and your 9 hour driving limit.</div></div>
 <div style="margin-top:14px"><label for="rms">Remind me to start a planned shift</label><select id="rms"></select><div class="note">Uses the shifts in your Plan tab. It stops when you start the shift.</div></div>
 <div style="margin-top:14px"><label for="da">Driving Alarm</label><select id="da"><option value="0">Off</option></select><div class="note">Alerts you when your driving since your last break reaches this time.</div></div>
-<div class="tr" style="margin-top:14px"><span><span class="lbl">Phone notifications</span><br><span class="note" id="nn"></span></span><button class="tg" id="nt"></button></div>
-<div class="note" style="margin-top:10px">Reminders work while TachoGuard is open or running in the background. A phone cannot be woken by the app once it is fully closed, so keep it open on your shift.</div>
+<div class="tr" style="margin-top:14px"><span><span class="lbl">Phone notifications</span><br><span class="note" id="nn"></span></span><button class="tg" id="nt"></button></div><div class="tr" style="margin-top:8px"><button class="tg" id="nto" hidden>Turn off phone notifications</button></div>
+<div class="note" style="margin-top:10px">With phone notifications on, the server sends reminders to your phone even when TachoGuard is closed. Without them, reminders only appear while the app is open or running in the background.</div>
 </div>
 <h2>Working Time Average <button class="i" data-i="ref" aria-label="More info">i</button></h2><div class="g" id="rp1"></div>
 <h2>Jobs</h2><div class="g" id="jobs"></div>
@@ -420,7 +420,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-17-85';
+const APPV='tg-2026-10-17-86';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -431,7 +431,7 @@ const fixOv=()=>{[x=>(x.t||'d')!=='r',x=>x.t==='r'].forEach(nr=>{const w=st.sess
 fixOv();
 let lsOk=true,cloud=null,cloudReady=false,pushT=0,pushing=null,pushAgain=false,lastPush=0,lastMain='',syncMsg='';const remW=new Map();
 let dirty=false;
-const save=()=>{fixOv();st.u=Date.now();dirty=true;try{localStorage.setItem(K,JSON.stringify(st));lsOk=true}catch(e){lsOk=false}queuePush();syncNote()};
+const save=()=>{fixOv();st.u=Date.now();dirty=true;try{localStorage.setItem(K,JSON.stringify(st));lsOk=true}catch(e){lsOk=false}queuePush();pushRemQ();syncNote()};
 /* GPS updates arrive every few seconds while driving: keep them on the phone and let them ride along with the next account save. */
 const saveLocal=()=>{st.u=Date.now();try{localStorage.setItem(K,JSON.stringify(st));lsOk=true}catch(e){lsOk=false}};
 const $=id=>document.getElementById(id);
@@ -786,15 +786,54 @@ function fire(m,k){if(!st.alerts)return;k=k||'t'+Date.now();
  try{navigator.vibrate&&navigator.vibrate([400,200,400])}catch(e){}beep();notify(m)}
 function notify(m){try{if(!('Notification' in window)||Notification.permission!=='granted')return;const o={body:m,tag:'tg-alert',renotify:true,vibrate:[400,200,400],icon:'icons/icon-192.png',badge:'icons/icon-192.png'};
  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(r=>{if(r)r.showNotification('TachoGuard',o);else new Notification('TachoGuard',o)}).catch(()=>{try{new Notification('TachoGuard',o)}catch(e){}});else new Notification('TachoGuard',o)}catch(e){}}
-function ntUi(){const s=!('Notification' in window)?'na':Notification.permission;$('nt').textContent=s==='granted'?'Send Test':s==='denied'?'Blocked':s==='na'?'Not Supported':'Turn On';$('nt').disabled=s==='denied'||s==='na';
- $('nn').textContent=s==='granted'?'On. Alerts also appear as a phone notification.':s==='denied'?'Blocked. Allow notifications for this site in Chrome settings.':s==='na'?'This browser cannot show notifications.':'Off. Turn on to get alerts as phone notifications.'}
-$('nt').onclick=()=>{if(Notification.permission==='granted'){fire('Test reminder. This is how reminders look.','test');notify('Test alert. Notifications are working.');return}Notification.requestPermission().then(ntUi).catch(ntUi)};
+/* Phone notifications: the server (a Supabase function on a one minute timer) sends them, so they arrive with the app closed and the phone locked. */
+const PKEY='tachoguard.push.v1',pushOn=()=>{try{return localStorage.getItem(PKEY)==='1'}catch(e){return false}};
+const pushOk=()=>'Notification' in window&&'serviceWorker' in navigator&&'PushManager' in window;
+const b64u=t=>{const r=atob((t+'='.repeat((4-t.length%4)%4)).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(r,c=>c.charCodeAt(0))};
+async function fnCall(path,opt){const t=await token(),r=await fetch(SBU+'/functions/v1/tg-push'+path,Object.assign({headers:{apikey:SBK,Authorization:'Bearer '+t,'Content-Type':'application/json'}},opt)),d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||('Error '+r.status));return d}
+function ntUi(){const b=$('nt'),n=$('nn'),o=$('nto');o.hidden=true;
+ if(!pushOk()){b.textContent='Not Supported';b.disabled=true;n.textContent='This browser cannot show phone notifications. Reminders still appear inside the app.';return}
+ const pm=Notification.permission;b.disabled=pm==='denied';
+ if(pm==='denied'){b.textContent='Blocked';n.textContent='Blocked. Allow notifications for this site in your phone or Chrome settings, then come back.';return}
+ if(!sess){b.textContent='Sign In';n.textContent='Phone notifications need an account, so the server knows which phone to send to. Guests only get reminders inside the app.';return}
+ if(pm==='granted'&&pushOn()){b.textContent='Send Test';o.hidden=false;n.textContent='On. Break and planned shift reminders arrive as a phone notification, even with the app closed. You only see one when the app is not open on screen.';return}
+ b.textContent='Turn On';n.textContent='Off. Turn on to get reminders as a phone notification even with the app closed. Your phone will ask you to allow notifications.'}
+async function pushEnable(){const reg=await navigator.serviceWorker.ready,{key}=await fnCall('?vapid=1');
+ const sub=(await reg.pushManager.getSubscription())||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(key)}),j=sub.toJSON();
+ await rest('POST','tg_push_subs?on_conflict=user_id,endpoint',[{user_id:sess.uid,endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth}],'resolution=merge-duplicates,return=minimal');
+ try{localStorage.setItem(PKEY,'1')}catch(e){}prSig='';pushRem(true)}
+async function pushDisable(){try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(sub){const ep=sub.endpoint;await sub.unsubscribe();await rest('DELETE','tg_push_subs?endpoint=eq.'+encodeURIComponent(ep),null,'return=minimal')}await rest('DELETE','tg_reminders?sent_at=is.null',null,'return=minimal')}catch(e){}
+ try{localStorage.setItem(PKEY,'0')}catch(e){}prSig=''}
+$('nt').onclick=async()=>{if(!pushOk())return;if(!sess){showAuth();return}const b=$('nt'),n=$('nn');
+ if(pushOn()&&Notification.permission==='granted'){b.disabled=true;b.textContent='Sending...';
+  try{const r=await fnCall('',{method:'POST',body:JSON.stringify({test:true})});n.textContent=r.ok?'Test sent. It arrives in a few seconds. If the app is open on screen you will not see the phone one, so switch to another app or lock the phone to check.':r.phones?'The test could not be delivered. Try Turn Off, then Turn On again.':'No phone is registered. Try Turn Off, then Turn On again.'}catch(e){n.textContent='Could not send: '+aErr(e)}
+  b.disabled=false;b.textContent='Send Test';return}
+ b.disabled=true;b.textContent='Turning on...';
+ try{if(Notification.permission!=='granted'){const q=await Notification.requestPermission();if(q!=='granted'){ntUi();return}}await pushEnable();n.textContent='On.'}catch(e){n.textContent='Could not turn on: '+aErr(e)}
+ ntUi()};
+$('nto').onclick=async()=>{await pushDisable();ntUi()};
+/* What the server should remind you of, worked out from the screen figures. Sent whenever things change, so the times stay right. */
+let RLD=null,prT=0,prSig='';
+function remList(n){const L=[];if(!st.alerts||!RLD)return L;const{act,busy,b,wc,day}=RLD,RL=st.rml===undefined?15:st.rml,RS=st.rms===undefined?10:st.rms,Lm=RL*M;
+ const add=(key,at,ti,m)=>{if(at>n+20000)L.push({key,at,ti,m})};
+ if(act==='d'&&isTc()){if(b<270*M-Lm)add('b15',n+270*M-Lm-b,'Break',RL+' minutes until you need a 45 minute break.');if(b<270*M)add('b0',n+270*M-b,'Break','4h 30m of driving reached. Take a break now.')}
+ if(busy&&act!=='p'){if(wc<6*H-Lm)add('w15',n+6*H-Lm-wc,'Break',RL+' minutes until your 6 hour working limit, then you need a break.');if(wc<6*H)add('w0',n+6*H-wc,'Break','6 hours of work reached. Take a break now.')}
+ if(act==='d'&&day<9*H-Lm)add('d15',n+9*H-Lm-day,'Driving limit',RL+' minutes until 9 hours driving this shift.');
+ if(RS>=0&&!st.active&&typeof plOcc==='function'){const a0=all();plOcc(n,n+3*864e5).filter(o=>!o.st&&o.E>n&&!a0.some(x=>x.e>o.S-H&&x.s<o.E)).forEach(o=>add('ps:'+o.oid,o.S-RS*M,'Planned shift',jobC(o.j).n+' '+o.s.slice(0,5)+' to '+o.e.slice(0,5)+(RS?', starts in '+RS+' min.':', starts now.')+' Start your shift?'))}
+ return L}
+function pushRemQ(){clearTimeout(prT);prT=setTimeout(()=>pushRem(),4000)}
+async function pushRem(force){if(!sess||!cloudReady||!pushOk()||!pushOn()||Notification.permission!=='granted')return;
+ const n=Date.now(),L=remList(n),sig=JSON.stringify(L.map(r=>[r.key,Math.round(r.at/6e4),r.m]));if(!force&&sig===prSig)return;
+ try{if(L.length)await rest('POST','tg_reminders?on_conflict=user_id,key',L.map(r=>({user_id:sess.uid,key:r.key,fire_at:new Date(r.at).toISOString(),title:r.ti,body:r.m,sent_at:null})),'resolution=merge-duplicates,return=minimal');
+  await rest('DELETE','tg_reminders?sent_at=is.null'+(L.length?'&key=not.in.'+encodeURIComponent('('+L.map(r=>'"'+r.key+'"').join(',')+')'):''),null,'return=minimal');prSig=sig;
+  /* tidy: reminders already handled and over a day old */
+  rest('DELETE','tg_reminders?sent_at=not.is.null&fire_at=lt.'+encodeURIComponent(new Date(n-864e5).toISOString()),null,'return=minimal').catch(()=>{})}catch(e){prSig=''}}
 $('rmb').onclick=e=>{const b=e.target.closest('[data-rm]');if(!b)return;const a=b.dataset.rm,k=b.dataset.rk;if(a==='snz'){snz[k]=Date.now()+5*M;fired[k]=false}rmq.delete(k);rmDraw();if(a==='brk')setAct('r');else if(a==='start')setAct('w')};
 $('rml').innerHTML=[5,10,15,20,30,45].map(m=>`<option value="${m}">${m} minutes before</option>`).join('');
 $('rms').innerHTML=[[-1,'Off'],[0,'At the start time'],[5,'5 minutes before'],[10,'10 minutes before'],[15,'15 minutes before'],[30,'30 minutes before']].map(([m,t])=>`<option value="${m}">${t}</option>`).join('');
 $('rml').onchange=()=>{st.rml=+$('rml').value;save();live()};$('rms').onchange=()=>{st.rms=+$('rms').value;save();live()};
 const DA=[0,30,60,90,120,150,180,210,240,255,270];$('da').innerHTML=DA.map(m=>`<option value="${m}">${m?fmt(m*M):'Off'}</option>`).join('');
-ntUi();$('da').onchange=()=>{st.da=+$('da').value;fired.da=false;if(st.da)ntUi();save();live()};
+$('da').onchange=()=>{st.da=+$('da').value;fired.da=false;save();live()};
 function tcs(v,days,el){const e=$(el);if(!v){e.textContent='Enter the date to track it.';e.className='note';return}
  const d=Math.ceil((new Date(v+'T12:00').getTime()+days*864e5-Date.now())/864e5);
  e.textContent=d<0?'Overdue by '+(-d)+' days.':d===0?'Due today.':'Next due in '+d+' days.';e.className='note '+(d<0?'bad':d<=7?'warn':'ok')}
@@ -947,6 +986,7 @@ function liveRun(){
  const qd=m=>lock||(isTc()&&(prog>=45*M||(m===15&&prog>=15*M)));const nd=sw>9*H?45:30;
  $('al').textContent=st.alerts?'Alerts On':'Alerts Off';
  const RL=st.rml===undefined?15:st.rml,RS=st.rms===undefined?10:st.rms,Lm=RL*M;
+ RLD={act,busy,b:b.d,wc:wc.d,day};
  const al=[['b15',act==='d'&&isTc()&&b.d>=270*M-Lm&&b.d<270*M,RL+' minutes until you need a 45 minute break.'],['b0',act==='d'&&isTc()&&b.d>=270*M,'4h 30m of driving reached. Take a break now.'],
   ['w15',busy&&act!=='p'&&wc.d>=6*H-Lm&&wc.d<6*H,RL+' minutes until your 6 hour working limit, then you need a break.'],['w0',busy&&act!=='p'&&wc.d>=6*H,'6 hours of work reached. Take a break now.'],
   ['d15',act==='d'&&day>=9*H-Lm&&day<9*H,RL+' minutes until 9 hours driving this shift.'],['d0',act==='d'&&day>=9*H,extLeft?'9 hours reached. You can extend to 10 hours.':'9 hours reached. Stop driving.'],['e0',act==='d'&&extLeft&&day>=10*H,'10 hours reached. Stop driving.']];
@@ -1745,7 +1785,7 @@ AB.onclick=async e=>{const b=e.target.closest('[data-a]');if(!b)return;const k=b
  authReq('user',null,'GET',at).then(u=>{saveSess(Object.assign(base,{uid:u.id,email:u.email}));acctUi();if(p.get('type')==='recovery')showAuth(null,'recover');else{closeAuth();bootCloud()}}).catch(()=>showAuth({t:'That link did not work. Sign in with your email and password.',bad:1}))})();
 /* Account card in Settings */
 let outArm=0;
-function acctUi(){const n=$('acn'),b=$('acb');
+function acctUi(){const n=$('acn'),b=$('acb');try{ntUi()}catch(e){}
  if(!SBU){n.textContent='Account saving is not set up in this copy of the app. Your record is saved on this phone only.';b.hidden=true;return}
  b.hidden=false;if(sess){n.textContent='Signed in as '+(sess.email||'your account')+'. Your record is saved to your account and kept on this phone.';b.textContent=outArm?'Tap Again to Sign Out':'Sign Out'}else{n.textContent='Guest mode. Your record is saved on this phone only and is lost if you clear the app data or change phone. Sign in to back it up.';b.textContent='Sign In or Create Account'}}
 $('acb').onclick=()=>{if(!sess){showAuth();return}
@@ -1762,7 +1802,7 @@ else if(!sess){syncMsg='Saved on this phone only. Sign in (Settings) to back up.
 else bootCloud();
 setInterval(()=>{if(SBU&&sess&&!cloudReady)bootCloud();else if(cloudReady&&document.visibilityState==='visible')pollAcc()},30000);
 window.addEventListener('online',()=>{if(cloudReady)queuePush(true);else bootCloud()});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')live();if(!cloudReady)return;if(document.visibilityState==='hidden'){clearTimeout(pushT);doPush()}else pollAcc()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')live();if(!cloudReady)return;if(document.visibilityState==='hidden'){clearTimeout(pushT);doPush();pushRem()}else pollAcc()});
 
 archive();
 if(st.act==='d'){gpsOn();wake()}
