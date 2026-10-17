@@ -200,12 +200,35 @@ function plDue(){const n=Date.now(),L=all();
 /* Starting a shift late against the plan: ask whether it really started at the planned time. */
 function plStartAsk(o,t){const n=Date.now(),j=jobC(o.j),A=all(),pe=A.length?A[A.length-1].e:0,ps=o.s.slice(0,5);
  mo(`<h3>When did you start?</h3><p>You had <b>${esc(j.n)}</b> planned from <b>${ps}</b> to ${o.e.slice(0,5)} today. If you started at ${ps}, start the shift from then so your hours and breaks count from the right time.</p><button class="tg big" data-k="pl" style="font-weight:700">I started at ${ps}, as planned</button><button class="tg big" data-k="now">I am starting now (${hm(n)})</button><div class="tr" style="margin-top:12px"><label>Or I started at<input type="time" id="pst"></label><button class="tg" data-k="at">Use time</button></div><div class="note bad" id="psterr"></div><button class="tg big" data-k="no">Cancel</button>`);
- const go=x=>{bd=x;begin(t,1)},err=m=>{$('psterr').textContent=m};
+ const go=x=>plCatch(x,t,()=>plStartAsk(o,t)),err=m=>{$('psterr').textContent=m};
  mcb={no:undo,now:()=>begin(t,1),pl:()=>go(Math.max(o.S,pe)),at:()=>{const v=$('pst').value;if(!v){err('Enter the time you started.');return}
   const[h,m]=v.split(':').map(Number),q=new Date(n);q.setHours(h,m,0,0);let x=q.getTime();if(x>n)x-=864e5;
   if(x<=pe){err('That is before your last activity ended ('+hm(pe)+'). Pick a later time.');return}if(n-x>16*H){err('That is more than 16 hours ago. Check the time.');return}go(x)}}}
 
 document.addEventListener('change',e=>{if(e.target.id==='pfj')plDrv()});
+/* After picking a start time in the past: add the driving, POA and breaks you have already had since then, then start the shift.
+   Tacho jobs can add driving, POA and breaks. No-tacho jobs only have breaks to add. */
+function plCatch(x,t,back){const n=Date.now(),tc=isTc(),types=tc?[['d','Driving'],['p','POA'],['r','Break']]:[['r','Break']],E=[],ic={d:'🚛',p:'◪',r:'🛏'},nm={d:'Driving',p:'POA',r:'Break'};
+ const mk=(a,b,ty)=>{const o={s:a,e:b,t:ty};if(jobsOn()&&ty!=='r'){if(st.cj)o.j=st.cj;o.c=ty==='d'?1:ty==='x'?0:isTc()?1:0}return o};
+ const list=()=>{const cur=E.reduce((m,y)=>Math.max(m,y.e),x);
+  mo(`<h3>Anything since ${hm(x)}?</h3><p>You are starting from <b>${hm(x)}</b>. ${tc?'Add any driving, POA or breaks you have already had since then':'Add any breaks you have already had since then'}, so your hours and breaks are right. You can skip this if there is nothing to add.</p>${E.length?E.map((y,i)=>`<div class="item"><div><div class="lbl">${ic[y.t]} ${nm[y.t]}</div><div class="note">${hm(y.s)} to ${hm(y.e)} (${fmt(y.e-y.s)})</div></div><button class="del" data-k="rm${i}">Remove</button></div>`).join(''):''}<div class="tr" style="gap:6px;flex-wrap:wrap;margin:10px 0">${types.map(([k,l])=>`<button class="tg" data-k="a${k}" style="flex:1 1 0">+ ${l}</button>`).join('')}</div><button class="tg big" data-k="go" style="font-weight:700">${E.length?'Done, start my shift':'Nothing to add, start my shift'}</button><button class="tg big" data-k="bk">← Back</button>`);
+  mcb={bk:back,go:()=>{
+    bd=x;begin(t,1);if(!E.length)return;
+    /* the running activity was started at x: split it around what was added */
+    E.sort((p,q)=>p.s-q.s);let c=x;
+    E.forEach(y=>{if(y.s>c)st.sessions.push(mk(c,y.s,t));clear(y.s,y.e,1);st.sessions.push(mk(y.s,y.e,y.t));c=y.e});
+    st.active=c;st.ad=0;st.as=null;st.act=t;save();render()}};
+  E.forEach((y,i)=>mcb['rm'+i]=()=>{E.splice(i,1);list()});
+  types.forEach(([k])=>mcb['a'+k]=()=>form(k,cur))};
+ const form=(k,cur)=>{const e0=Math.min(n,cur+(k==='r'?30:60)*M);
+  mo(`<h3>Add ${nm[k]}</h3><p class="note">Between ${hm(x)} and now.</p><div class="tr"><label>Started<input type="time" id="cs1" value="${hm(cur)}"></label><label>Finished<input type="time" id="cs2" value="${hm(e0)}"></label></div><div class="note bad" id="cserr"></div><button class="tg big" data-k="ok">Add it</button><button class="tg big" data-k="no">Cancel</button>`);
+  mcb={no:list,ok:()=>{const a=$('cs1').value,b=$('cs2').value,E2=$('cserr');if(!a||!b){E2.textContent='Enter both times.';return}
+   const s0=atT(a,x-60000),e1=atT(b,s0+1);
+   if(s0<x){E2.textContent='That is before you started ('+hm(x)+').';return}if(e1>n){E2.textContent='That finishes after now.';return}if(!(e1>s0)){E2.textContent='The finish must be after the start.';return}
+   if(E.some(y=>s0<y.e&&e1>y.s)){E2.textContent='That overlaps something you already added.';return}
+   E.push({s:s0,e:e1,t:k});list()}}};
+ list()}
+
 /* Wire up */
 document.addEventListener('click',e=>{const b=e.target.closest('[data-pbk]');if(b){const[k,oid]=b.dataset.pbk.split(/:(.*)/s);plAct(k,oid)}});
 $('plc').addEventListener('click',e=>{const t=e.target.closest('[data-pm],[data-pa],[data-pp],[data-pd]');if(!t)return;const d=t.dataset;

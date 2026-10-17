@@ -277,6 +277,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .i{position:relative}.i::after{content:'';position:absolute;inset:-12px}.dbody ul{margin:0;padding-left:18px}.dbody li{margin:0 0 8px}.srcs{margin-top:8px;line-height:1.1}.src{display:inline-block;margin:0 6px 4px 0;padding:2px 6px;font-size:11px;color:var(--mut);text-decoration:none;border:1px solid var(--bd)}.src:hover,.src:focus{color:var(--tx);text-decoration:underline}.wn{margin-top:8px;font-size:13px;padding:6px 8px;color:var(--tx)}.lg{margin-top:6px;font-size:13px;padding:6px 8px;color:var(--tx)}.lg-law{border-left-color:var(--bad)}.lg-adv{border-left-color:var(--warn)}.lg-sh{border-left-color:var(--warn)}.lg-warn{border-left-color:var(--warn)}.lg-info{border-left-color:var(--mut)}.lg-veh{border-left-color:var(--acc)}
 .sgc img{flex:none;width:84px;height:84px;object-fit:contain}.sgc img.fl{transform:scaleX(-1)}
 .tci{flex:none;vertical-align:-4px}
+#rmb{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:8px;right:8px;z-index:55;display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:520px;margin:0 auto}.rmc{pointer-events:auto;background:var(--panb);border:1px solid var(--acc);border-left-width:6px;border-radius:14px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:8px}.rmt b{display:block;font-size:12.5px;color:var(--acc)}.rmt span{font-size:15px;color:var(--tx);line-height:1.35}.rmx{display:flex;gap:6px;flex-wrap:wrap}.rmx .tg{flex:1 1 auto;white-space:normal}.rmx .tg[data-rm="x"]{flex:0 0 auto;padding-left:12px;padding-right:12px}
 .wrb{margin:8px 0}.wrd{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;align-items:end}.wrs{position:relative;height:54px;border:1px solid var(--bd2);border-radius:8px;background:var(--sub);overflow:hidden;display:flex;align-items:flex-end;justify-content:center}.wrs i{position:absolute;left:0;right:0;bottom:0;background:var(--acc);opacity:.32}.wrs b{position:relative;font-size:11px;font-weight:700;padding-bottom:4px;color:var(--tx)}.wrs.cur{border:2px solid var(--acc)}.wrs.fut{opacity:.55;border-style:dashed}.wrs.bad{border-color:var(--bad);border-width:2px}.wrb.big .wrs{height:78px}
 .wrl{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;font-size:10px;line-height:1.25;color:var(--mut);text-align:center;margin-top:3px}.wrl .cur{color:var(--acc);font-weight:700}.wrf{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--mut);margin-top:8px;line-height:1.35}.wrf b{color:var(--tx)}.wrf b.bad{color:var(--bad)}
 .wrm{position:relative;height:16px;font-size:10.5px;color:var(--mut)}.wrm span{position:absolute;top:2px;white-space:nowrap}
@@ -295,7 +296,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <main>
 <div class="hd"><div><div class="kick">Drivers' hours</div><h1>TachoGuard <button class="i" data-i="about" aria-label="More info">i</button></h1></div><div class="hr"><button class="tg hbtn" id="cpb" aria-pressed="false"></button><button class="tab gear" data-t="set" aria-label="Settings">Settings</button></div></div>
 <div class="tabs"><button class="tab on" data-t="today">Today</button><button class="tab" data-t="check">Walkaround</button><button class="tab" data-t="hours">Hours</button><button class="tab" data-t="plan">Plan</button><button class="tab" data-t="tacho">Tacho</button><button class="tab" data-t="signs">Learn</button><button class="tab" data-t="log">Log</button></div>
-<div id="sync" role="status"></div>
+<div id="rmb" aria-live="assertive"></div><div id="sync" role="status"></div>
 <section id="t-today">
 <div class="alert" id="alert" hidden></div>
 <div id="plb"></div><div id="iss"></div><div id="wkb"></div><div id="mx"></div><div id="owe"></div>
@@ -391,10 +392,13 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <h2>GPS</h2>
 <div class="g"><div class="tr"><span><span class="lbl">Distance Tracking</span><br><span class="note">Off by default. When on, it uses your location only while Driving is on, and the screen stays awake.</span></span><button class="tg" id="gp"></button></div><div class="row" style="margin-top:14px"><span class="lbl">Distance This Drive</span><span class="num" id="gd"></span></div><div class="note" id="gs"></div></div>
 <p class="note">Distance only updates while this page is open, so keep your phone unlocked. If location is blocked, allow it for this site in Chrome.</p>
-<h2>Settings</h2>
-<div class="g" hidden><div class="tr"><span><span class="lbl">Alerts</span><br><span class="note">Sound, vibration and a phone notification at your limits and break milestones (15, 30 and 45 minutes). Alerts need the app open or running in the background, so keep it open while you drive.</span></span><button class="tg" id="al"></button></div>
+<h2>Reminders</h2>
+<div class="g"><div class="tr"><span><span class="lbl">Reminders</span><br><span class="note">A box at the top of the screen, with a sound and vibration, when it is time to start a planned shift or take a break.</span></span><button class="tg" id="al"></button></div>
+<div style="margin-top:14px"><label for="rml">Warn me before a break is due</label><select id="rml"></select><div class="note">For the 4h 30m driving break, the 6 hour working time break and your 9 hour driving limit.</div></div>
+<div style="margin-top:14px"><label for="rms">Remind me to start a planned shift</label><select id="rms"></select><div class="note">Uses the shifts in your Plan tab. It stops when you start the shift.</div></div>
 <div style="margin-top:14px"><label for="da">Driving Alarm</label><select id="da"><option value="0">Off</option></select><div class="note">Alerts you when your driving since your last break reaches this time.</div></div>
-<div class="tr" style="margin-top:14px"><span><span class="lbl">Notifications</span><br><span class="note" id="nn"></span></span><button class="tg" id="nt"></button></div>
+<div class="tr" style="margin-top:14px"><span><span class="lbl">Phone notifications</span><br><span class="note" id="nn"></span></span><button class="tg" id="nt"></button></div>
+<div class="note" style="margin-top:10px">Reminders work while TachoGuard is open or running in the background. A phone cannot be woken by the app once it is fully closed, so keep it open on your shift.</div>
 </div>
 <h2>Working Time Average <button class="i" data-i="ref" aria-label="More info">i</button></h2><div class="g" id="rp1"></div>
 <h2>Jobs</h2><div class="g" id="jobs"></div>
@@ -415,7 +419,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-17-83';
+const APPV='tg-2026-10-17-84';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -605,12 +609,12 @@ function setAct(t){
   if(!was&&z&&n-z.e>=9*H&&(st.fq||0)<z.e)shiftAsk(z,n,gp,chk);else if(!was)gp();else chk0()}}
 function startAsk(next,chg){
  /* a shift planned for now picks its job and tacho setting for you */
- const J=jobs(),pd=!chg&&typeof plDue==='function'?plDue():null;let sj=jobC(pd?pd.j:st.cj).id,tc=st.tm!==undefined&&st.tm!==null&&!chg&&!pd?!!st.tm:jobC(sj).tc!==false,wk=true;
+ const J=jobs(),pd=!chg&&typeof plDue==='function'?plDue():null;let sj=jobC(pd?pd.j:st.cj).id,tc=st.tm!==undefined&&st.tm!==null&&!chg&&!pd?!!st.tm:jobC(sj).tc!==false,wk='y';
  const sel=(on,bg,fg)=>on?`style="background:${bg};border-color:${bg};color:${fg||'#fff'};font-weight:700"`:'';
- const draw=()=>{mo(`<h3>${chg?'Change job':'Starting a shift'}</h3>${J.length>1?`<p>Which job is this for?</p>${J.map((j,i)=>`<button class="tg big" data-k="j${i}" ${sel(j.id===sj,JCOL[i])}>${j.id===sj?'✓ ':''}${esc(j.n)}${j.tc===false?' (no tacho)':''}</button>`).join('')}`:''}<p>Will you use a tachograph today?</p><button class="tg big" data-k="ty" ${sel(tc,'var(--ok)')}>${tc?'✓ ':''}${tcIco(1)} Yes, tacho</button><button class="tg big" data-k="tn" ${sel(!tc,'var(--warn)','#1b1300')}>${!tc?'✓ ':''}${tcIco(0)} No tacho</button><p class="note">${tc?'Driving counts towards the 4h 30m, 9h and weekly driving limits.':'Only Work and Break are shown, and everything counts as working time. If you are asked to drive a vehicle that needs a tachograph, tap Switch this shift to tacho on the Today screen.'}</p>${!tc&&!chg?`<p>Do you still need a walkaround check today?</p><button class="tg big" data-k="wy" ${sel(wk,'var(--acc)','var(--onacc)')}>${wk?'✓ ':''}Yes, show it</button><button class="tg big" data-k="wn" ${sel(!wk,'var(--acc)','var(--onacc)')}>${!wk?'✓ ':''}No walkaround needed</button>`:''}<button class="tg big" data-k="ok" style="margin-top:14px;font-weight:700">${chg?'Save':'Start shift'}</button><button class="tg big" data-k="no">← Back</button>`);
-  mcb={no:chg?moX:undo,ty:()=>{tc=true;draw()},tn:()=>{tc=false;draw()},wy:()=>{wk=true;draw()},wn:()=>{wk=false;draw()},
+ const draw=()=>{mo(`<h3>${chg?'Change job':'Starting a shift'}</h3>${J.length>1?`<p>Which job is this for?</p>${J.map((j,i)=>`<button class="tg big" data-k="j${i}" ${sel(j.id===sj,JCOL[i])}>${j.id===sj?'✓ ':''}${esc(j.n)}${j.tc===false?' (no tacho)':''}</button>`).join('')}`:''}<p>Will you use a tachograph today?</p><button class="tg big" data-k="ty" ${sel(tc,'var(--ok)')}>${tc?'✓ ':''}${tcIco(1)} Yes, tacho</button><button class="tg big" data-k="tn" ${sel(!tc,'var(--warn)','#1b1300')}>${!tc?'✓ ':''}${tcIco(0)} No tacho</button><p class="note">${tc?'Driving counts towards the 4h 30m, 9h and weekly driving limits.':'Only Work and Break are shown, and everything counts as working time. If you are asked to drive a vehicle that needs a tachograph, tap Switch this shift to tacho on the Today screen.'}</p>${!chg?`<p>Walkaround check?</p><button class="tg big" data-k="wy" ${sel(wk==='y','var(--acc)','var(--onacc)')}>${wk==='y'?'✓ ':''}I will do my own in the app</button><button class="tg big" data-k="we" ${sel(wk==='e','var(--acc)','var(--onacc)')}>${wk==='e'?'✓ ':''}Already done elsewhere, mark it done</button><button class="tg big" data-k="wn" ${sel(wk==='n','var(--acc)','var(--onacc)')}>${wk==='n'?'✓ ':''}Not needed today</button>`:''}<button class="tg big" data-k="ok" style="margin-top:14px;font-weight:700">${chg?'Save':'Start shift'}</button><button class="tg big" data-k="no">← Back</button>`);
+  mcb={no:chg?moX:undo,ty:()=>{tc=true;draw()},tn:()=>{tc=false;draw()},wy:()=>{wk='y';draw()},we:()=>{wk='e';draw()},wn:()=>{wk='n';draw()},
    ok:()=>{const n=Date.now(),was=st.act,ch=chg&&st.active&&was&&was!=='r';if(ch){snap=null;commit(n)}
-    st.cj=sj;st.tm=tc;st.tmt=n;if(!chg){if(!tc)st.dd={t:n,v:wk?'y':'n'};else delete st.dd}
+    st.cj=sj;st.tm=tc;st.tmt=n;if(!chg)st.dd={t:n,v:wk}
     save();moX();if(ch)begin(was==='x'||was==='d'?(tc?'d':'x'):was);else if(chg)render();else next()}};
   J.forEach((j,i)=>mcb['j'+i]=()=>{sj=j.id;tc=j.tc!==false;draw()})};draw()}
 function shiftAsk(z,n,gp,chk){
@@ -770,12 +774,23 @@ function longAsk(r){const x=r.x,dv=r.kind==='d',lo=r.rs,hi=x.e;let N=45;
   clear(s0,e0,1);st.sessions.push({s:s0,e:e0,t:'r'});fixOv();
   bu=[];flash='Break of '+fmt(e0-s0)+' added from '+hm(s0)+' to '+hm(e0)+'.';setTimeout(()=>{flash='';live()},6000);save();moX();render()}};
  [15,30,45,60].forEach(m=>mcb['n'+m]=()=>{const a=$('lq1').value;if(!a)return;$('lq2').value=hm(atT(a,lo-1)+m*M)})}
-function fire(m){return; /* in-app alerts switched off until phone push alerts exist */if(!st.alerts)return;$('alert').textContent=m+' (tap to dismiss)';$('alert').hidden=false;try{navigator.vibrate&&navigator.vibrate([400,200,400])}catch(e){}beep();notify(m)}
+/* Reminders appear in a box at the top of the screen. Each has a key, so it shows once, goes away by itself when it no longer applies,
+   and can be dismissed or snoozed. The box has a sound and vibration, and a phone notification when that is allowed. */
+const rmq=new Map(),snz={};
+function rmDraw(){const el=$('rmb');if(!el)return;set(el,[...rmq.entries()].map(([k,r])=>`<div class="rmc" role="alert"><div class="rmt"><b>${r.ti}</b><span>${esc(r.m)}</span></div><div class="rmx">${r.b.map(([a,t])=>`<button class="tg" data-rm="${a}" data-rk="${esc(k)}">${t}</button>`).join('')}<button class="tg" data-rm="x" data-rk="${esc(k)}" aria-label="Dismiss">✕</button></div></div>`).join(''))}
+function fire(m,k){if(!st.alerts)return;k=k||'t'+Date.now();
+ const brk=/^(b15|b0|w15|w0)$/.test(k),ps=k.startsWith('ps:');
+ rmq.set(k,{ti:brk?'Break':ps?'Planned shift':'Reminder',m,b:brk?[['brk','Take a break now'],['snz','Snooze 5 min']]:ps?[['start','Start shift'],['snz','Snooze 5 min']]:[]});rmDraw();
+ try{navigator.vibrate&&navigator.vibrate([400,200,400])}catch(e){}beep();notify(m)}
 function notify(m){try{if(!('Notification' in window)||Notification.permission!=='granted')return;const o={body:m,tag:'tg-alert',renotify:true,vibrate:[400,200,400],icon:'icons/icon-192.png',badge:'icons/icon-192.png'};
  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(r=>{if(r)r.showNotification('TachoGuard',o);else new Notification('TachoGuard',o)}).catch(()=>{try{new Notification('TachoGuard',o)}catch(e){}});else new Notification('TachoGuard',o)}catch(e){}}
 function ntUi(){const s=!('Notification' in window)?'na':Notification.permission;$('nt').textContent=s==='granted'?'Send Test':s==='denied'?'Blocked':s==='na'?'Not Supported':'Turn On';$('nt').disabled=s==='denied'||s==='na';
  $('nn').textContent=s==='granted'?'On. Alerts also appear as a phone notification.':s==='denied'?'Blocked. Allow notifications for this site in Chrome settings.':s==='na'?'This browser cannot show notifications.':'Off. Turn on to get alerts as phone notifications.'}
-$('nt').onclick=()=>{if(Notification.permission==='granted'){beep();notify('Test alert. Notifications are working.');return}Notification.requestPermission().then(ntUi).catch(ntUi)};
+$('nt').onclick=()=>{if(Notification.permission==='granted'){fire('Test reminder. This is how reminders look.','test');notify('Test alert. Notifications are working.');return}Notification.requestPermission().then(ntUi).catch(ntUi)};
+$('rmb').onclick=e=>{const b=e.target.closest('[data-rm]');if(!b)return;const a=b.dataset.rm,k=b.dataset.rk;if(a==='snz'){snz[k]=Date.now()+5*M;fired[k]=false}rmq.delete(k);rmDraw();if(a==='brk')setAct('r');else if(a==='start')setAct('w')};
+$('rml').innerHTML=[5,10,15,20,30,45].map(m=>`<option value="${m}">${m} minutes before</option>`).join('');
+$('rms').innerHTML=[[-1,'Off'],[0,'At the start time'],[5,'5 minutes before'],[10,'10 minutes before'],[15,'15 minutes before'],[30,'30 minutes before']].map(([m,t])=>`<option value="${m}">${t}</option>`).join('');
+$('rml').onchange=()=>{st.rml=+$('rml').value;save();live()};$('rms').onchange=()=>{st.rms=+$('rms').value;save();live()};
 const DA=[0,30,60,90,120,150,180,210,240,255,270];$('da').innerHTML=DA.map(m=>`<option value="${m}">${m?fmt(m*M):'Off'}</option>`).join('');
 ntUi();$('da').onchange=()=>{st.da=+$('da').value;fired.da=false;if(st.da)ntUi();save();live()};
 function tcs(v,days,el){const e=$(el);if(!v){e.textContent='Enter the date to track it.';e.className='note';return}
@@ -929,16 +944,21 @@ function liveRun(){
   const ae=document.querySelector('.acts');if(ae)ae.style.gridTemplateColumns='repeat('+nv+',1fr)'}
  const qd=m=>lock||(isTc()&&(prog>=45*M||(m===15&&prog>=15*M)));const nd=sw>9*H?45:30;
  $('al').textContent=st.alerts?'Alerts On':'Alerts Off';
- const al=[['b15',act==='d'&&b.d>=255*M,'15 minutes until you need a 45 minute break.'],['b0',act==='d'&&b.d>=270*M,'4h 30m of driving reached. Take a break now.'],
-  ['w15',busy&&act!=='p'&&wc.d>=345*M,'15 minutes until your 6 hour working limit.'],['w0',busy&&act!=='p'&&wc.d>=6*H,'6 hours of work reached. Take a break now.'],
-  ['d15',act==='d'&&day>=9*H-15*M,'15 minutes until 9 hours driving this shift.'],['d0',act==='d'&&day>=9*H,extLeft?'9 hours reached. You can extend to 10 hours.':'9 hours reached. Stop driving.'],['e0',act==='d'&&extLeft&&day>=10*H,'10 hours reached. Stop driving.']];
+ const RL=st.rml===undefined?15:st.rml,RS=st.rms===undefined?10:st.rms,Lm=RL*M;
+ const al=[['b15',act==='d'&&isTc()&&b.d>=270*M-Lm&&b.d<270*M,RL+' minutes until you need a 45 minute break.'],['b0',act==='d'&&isTc()&&b.d>=270*M,'4h 30m of driving reached. Take a break now.'],
+  ['w15',busy&&act!=='p'&&wc.d>=6*H-Lm&&wc.d<6*H,RL+' minutes until your 6 hour working limit, then you need a break.'],['w0',busy&&act!=='p'&&wc.d>=6*H,'6 hours of work reached. Take a break now.'],
+  ['d15',act==='d'&&day>=9*H-Lm&&day<9*H,RL+' minutes until 9 hours driving this shift.'],['d0',act==='d'&&day>=9*H,extLeft?'9 hours reached. You can extend to 10 hours.':'9 hours reached. Stop driving.'],['e0',act==='d'&&extLeft&&day>=10*H,'10 hours reached. Stop driving.']];
  if(document.activeElement!==$('da'))$('da').value=String(st.da||0);
+ if(document.activeElement!==$('rml'))$('rml').value=String(RL);if(document.activeElement!==$('rms'))$('rms').value=String(RS);
  const lb=[...a].reverse().find(x=>x.t!=='r'&&!x.live),be=!busy&&lb?n-lb.e:-1,inW=(x,y)=>!endd&&be>=x*M&&be<y*M;
  al.push(['da',!!st.da&&act==='d'&&b.d>=st.da*M,'Driving alarm: you have driven '+fmt(b.d)+' since your last break.'],
   ['k15',isTc()&&inW(15,20),'15 minutes of break done. Take 30 more to finish a split driving break, or carry on to 45.'],
   ['k30',inW(30,35),isTc()?'30 minutes of break done. Your working time break is complete. 15 more minutes completes a full 45 minute driving break.':(nd===30?'30 minutes of break done. Your working time break is complete.':'30 minutes of break done. 15 more minutes completes your working time break.')],
   ['k45',inW(45,50),isTc()?'45 minutes of break done. Your driving break and working time break are complete.':'45 minutes of break done. Your working time break is complete.']);
- al.forEach(([k,c,m])=>{if(c&&!fired[k])fire(m);fired[k]=c});
+ /* a planned shift that is about to start (or has started late) and has nothing logged for it */
+ if(RS>=0&&typeof plOcc==='function'&&!st.active)plOcc(n-3*H,n+(RS+1)*M).filter(o=>!o.st&&n>=o.S-RS*M&&o.E>n&&!a0.some(x=>x.e>o.S-H&&x.s<o.E)).forEach(o=>al.push(['ps:'+o.oid,true,jobC(o.j).n+' '+o.s.slice(0,5)+' to '+o.e.slice(0,5)+(n<o.S?', starts in '+Math.max(1,Math.ceil((o.S-n)/M))+' min.':', due to start at '+o.s.slice(0,5)+'.')+' Start your shift?']));
+ {const alc={};al.forEach(([k,c,m])=>{alc[k]=c;if(c){if(!fired[k]&&!(snz[k]>n)){fired[k]=true;fire(m,k)}else if(rmq.has(k)&&rmq.get(k).m!==m){rmq.get(k).m=m;rmDraw()}}else fired[k]=false});
+  [...rmq.keys()].forEach(k=>{if(!alc[k]){rmq.delete(k);rmDraw()}})}
  const L=[];
  $('gp').textContent=st.gps?'GPS On':'GPS Off';$('gd').textContent=act==='d'&&st.gps?mi(st.ad):'Not tracking';$('gs').textContent=!st.gps?'GPS is off. Turn it on above to track distance.':act==='d'?(gmsg||'Starting GPS...'):'GPS is on and starts when you start driving.';
  if(!act)L.push(l&&!fresh&&!(st.se&&st.se>=l.e)?'Nothing running. Only your break timer is counting. Tap End Shift to start your daily rest.':'Nothing running. Only your rest and break timers are counting.');
@@ -1511,13 +1531,15 @@ function walkStatus(){const a0=all(),n=Date.now(),l=a0[a0.length-1];let since=so
 function wkUpdate(){
  const w=walkStatus(),act=st.act,a0=all(),n=Date.now(),l=a0[a0.length-1],busy=!!st.active&&st.act!=='r',gap=l&&!busy?n-l.e:0;
  const off=!st.active&&(!l||gap>=9*H||!!(st.se&&st.se>=l.e)),ss=!off&&l?shiftStart(a0):0,dd=!off&&st.dd&&st.dd.t>=ss-10*M?st.dd.v:'';let h='',dot=false;
+ const bt=(k,t,o)=>`<button class="tg" ${k} style="flex:1 1 0;min-width:0;white-space:normal">${t}</button>`;
  if(w){const n=w.D.length,dg=w.D.some(x=>x.d);
   h=n?`<button class="wkb wn"><b>Walkaround done ${hm(w.t)}, ${n} defect${n>1?'s':''}</b><span>${dg?'A dangerous defect is recorded. Do not drive until it is fixed.':'Make sure they are reported in writing.'}</span></button>`
    :`<button class="wkb dn2"><b>Walkaround done ${hm(w.t)}</b><span>No defects, ${esc(w.reg)}</span></button>`}
  else if(off)h='';
- else if(act==='d'||dd==='y'){dot=true;h=`<button class="wkb nb"><b>Walkaround not done</b><span>${act==='d'?'You are driving and no walkaround is recorded for this shift.':'Do it before you drive. The DVSA expects it before the first drive of the day.'} Tap to start.</span></button>`}
+ else if(dd==='e')h=`<div class="wkb dn2"><b>Walkaround done elsewhere</b><span>Marked as done at ${hm(st.dd.t)}. Nothing is recorded in the app for it.</span><div style="display:flex;gap:8px;margin-top:8px">${bt('data-wgo="1"','Do my own as well')}${bt('data-dd=""','Undo')}</div></div>`
+ else if(act==='d'||dd==='y'){dot=true;h=`<div class="wkb nb"><b>Walkaround not done</b><span>${act==='d'?'You are driving and no walkaround is recorded for this shift.':'Do it before you drive. The DVSA expects it before the first drive of the day.'}</span><div style="display:flex;gap:8px;margin-top:8px">${bt('data-wgo="1"','Do it now')}${bt('data-dd="e"','Done elsewhere')}${bt('data-dd="n"','Not needed')}</div></div>`}
  else if(dd==='n')h=`<div class="wkb dn2"><b>No walkaround needed today</b><span>You said you are not driving this shift. <u data-dd="" style="cursor:pointer">Change</u></span></div>`;
- else h=`<div class="wkb"><b>Are you driving today?</b><span>A walkaround check is only needed on a day you drive.</span><div style="display:flex;gap:8px;margin-top:8px"><button class="tg" data-dd="y" style="flex:1;min-width:0">Yes</button><button class="tg" data-dd="n" style="flex:1;min-width:0">No</button></div></div>`;
+ else h=`<div class="wkb"><b>Walkaround check</b><span>The DVSA expects one before the first drive of the day. Will you do your own, or has it been done elsewhere?</span><div style="display:flex;gap:8px;margin-top:8px">${bt('data-dd="y"','I will do my own')}${bt('data-dd="e"','Done elsewhere')}${bt('data-dd="n"','Not driving')}</div></div>`;
  set($('wkb'),h);document.querySelector('.tab[data-t="check"]').classList.toggle('dot',dot);mxUpdate();issUpdate();if(typeof plBanner==='function')plBanner()}
 function issUpdate(){const I=st.iss||[],el=$('iss');if(!el)return;
  set(el,I.map((x,i)=>`<div class="wkb nb" style="cursor:default"><b>Needs checking: ${NM[x.a]||'Activity'} started ${tt(x.t)}</b><span>${x.r.map(esc).join('. ')}. If a time was logged wrong, fix it in the log. If the times are right, this may be an infringement, so keep a note of why.</span><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="tg" data-isf="${i}" style="flex:1 1 0;min-width:0;white-space:normal;padding-left:6px;padding-right:6px">Fix entries</button><button class="tg" data-isd="${i}" style="flex:1 1 0;min-width:0;white-space:normal;padding-left:6px;padding-right:6px">Fixed</button><button class="tg" data-isk="${i}" style="flex:1 1 0;min-width:0;white-space:normal;padding-left:6px;padding-right:6px">Times are right</button></div></div>`).join(''))}
@@ -1541,7 +1563,7 @@ function mxShow(){const L=mxList();if(!L)return;const P=[];let c=L.wd||L.items[0
  mo(`<h3>Tacho manual entries</h3><p class="note">${L.wd?'Your card was last used until about <b>'+tt(L.wd)+'</b>. ':''}You started on the tacho at <b>${tt(L.ins)}</b>. When you insert your card, the tachograph asks if you want to add manual entries for the time since it was last taken out. Enter these periods in order. The tachograph's own screens may word the steps a little differently.</p>${D.map(g=>`<div class="cs" style="margin-top:12px">${new Date(g.d).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</div>${g.r.map(r=>`<div class="item"><div><div class="lbl">${lab(r)[0]} ${lab(r)[1]}</div><div class="note">${hm(r.s)} to ${r.e>=nxd(sod(r.s))?'24:00':hm(r.e)}${r.j&&r.t!=='r'?' · '+esc(jobC(r.j).n):''}${r.t==='x'?' · driving with no tacho':''}</div></div><div class="lbl" style="white-space:nowrap;margin-left:8px">${fmt(r.e-r.s)}</div></div>`).join('')}`).join('')}<p class="note" style="margin-top:10px">Work for another employer, and driving a vehicle outside the tacho rules, is recorded as <b>Other work</b>. Time off is <b>Rest</b>. <a class="src" href="https://www.legislation.gov.uk/eur/2006/561/article/6" target="_blank" rel="noopener noreferrer" aria-label="Source: Regulation 561/2006, Article 6. Opens in a new tab.">Source &#8599;</a></p><p class="note">Not sure how your employer wants long periods away (holidays, weeks off) entered? Check with your transport manager.</p><button class="tg big" data-k="done">I've entered these</button><button class="tg big" data-k="dis">Dismiss</button><button class="tg big" data-k="no">Close</button>`);
  mcb={no:moX,done:()=>{st.mx=L.key;save();moX();mxUpdate()},dis:()=>{st.mx=L.key;save();moX();mxUpdate()}}}
 $('mx').onclick=e=>{if(e.target.closest('[data-mx]'))mxShow()};
-$('wkb').onclick=e=>{const d=e.target.closest('[data-dd]');if(d){const v=d.dataset.dd;if(v)st.dd={t:Date.now(),v};else delete st.dd;save();wkUpdate();return}if(!e.target.closest('.dn2')||e.target.closest('button'))showTab('check')};
+$('wkb').onclick=e=>{const d=e.target.closest('[data-dd]');if(d){const v=d.dataset.dd;if(v)st.dd={t:Date.now(),v};else delete st.dd;save();wkUpdate();return}if(e.target.closest('[data-wgo]')){if(st.dd&&st.dd.v==='e')st.dd={t:Date.now(),v:'y'};save();showTab('check');return}if(!e.target.closest('.dn2')||e.target.closest('button'))showTab('check')};
 /* Account storage: the record is kept in the page's database, private to the signed-in driver. The phone copy is a fallback. */
 let bootQ=true;['pointerdown','keydown'].forEach(k=>document.addEventListener(k,()=>{bootQ=false},{once:true,capture:true}));
 function syncNote(){const el=$('sync');if(!el)return;const m=syncMsg||(lsOk?'':'Could not save on this phone.');if(bootQ&&!syncMsg&&cloudReady){el.textContent=m;el.classList.remove('on');return}if(el.textContent!==m){el.textContent=m;clearTimeout(syncT);if(m){el.classList.add('on');syncT=setTimeout(()=>el.classList.remove('on'),3000)}else el.classList.remove('on')}}
@@ -1562,7 +1584,7 @@ function fromAcc(s){try{if(!s||!s.exists)return;const d=s.data(),ru=d.u||0;if(ru
   if(d.j===lastMain){baseU=ru;return}
   if(ru>(st.u||0)){const r=JSON.parse(d.j);if(r&&Array.isArray(r.sessions))adopt(r,ru,dirty&&mainJ()!==lastMain)}}catch(e){}}
 function queuePush(now){if(!cloudReady)return;clearTimeout(pushT);pushT=setTimeout(doPush,now?0:Math.max(1200,15000-(Date.now()-lastPush)))}
-const KEEP=['wr','wrp','wri','jobs','rp','rpb','na','cj'];
+const KEEP=['wr','wrp','wri','jobs','rp','rpb','na','cj','rml','rms'];
 function keepKeys(r){let ch=0;if(r)KEEP.forEach(k=>{if(r[k]!==undefined&&r[k]!==null&&st[k]===undefined){st[k]=r[k];ch=1}});if(ch){try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}}return ch}
 function doPush(){if(!cloudReady)return;if(pushing){pushAgain=true;return}
  pushing=(async()=>{try{lastPush=Date.now();
