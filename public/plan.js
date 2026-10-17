@@ -35,7 +35,7 @@ function plCheck(sp){const I=new Map(),add=(x,lv,t)=>{if(x.log)return;const k=x.
  /* group into shifts: a gap of 9h or more ends a shift */
  const SH=[];sp.forEach((x,i)=>{if(!i||x.s-sp[i-1].e>=9*H)SH.push({s:x.s,e:x.e,w:0,dv:0,sp:[],gap:i?x.s-sp[i-1].e:Infinity});const c=SH[SH.length-1];c.e=Math.max(c.e,x.e);c.w+=x.w;c.dv+=x.dv;c.sp.push(x)});
  /* weekly rest anchor */
- const WI=typeof wrInfo==='function'?wrInfo():null;let lastWE=WI&&WI.anc!==null&&WI.lastEnd?WI.lastEnd:null,prevRed=WI&&WI.anc!==null?!!WI.prevRed:false,redD=0;
+ const WI=typeof wrInfo==='function'?wrInfo():null;let lastWE=WI&&WI.anc!==null&&WI.lastEnd?WI.lastEnd:null,prevRed=WI&&WI.anc!==null?!!WI.full45:false,redD=0;
  if(lastWE===null)lastWE=SH[0].s;
  SH.forEach((c,ci)=>{const pl=c.sp.filter(x=>!x.log),first=c.sp[0];
   /* rest before this shift */
@@ -93,22 +93,43 @@ function plFree(d,base,baseI){const n=Date.now(),D0=Math.max(d,n),D1=nxd(d);if(D
  I.forEach((L,k)=>{L.forEach(x=>{if(x.lv==='i')return;if(k==='hyp')R.push(x);else if(!(baseI.get(k)||[]).some(y=>y.t===x.t)){const o=base.find(z=>z.id===k);R.push({lv:x.lv,t:'Knock-on for your '+(o&&o.o?esc(jobC(o.o.j).n)+' shift on '+dlong(o.s):'next shift')+': '+x.t})}})});
  return{lv:Math.max(1,worst(R)),ea,la:laR,s0,e0,R,txt:''}}
 
+/* Where your next weekly rests are likely to fall, from what you have logged plus your plan. Each one is the first gap of 24 hours or more
+   that starts before the 6 day deadline (a full 45h gap is preferred over a shorter one, as in the weekly rest card). */
+function plRests(sp){const I=typeof wrInfo==='function'?wrInfo():null;if(!I||I.anc===null||I.inWr)return[];
+ const L=sp.slice().sort((a,b)=>a.s-b.s).filter(x=>x.e>I.lastEnd),G=[];let cur=null;
+ /* only gaps between one activity and the next count: the time before your first shift since your last rest is that rest, not a new one */
+ L.forEach(x=>{if(cur!==null&&x.s>cur)G.push({s:cur,e:x.s,len:x.s-cur});cur=cur===null?x.e:Math.max(cur,x.e)});
+ G.push({s:cur===null?Math.max(Date.now(),I.lastEnd):cur,e:Infinity,len:Infinity,open:1});
+ const out=[];let le=I.lastEnd;
+ for(let k=0;k<8;k++){const due=le+144*H,ok=G.filter(g=>g.s>=le&&g.s<=due&&g.len>=24*H),g=ok.find(g=>g.len>=45*H)||ok[0];
+  if(!g){out.push({miss:1,due});break}
+  out.push({s:g.s,e:g.e,len:g.len,full:g.len>=45*H,open:!!g.open,due});if(g.open)break;le=g.e}
+ return out}
+function plRestTag(d,WR){const f=WR[0],r=WR.find(x=>!x.miss&&x.s<nxd(d)&&x.e>d);let t='';
+ if(r)t+=`<div class="plr ${r.full?'ok':'warn'}">Rest</div>`;
+ if(f&&sod(f.due)===d)t+=`<div class="plr ${f.miss?'bad':'mut'}">⚑ ${hm(f.due).slice(0,5)}</div>`;
+ return t}
+function plRestNote(d,WR){const f=WR[0],r=WR.find(x=>!x.miss&&x.s<nxd(d)&&x.e>d);let t='';
+ if(r)t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--${r.full?'ok':'warn'})"><div class="lbl">Weekly rest</div><div class="note">${r.open?'From '+dmy(r.s)+', with nothing planned after that':dmy(r.s)+' to '+dmy(r.e)+' ('+fmt(r.len)+')'}. ${r.full?'A full weekly rest (45h or more).':'Only a reduced rest. You would owe '+fmt(45*H-r.len)+', paid back in one block within 3 weeks.'}</div></div>`;
+ if(f&&sod(f.due)===d)t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--${f.miss?'bad':'mut'})"><div class="lbl">⚑ Weekly rest must start by ${hm(f.due)}</div><div class="note">${f.miss?'Nothing in your plan leaves a gap of 24 hours or more before this. Free up time or move a shift.':'That is six 24 hour periods after your last weekly rest ended.'}</div></div>`;
+ return t}
 function plMonth(){if(!PL.m){const t=new Date(sod(Date.now()));t.setDate(1);PL.m=t.getTime()}return PL.m}
 function plRender(){const el=$('plc');if(!el)return;const m0=plMonth(),md=new Date(m0),n=Date.now();
  const gs=wkS(m0),me=new Date(md.getFullYear(),md.getMonth()+1,1).getTime(),ge=nwk(wkS(me-864e5));
- const sp=plSpans(),I=plCheck(sp),occ=plOcc(gs,ge),T=typeof dayTot==='function'?dayTot():{};
- let h=`<div class="tr" style="margin:0 0 8px"><button class="tg" data-pm="-1" aria-label="Previous month">‹</button><b style="flex:1;text-align:center;font-size:17px">${md.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</b><button class="tg" data-pm="1" aria-label="Next month">›</button></div><div class="tr" style="margin:0 0 10px;gap:6px;flex-wrap:wrap"><button class="tg" data-pm="0">This month</button><button class="tg" data-pa="1">Add shift</button><button class="tg" data-pp="1">Repeating shifts</button></div>`;
+ const sp=plSpans(),I=plCheck(sp),occ=plOcc(gs,ge),WR=plRests(sp),T=typeof dayTot==='function'?dayTot():{};
+ let h=(typeof oweBanner==='function'?oweBanner(wrInfo()):'')+`<div class="tr" style="margin:0 0 8px"><button class="tg" data-pm="-1" aria-label="Previous month">‹</button><b style="flex:1;text-align:center;font-size:17px">${md.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</b><button class="tg" data-pm="1" aria-label="Next month">›</button></div><div class="tr" style="margin:0 0 10px;gap:6px;flex-wrap:wrap"><button class="tg" data-pm="0">This month</button><button class="tg" data-pa="1">Add shift</button><button class="tg" data-pp="1">Repeating shifts</button></div>`;
  h+='<div class="plg">'+['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(x=>`<div class="plh">${x}</div>`).join('');
  let shown=0;const wk0=wkS(n);
  for(let d=gs;d<ge||(shown<42&&ge>n);d=nxd(d)){if((new Date(d).getDay()+6)%7===0&&d<wk0){let any=false;for(let q=d,k=0;k<7;k++,q=nxd(q)){const t=T[q];if((t&&t.d+t.w)||occ.some(o=>sod(o.S)===q&&o.st!=='skip')){any=true;break}}if(!any){d=add7(d,1)-864e5;d=sod(d);continue}}shown++;const inM=new Date(d).getMonth()===md.getMonth(),past=nxd(d)<=n,td=d===sod(n),os=occ.filter(o=>sod(o.S)===d&&o.st!=='skip'&&!(o.st==='done'||o.E<=n)),o2=T[d],logged=o2?o2.d+o2.w:0;
   let lv=0;os.forEach(o=>{lv=Math.max(lv,worst(I.get(o.oid)))});
   let fr=null;if(!past&&!os.length&&!logged)fr=plFree(d,sp,I);
   const dot=fr?['','ok','warn','bad'][fr.lv]:'',chips=os.map(o=>{const j=jobC(o.j);return `<div class="plk" style="border-left-color:${JCOL[jobI(j.id)]}">${ct(o.s)}–${ct(o.e)}${lv?`<i class="${['','','warn','bad'][worst(I.get(o.oid))]||''}">${worst(I.get(o.oid))>=2?'!':''}</i>`:''}</div>`}).join('');
-  h+=`<button class="pld${inM?'':' plo'}${td?' plt':''}${past?' plp':''}" data-pd="${d}"><span class="pln">${new Date(d).getDate()}</span>${chips}${logged&&(past||td)?`<div class="plk pll">${fmt(logged).replace(' 00m','')}</div>`:''}${fr?`<span class="pldot ${dot}"></span><span class="plw">${fr.lv<3?hm(fr.ea).slice(0,2)+(fr.la===Infinity||fr.la>nxd(d)+4*H?'+':'–'+hm(fr.la).slice(0,2)+(fr.la>nxd(d)?'¹':'')):''}</span>`:''}</button>`}
- h+='</div>'+(shown?'':'<p class="note" style="text-align:center;margin:12px 0">Nothing was logged or planned in this month.</p>')+'<div class="bx plkey" style="margin-top:10px"><div class="lbl" style="margin-bottom:4px">Key</div><div><span class="ki"><span class="pldot ok"></span></span>Free, fine to work</div><div><span class="ki"><span class="pldot warn"></span></span>Free, only with a reduced rest</div><div><span class="ki"><span class="pldot bad"></span></span>Not allowed (rest rules)</div><div><span class="ki"><span style="display:inline-block;width:14px;height:10px;border-left:3px solid var(--mut);background:var(--bg)"></span></span>Planned shift, in the job\'s colour</div><div><span class="ki"><b class="bad">!</b></span>Planned shift breaks a rule</div><div><span class="ki"><span class="plw">04–22</span></span>Earliest start to latest finish</div><div><span class="ki"><span class="plw">04+</span></span>No latest finish from your other shifts</div><div><span class="ki"><span class="plw">¹</span></span>Finish is the next morning</div><div class="note" style="margin-top:4px">Tap a day for details.</div></div>';
+  const rtag=plRestTag(d,WR);
+  h+=`<button class="pld${inM?'':' plo'}${td?' plt':''}${past?' plp':''}" data-pd="${d}"><span class="pln">${new Date(d).getDate()}</span>${chips}${rtag}${logged&&(past||td)?`<div class="plk pll">${fmt(logged).replace(' 00m','')}</div>`:''}${fr?`<span class="pldot ${dot}"></span><span class="plw">${fr.lv<3?hm(fr.ea).slice(0,2)+(fr.la===Infinity||fr.la>nxd(d)+4*H?'+':'–'+hm(fr.la).slice(0,2)+(fr.la>nxd(d)?'¹':'')):''}</span>`:''}</button>`}
+ h+='</div>'+(shown?'':'<p class="note" style="text-align:center;margin:12px 0">Nothing was logged or planned in this month.</p>')+'<div class="bx plkey" style="margin-top:10px"><div class="lbl" style="margin-bottom:4px">Key</div><div><span class="ki"><span class="pldot ok"></span></span>Free, fine to work</div><div><span class="ki"><span class="pldot warn"></span></span>Free, only with a reduced rest</div><div><span class="ki"><span class="pldot bad"></span></span>Not allowed (rest rules)</div><div><span class="ki"><span style="display:inline-block;width:14px;height:10px;border-left:3px solid var(--mut);background:var(--bg)"></span></span>Planned shift, in the job\'s colour</div><div><span class="ki"><b class="bad">!</b></span>Planned shift breaks a rule</div><div><span class="ki"><span class="plr ok" style="margin:0">Rest</span></span>Predicted weekly rest, 45h or more</div><div><span class="ki"><span class="plr warn" style="margin:0">Rest</span></span>Predicted reduced rest (24 to 45h): you would owe the rest</div><div><span class="ki"><span class="plr mut" style="margin:0">⚑</span></span>Latest time your weekly rest can start (the time is shown). Red means nothing in your plan covers it</div><div><span class="ki"><span class="plw">04–22</span></span>Earliest start to latest finish</div><div><span class="ki"><span class="plw">04+</span></span>No latest finish from your other shifts</div><div><span class="ki"><span class="plw">¹</span></span>Finish is the next morning</div><div class="note" style="margin-top:4px">Tap a day for details.</div></div>';
  set(el,h)}
 
-function plDay(d){const n=Date.now(),sp=plSpans(),I=plCheck(sp),occ=plOcc(d,nxd(d)).filter(o=>sod(o.S)===d),T=typeof dayTot==='function'?dayTot():{},o2=T[d],past=nxd(d)<=n;
+function plDay(d){const n=Date.now(),sp=plSpans(),I=plCheck(sp),WR=plRests(sp),occ=plOcc(d,nxd(d)).filter(o=>sod(o.S)===d),T=typeof dayTot==='function'?dayTot():{},o2=T[d],past=nxd(d)<=n;
  const fr=!past&&!occ.filter(o=>o.st!=='skip').length&&!(o2&&o2.d+o2.w)?plFree(d,sp,I):null;
  const isz=L=>(L||[]).map(x=>`<div class="note ${x.lv==='r'?'bad':x.lv==='a'?'warn':''}" style="margin-top:4px">${x.lv==='r'?'✕ ':x.lv==='a'?'⚠ ':'ℹ '}${x.t}</div>`).join('');
  let h=`<h3>${new Date(d).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3>`;
@@ -116,6 +137,7 @@ function plDay(d){const n=Date.now(),sp=plSpans(),I=plCheck(sp),occ=plOcc(d,nxd(
  occ.forEach(o=>{const j=jobC(o.j),stx=o.st==='skip'?' · not worked':o.st==='done'||o.E<=n?' · past':'';
   h+=`<div class="bx" style="margin-top:8px;border-left:4px solid ${JCOL[jobI(j.id)]}"><div class="row"><span class="lbl">${esc(j.n)}${j.tc===false?' (no tacho)':''}${o.pat?' · repeats '+ordW(((st.pat||[]).find(r=>r.id===o.pat)||{}).ev):''}${stx}</span><span class="lbl">${o.s.slice(0,5)}–${o.e.slice(0,5)}</span></div><div class="note">${o.br?o.br+' min unpaid break. ':''}${j.tc!==false&&o.dr?o.dr+'h driving expected. ':''}Working time about ${fmt(o.E-o.S-(o.br||0)*M)}.</div>${o.st==='skip'||o.st==='done'||o.E<=n?'':isz(I.get(o.oid))}<div class="tr" style="margin:8px 0 0;gap:6px;flex-wrap:wrap"><button class="tg" data-k="e:${o.oid}">Edit${o.pat?' this day':''}</button>${o.pat?`<button class="tg" data-k="es:${o.pat}">Edit repeat</button>`:''}<button class="tg" data-k="x:${o.oid}">Remove${o.pat?' this day':''}</button></div></div>`});
  if(fr){h+=`<div class="bx" style="margin-top:8px"><div class="lbl"><span class="pldot ${['','ok','warn','bad'][fr.lv]}"></span> ${fr.lv===3?'Not available':fr.lv===2?'Available with a reduced rest':'Free to work'}</div>${fr.lv<3||fr.la>fr.ea?`<div class="note">Earliest start <b>${hm(fr.ea)}</b>, latest finish <b>${fr.la===Infinity?'no limit from other shifts':hmx(fr.la,d)}</b>, based on 11 hour rests around your other shifts${fr.ea<d+4*H?'. Starting before 04:00 counts as night work (10 hour limit)':''}.</div>`:''}${fr.txt?`<div class="note">${fr.txt}</div>`:''}${fr.lv<3?'<div class="note" style="margin-top:4px">Checked as a 12 hour shift from '+hm(fr.s0)+' to '+hmx(fr.e0,d)+':</div>':''}${isz(fr.R)||(fr.lv===1?'<div class="note ok">✓ No rules broken.</div>':'')}</div>`}
+ h+=plRestNote(d,WR);
  h+=`<button class="tg big" data-k="add" style="margin-top:12px">Add shift</button><button class="tg big" data-k="rp">Repeating shift starting this day</button><button class="tg big" data-k="cw">Copy this week to next week</button><button class="tg big" data-k="no">Close</button>`;
  mo(h);mcb={no:moX,add:()=>plForm({d:ymd(d)}),cw:()=>plCopyWeek(d),rp:()=>plPatForm(null,ymd(d))};
  occ.forEach(o=>{mcb['e:'+o.oid]=()=>plForm(o.pat?{d:o.d,j:o.j,s:o.s,e:o.e,br:o.br,dr:o.dr,fromPat:o.oid}:(st.plan||[]).find(p=>p.id===o.oid));
@@ -189,4 +211,5 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-pbk]');if(
 $('plc').addEventListener('click',e=>{const t=e.target.closest('[data-pm],[data-pa],[data-pp],[data-pd]');if(!t)return;const d=t.dataset;
  if(d.pm!==undefined){if(d.pm==='0')PL.m=null;else{const m=new Date(plMonth());m.setMonth(m.getMonth()+ +d.pm);PL.m=m.getTime()}plRender()}
  else if(d.pa)plForm({d:ymd(Date.now())});else if(d.pp)plPatList();else if(d.pd)plDay(+d.pd)});
+$('plc').addEventListener('click',e=>{if(e.target.closest('[data-owe]'))wrDetail()});
 if(typeof KEEP!=='undefined')['plan','pat','plx','pls'].forEach(k=>{if(!KEEP.includes(k))KEEP.push(k)});
