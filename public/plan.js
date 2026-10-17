@@ -93,25 +93,25 @@ function plFree(d,base,baseI){const n=Date.now(),D0=Math.max(d,n),D1=nxd(d);if(D
  I.forEach((L,k)=>{L.forEach(x=>{if(x.lv==='i')return;if(k==='hyp')R.push(x);else if(!(baseI.get(k)||[]).some(y=>y.t===x.t)){const o=base.find(z=>z.id===k);R.push({lv:x.lv,t:'Knock-on for your '+(o&&o.o?esc(jobC(o.o.j).n)+' shift on '+dlong(o.s):'next shift')+': '+x.t})}})});
  return{lv:Math.max(1,worst(R)),ea,la:laR,s0,e0,R,txt:''}}
 
-/* Where your next weekly rests are likely to fall, from what you have logged plus your plan. Each one is the first gap of 24 hours or more
-   that starts before the 6 day deadline (a full 45h gap is preferred over a shorter one, as in the weekly rest card). */
-function plRests(sp){const I=typeof wrInfo==='function'?wrInfo():null;if(!I||I.anc===null||I.inWr)return[];
+/* Where your NEXT weekly rest can start, from what you have logged plus your plan: the first gap that is long enough for a full 45h rest, and
+   the first gap long enough for a reduced 24h rest. Only gaps between one activity and the next count (the time before your first shift since
+   your last rest is that rest, not a new one). Nothing after that is shown, because it changes as shifts are added. */
+function plRests(sp){const I=typeof wrInfo==='function'?wrInfo():null;if(!I||I.anc===null||I.inWr)return null;
  const L=sp.slice().sort((a,b)=>a.s-b.s).filter(x=>x.e>I.lastEnd),G=[];let cur=null;
- /* only gaps between one activity and the next count: the time before your first shift since your last rest is that rest, not a new one */
  L.forEach(x=>{if(cur!==null&&x.s>cur)G.push({s:cur,e:x.s,len:x.s-cur});cur=cur===null?x.e:Math.max(cur,x.e)});
  G.push({s:cur===null?Math.max(Date.now(),I.lastEnd):cur,e:Infinity,len:Infinity,open:1});
- const out=[];let le=I.lastEnd;
- for(let k=0;k<8;k++){const due=le+144*H,ok=G.filter(g=>g.s>=le&&g.s<=due&&g.len>=24*H),g=ok.find(g=>g.len>=45*H)||ok[0];
-  if(!g){out.push({miss:1,due});break}
-  out.push({s:g.s,e:g.e,len:g.len,full:g.len>=45*H,open:!!g.open,due});if(g.open)break;le=g.e}
- return out}
-function plRestTag(d,WR){const f=WR[0],r=WR.find(x=>!x.miss&&x.s<nxd(d)&&x.e>d);let t='';
- if(r)t+=`<div class="plr ${r.full?'ok':'warn'}">Rest</div>`;
- if(f&&sod(f.due)===d)t+=`<div class="plr ${f.miss?'bad':'mut'}">⚑ ${hm(f.due).slice(0,5)}</div>`;
+ const due=I.lastEnd+144*H,ok=G.filter(g=>g.s>=I.lastEnd&&g.s<=due),f45=ok.find(g=>g.len>=45*H)||null,f24=I.full45?null:(ok.find(g=>g.len>=24*H)||null);
+ return{f45,f24,due,miss:!f45&&!f24,full45:I.full45}}
+const plHm=t=>hm(t).slice(0,5);
+function plRestTag(d,WR){if(!WR)return '';let t='';const a=WR.f45,b=WR.f24;
+ if(a&&sod(a.s)===d)t+=`<div class="plr ok">45h ${plHm(a.s)}</div>`;
+ if(b&&(!a||b.s!==a.s)&&sod(b.s)===d)t+=`<div class="plr warn">24h ${plHm(b.s)}</div>`;
+ if(sod(WR.due)===d)t+=`<div class="plr ${WR.miss?'bad':'mut'}">⚑ ${plHm(WR.due)}</div>`;
  return t}
-function plRestNote(d,WR){const f=WR[0],r=WR.find(x=>!x.miss&&x.s<nxd(d)&&x.e>d);let t='';
- if(r)t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--${r.full?'ok':'warn'})"><div class="lbl">Weekly rest</div><div class="note">${r.open?'From '+dmy(r.s)+', with nothing planned after that':dmy(r.s)+' to '+dmy(r.e)+' ('+fmt(r.len)+')'}. ${r.full?'A full weekly rest (45h or more).':'Only a reduced rest. You would owe '+fmt(45*H-r.len)+', paid back in one block within 3 weeks.'}</div></div>`;
- if(f&&sod(f.due)===d)t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--${f.miss?'bad':'mut'})"><div class="lbl">⚑ Weekly rest must start by ${hm(f.due)}</div><div class="note">${f.miss?'Nothing in your plan leaves a gap of 24 hours or more before this. Free up time or move a shift.':'That is six 24 hour periods after your last weekly rest ended.'}</div></div>`;
+function plRestNote(d,WR){if(!WR)return '';let t='';const a=WR.f45,b=WR.f24,len=g=>g.open?'with nothing planned after that':'until '+dmy(g.e)+' ('+fmt(g.len)+' clear)';
+ if(a&&sod(a.s)===d)t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--ok)"><div class="lbl">Earliest a full weekly rest can start: ${plHm(a.s)}</div><div class="note">45 hours or more, ${len(a)}. Starting it then keeps you legal without owing anything back.</div></div>`;
+ if(b&&(!a||b.s!==a.s)&&sod(b.s)===d)t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--warn)"><div class="lbl">Earliest a reduced weekly rest can start: ${plHm(b.s)}</div><div class="note">At least 24 hours, ${len(b)}. If you only take 24 hours you would owe 21 hours, paid back in one block within 3 weeks.</div></div>`;
+ if(sod(WR.due)===d)t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--${WR.miss?'bad':'mut'})"><div class="lbl">⚑ Weekly rest must start by ${hm(WR.due)}</div><div class="note">${WR.miss?'Nothing in your plan leaves a gap of 24 hours or more before this. Free up time or move a shift.':'That is six 24 hour periods after your last weekly rest ended.'}</div></div>`;
  return t}
 function plMonth(){if(!PL.m){const t=new Date(sod(Date.now()));t.setDate(1);PL.m=t.getTime()}return PL.m}
 function plRender(){const el=$('plc');if(!el)return;const m0=plMonth(),md=new Date(m0),n=Date.now();
@@ -126,7 +126,7 @@ function plRender(){const el=$('plc');if(!el)return;const m0=plMonth(),md=new Da
   const dot=fr?['','ok','warn','bad'][fr.lv]:'',chips=os.map(o=>{const j=jobC(o.j);return `<div class="plk" style="border-left-color:${JCOL[jobI(j.id)]}">${ct(o.s)}–${ct(o.e)}${lv?`<i class="${['','','warn','bad'][worst(I.get(o.oid))]||''}">${worst(I.get(o.oid))>=2?'!':''}</i>`:''}</div>`}).join('');
   const rtag=plRestTag(d,WR);
   h+=`<button class="pld${inM?'':' plo'}${td?' plt':''}${past?' plp':''}" data-pd="${d}"><span class="pln">${new Date(d).getDate()}</span>${chips}${rtag}${logged&&(past||td)?`<div class="plk pll">${fmt(logged).replace(' 00m','')}</div>`:''}${fr?`<span class="pldot ${dot}"></span><span class="plw">${fr.lv<3?hm(fr.ea).slice(0,2)+(fr.la===Infinity||fr.la>nxd(d)+4*H?'+':'–'+hm(fr.la).slice(0,2)+(fr.la>nxd(d)?'¹':'')):''}</span>`:''}</button>`}
- h+='</div>'+(shown?'':'<p class="note" style="text-align:center;margin:12px 0">Nothing was logged or planned in this month.</p>')+'<div class="bx plkey" style="margin-top:10px"><div class="lbl" style="margin-bottom:4px">Key</div><div><span class="ki"><span class="pldot ok"></span></span>Free, fine to work</div><div><span class="ki"><span class="pldot warn"></span></span>Free, only with a reduced rest</div><div><span class="ki"><span class="pldot bad"></span></span>Not allowed (rest rules)</div><div><span class="ki"><span style="display:inline-block;width:14px;height:10px;border-left:3px solid var(--mut);background:var(--bg)"></span></span>Planned shift, in the job\'s colour</div><div><span class="ki"><b class="bad">!</b></span>Planned shift breaks a rule</div><div><span class="ki"><span class="plr ok" style="margin:0">Rest</span></span>Predicted weekly rest, 45h or more</div><div><span class="ki"><span class="plr warn" style="margin:0">Rest</span></span>Predicted reduced rest (24 to 45h): you would owe the rest</div><div><span class="ki"><span class="plr mut" style="margin:0">⚑</span></span>Latest time your weekly rest can start (the time is shown). Red means nothing in your plan covers it</div><div><span class="ki"><span class="plw">04–22</span></span>Earliest start to latest finish</div><div><span class="ki"><span class="plw">04+</span></span>No latest finish from your other shifts</div><div><span class="ki"><span class="plw">¹</span></span>Finish is the next morning</div><div class="note" style="margin-top:4px">Tap a day for details.</div></div>';
+ h+='</div>'+(shown?'':'<p class="note" style="text-align:center;margin:12px 0">Nothing was logged or planned in this month.</p>')+'<div class="bx plkey" style="margin-top:10px"><div class="lbl" style="margin-bottom:4px">Key</div><div><span class="ki"><span class="pldot ok"></span></span>Free, fine to work</div><div><span class="ki"><span class="pldot warn"></span></span>Free, only with a reduced rest</div><div><span class="ki"><span class="pldot bad"></span></span>Not allowed (rest rules)</div><div><span class="ki"><span style="display:inline-block;width:14px;height:10px;border-left:3px solid var(--mut);background:var(--bg)"></span></span>Planned shift, in the job\'s colour</div><div><span class="ki"><b class="bad">!</b></span>Planned shift breaks a rule</div><div><span class="ki"><span class="plr ok" style="margin:0">45h</span></span>Earliest your next weekly rest of 45h can start (and the time)</div><div><span class="ki"><span class="plr warn" style="margin:0">24h</span></span>Earliest a reduced 24h rest can start: you would owe the rest</div><div><span class="ki"><span class="plr mut" style="margin:0">⚑</span></span>Latest time your weekly rest can start (the time is shown). Red means nothing in your plan covers it</div><div><span class="ki"><span class="plw">04–22</span></span>Earliest start to latest finish</div><div><span class="ki"><span class="plw">04+</span></span>No latest finish from your other shifts</div><div><span class="ki"><span class="plw">¹</span></span>Finish is the next morning</div><div class="note" style="margin-top:4px">Tap a day for details.</div></div>';
  set(el,h)}
 
 function plDay(d){const n=Date.now(),sp=plSpans(),I=plCheck(sp),WR=plRests(sp),occ=plOcc(d,nxd(d)).filter(o=>sod(o.S)===d),T=typeof dayTot==='function'?dayTot():{},o2=T[d],past=nxd(d)<=n;
