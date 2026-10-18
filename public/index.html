@@ -424,7 +424,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-18-95';
+const APPV='tg-2026-10-18-96';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -670,7 +670,14 @@ function warnAsk(t,L,re){
 function resumeAsk(t,l,next){const n=Date.now(),a=all(),ss=shiftStart(a);
  mo(`<h3>Your shift has ended</h3><p>You ended your shift at <b>${tt(l.e)}</b>, ${fmt(n-l.e)} ago, so the app is counting your daily rest. It is not a full rest yet: the earliest your next shift can start is ${tt(l.e+9*H)} with a reduced 9h rest, or ${tt(l.e+11*H)} after a regular 11h rest.</p><p>If you start ${NM[t]} now, the time since ${hm(l.e)} becomes a break and this carries on the same shift, which started at ${tt(ss)}. You must still take a daily rest of at least 9 hours, finished within 24 hours of the end of your last rest (by about ${tt(ss+24*H)}).</p><button class="tg big" data-k="go">Carry on the same shift</button><button class="tg big" data-k="fx">The end time was wrong, fix entries</button><button class="tg big" data-k="no">Do not start</button>`);
  mcb={no:undo,go:()=>{delete st.se;moX();next()},fx:()=>{delete st.se;fixAsk(t,null,null,Date.now(),next,'',()=>{st.se=l.e;resumeAsk(t,l,next)})}}}
+/* starting work while a weekly rest is in progress: say what it will do to the weekly rest first */
+let restOk=0;
+function restAsk(t,I){const n=Date.now(),le=I.S[I.S.length-1].e;
+ mo(`<h3>You are on a weekly rest</h3><p>Your rest began at <b>${dmy(le)}</b> (${fmt(n-le)} ago). A weekly rest needs at least 24 hours clear of work, so starting ${NM[t].toLowerCase()} now ends it early.</p>${wrIfStart(I)}<button class="tg big" data-k="keep">Keep resting</button><button class="tg big" data-k="go">Start ${NM[t].toLowerCase()} anyway</button>`);
+ mcb={keep:moX,no:moX,go:()=>{restOk=1;moX();setAct(t)}}}
 function setAct(t){
+ if(t!=='r'&&!st.active&&!restOk){const I=wrInfo();if(I&&I.rc){restAsk(t,I);return}}
+ restOk=0;
  if(t==='d'&&!isTc())t='x';
  if(t==='r'&&st.act!=='r'&&lock){flash='Break is locked. You have had your full break this shift. It unlocks when a break is due or you pass 9h driving.'+(st.act?' To stop '+NM[st.act]+', change to another activity or tap End Shift.':'');setTimeout(()=>{flash='';live()},8000);live();return}
  if(st.act===t&&st.active){endAsk(1);return}
