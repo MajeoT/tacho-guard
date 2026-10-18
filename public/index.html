@@ -295,6 +295,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .limdd>summary{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;list-style:none}.limdd>summary::-webkit-details-marker{display:none}.limdd>summary::after{content:'▾';margin-left:6px;opacity:.6}.limdd[open]>summary::after{content:'▴'}.limdd .num small:first-child{display:block;font-size:11px;font-weight:400;text-align:right}.limb{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.limb .cs{grid-column:1/-1;margin:6px 0 0!important}.limb .g{margin:0}
 .wrin{margin-top:10px;padding-top:8px;border-top:1px solid var(--bd2)}.wrin.wrdd>summary{padding:2px 0}.h-ls{margin-top:12px;padding-top:10px;border-top:1px solid rgba(159,176,195,.25);font-size:13px}.h-lh{display:flex;justify-content:space-between;color:#9fb0c3}.h-lh b{color:inherit;font-weight:600}.h-lv{margin-top:4px}.h-lv b{font-size:20px}.h-lv span{display:block;font-size:12.5px;color:#9fb0c3;margin-top:2px}
 .h-rw{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px}.h-capi{font-size:18px;font-weight:600}.h-cap.sb{margin-top:8px}.h-cap.sb.wr{color:#ffb020}.cp .h-cap.sb{display:none}.cp .h-cap.sb.rs{display:block}
+.h-rw{margin-top:14px;align-items:center}.h-rw .h-state{margin-top:0}.h-capi{margin:0;line-height:1.1}.h-cap.sb{font-size:13px;line-height:1.35}.cp .h-rw{margin-top:8px}.acts-l{font-size:12.5px;color:var(--mut);margin:12px 2px 6px}.act .as{display:block;font:400 10.5px var(--body);color:var(--mut);margin-top:2px;letter-spacing:0;text-transform:none}.cp .act .as,.cp .acts-l{display:none}
 </style>
 </head>
 <body>
@@ -306,7 +307,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div class="alert" id="alert" hidden></div>
 <div id="plb"></div><div id="iss"></div><div id="wkb"></div><div id="mx"></div><div id="owe"></div>
 <div id="hero"></div>
-<div class="acts"><button class="act" data-a="d"><b>🚛</b>Driving</button><button class="act" data-a="w"><b>⚒</b>Work</button><button class="act" data-a="p"><b>◪</b>POA</button><button class="act" data-a="r"><b>🛏</b>Break</button></div><div id="tcsw"></div>
+<div class="acts-l" id="actl"></div><div class="acts"><button class="act" data-a="d"><b>🚛</b>Driving<small class="as">drive</small></button><button class="act" data-a="w"><b>⚒</b>Work<small class="as">other work</small></button><button class="act" data-a="p"><b>◪</b>POA<small class="as">waiting</small></button><button class="act" data-a="r"><b>🛏</b>Break<small class="as">take a break</small></button></div><div id="tcsw"></div>
 <div class="live" id="live"></div><div class="tr" id="es" style="margin-top:10px" hidden><label for="est" id="esl">Started At</label><input type="time" id="est"><button class="tg" id="esb">Change</button></div>
 <div id="s1"></div><div id="s2"></div><button class="tg" id="esh" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">End Shift</button><button class="tg" id="tlog" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">Today's Log</button><p class="note" style="text-align:center;margin:6px 0 0">See and edit today's driving, work, POA and breaks.</p><button class="tg" id="rd2" style="display:block;width:100%;margin-top:30px;padding:14px;font-size:16px;border-radius:12px;color:#fff;background:var(--bad);border-color:var(--bad)">Reset Day</button><p class="note" style="text-align:center;margin:6px 0 0">Starts breaks, shift and working time again from now. Asks twice and can be undone for 20 seconds.</p></section><section id="t-plan" hidden><h2>Shift Planner</h2><p class="note" style="margin-top:-6px">Plan shifts for all your jobs. Each day is checked against the rest, working time and driving rules, using what you have logged so far.</p><div id="plc"></div></section><section id="t-tacho" hidden><h2>Tacho</h2><div class="pls" id="tpn"><button class="pl on" data-tp="dl">Downloads</button><button class="pl" data-tp="use">Using a tacho</button><button class="pl" data-tp="ent">Your entries</button><button class="pl" data-tp="pap">Manual entries and paper</button></div><div id="tp-dl"><h3 class="h3p">Downloads <button class="i" data-i="tac" aria-label="More info">i</button></h3><div id="tcx"></div><div class="g"><div class="tr"><label for="tc">Driver Card Downloaded</label><input type="date" id="tc"></div><div class="note" id="tcn"></div><div class="tr" style="margin-top:12px"><label for="tu">Vehicle Unit Downloaded</label><input type="date" id="tu"></div><div class="note" id="tun"></div></div>
 
@@ -425,7 +426,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-18-97';
+const APPV='tg-2026-10-18-98';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -1080,7 +1081,7 @@ function liveRun(){
  const dOn=act==='d',wOn=act==='d'||act==='w'||act==='x',bOn=!busy,so=(x,y)=>x?y:'';
  /* a no-tacho job only needs Work and Break (a running Driving or POA stays visible so it can be seen) */
  {const nt=!isTc();let nv=0;document.querySelectorAll('.act').forEach(x=>{const o=x.dataset.a===(act==='x'?'d':act),hd=nt&&(x.dataset.a==='d'||x.dataset.a==='p')&&!o;x.hidden=hd;if(!hd)nv++;x.classList.toggle('on',o);x.setAttribute('aria-pressed',o);x.classList.toggle('lk',x.dataset.a==='r'&&lock&&act!=='r')});
-  const ae=document.querySelector('.acts');if(ae)ae.style.gridTemplateColumns='repeat('+nv+',1fr)'}
+  $('actl').textContent=!act?(l&&!fresh&&!endd?'Carry on with:':'Start your shift with:'):act==='r'?'Back to:':'Change to:';const ae=document.querySelector('.acts');if(ae)ae.style.gridTemplateColumns='repeat('+nv+',1fr)'}
  const qd=m=>lock||(isTc()&&(prog>=45*M||(m<30&&prog>=15*M)));const nd=sw>9*H?45:30;
  $('al').textContent=st.alerts?'Alerts On':'Alerts Off';
  const RL=st.rml===undefined?15:st.rml,RS=st.rms===undefined?10:st.rms,Lm=RL*M;
