@@ -20,7 +20,7 @@ function plOcc(from,to){const out=[],X=new Set(st.plx||[]),S=st.pls||{};
 /* Spans: logged activity (not rest) plus planned shifts that have not happened yet. */
 function plSpans(extra,skipId){const n=Date.now(),sp=[];
  /* the checks only look back to the start of the working time period and the fortnight before this week, so older logs are left out (much faster with a year of records) */
- const cut=Math.min(refP(n).s,wkS(n)-21*864e5);
+ const cut=Math.min(refMinS(n),wkS(n)-21*864e5);
  all().forEach(x=>{if(x.t==='r'||x.e<cut)return;sp.push({s:x.s,e:Math.min(x.e,n),w:x.t==='p'?0:x.e-x.s,dv:x.t==='d'?Math.min(x.e,n)-x.s:0,tc:x.t==='d'||onCard(x),log:1})});
  const lastLog=sp.length?Math.max(...sp.map(x=>x.e)):0;
  plOcc(n-14*864e5,n+400*864e5).forEach(o=>{if(o.oid===skipId||o.st==='skip'||o.st==='done')return;if(o.E<=n)return;
