@@ -297,12 +297,13 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .h-rw{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px}.h-capi{font-size:18px;font-weight:600}.h-cap.sb{margin-top:8px}.h-cap.sb.wr{color:#ffb020}.cp .h-cap.sb{display:none}.cp .h-cap.sb.rs{display:block}
 .h-rw{margin-top:14px;align-items:center}.h-rw .h-state{margin-top:0}.h-capi{margin:0;line-height:1.1}.h-cap.sb{font-size:13px;line-height:1.35}.cp .h-rw{margin-top:8px}.acts-l{font-size:12.5px;color:var(--mut);margin:12px 2px 6px}.act .as{display:block;font:400 10.5px var(--body);color:var(--mut);margin-top:2px;letter-spacing:0;text-transform:none}.cp .act .as,.cp .acts-l{display:none}
 #hero{margin:0}#herow .acts-l{color:#9fb0c3;margin:14px 2px 8px}#herow .act{background:rgba(255,255,255,.07);border-color:rgba(148,163,184,.28);color:#eaf0f8}#herow .act .as{color:#9fb0c3}#herow .act.on{background:rgba(56,189,248,.16);border-color:var(--acc)}#herow .act.lk{opacity:.5}.h-cap.sb{font-size:12px}
+.subtabs{display:flex;gap:6px;margin:-6px 0 14px}.stab{flex:1;padding:7px 4px;border:1px solid var(--bd);border-radius:999px;background:transparent;color:var(--mut);font:600 13px var(--body);cursor:pointer;position:relative}.stab.on{background:var(--soft);color:var(--acc);border-color:var(--acc)}.stab.dot::after{content:'';position:absolute;top:5px;right:8px;width:6px;height:6px;border-radius:50%;background:var(--bad)}.tabs{grid-template-columns:repeat(4,1fr)!important}.tabs .tab{grid-column:auto!important}
 </style>
 </head>
 <body>
 <main>
 <div class="hd"><div><div class="kick">Drivers' hours</div><h1>TachoGuard <button class="i" data-i="about" aria-label="More info">i</button></h1></div><div class="hr"><button class="tg hbtn" id="cpb" aria-pressed="false"></button><button class="tab gear" data-t="set" aria-label="Settings">Settings</button></div></div>
-<div class="tabs"><button class="tab on" data-t="today">Today</button><button class="tab" data-t="check">Walkaround</button><button class="tab" data-t="hours">Hours</button><button class="tab" data-t="plan">Plan</button><button class="tab" data-t="tacho">Tacho</button><button class="tab" data-t="signs">Learn</button><button class="tab" data-t="log">Log</button></div>
+<div class="tabs"><button class="tab on" data-t="today">Today</button><button class="tab" data-t="plan">Plan</button><button class="tab" data-g="rec">Records</button><button class="tab" data-g="more">More</button></div><div class="subtabs" id="subtabs" hidden></div>
 <div id="rmb" aria-live="assertive"></div><div id="sync" role="status"></div>
 <section id="t-today">
 <div class="alert" id="alert" hidden></div>
@@ -427,7 +428,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-18-99';
+const APPV='tg-2026-10-18-100';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -475,7 +476,7 @@ INFO.poa=`POA means Period of Availability. It is waiting time where you do not 
 let infoK=null;
 let cp=false;try{cp=localStorage.getItem('tachoguard.compact')==='1'}catch(e){}
 const cpUi=()=>{document.body.classList.toggle('cp',cp);$('cpb').textContent='Compact';$('cpb').classList.toggle('on',cp);$('cpb').setAttribute('aria-pressed',cp)};
-$('cpb').onclick=()=>{cp=!cp;try{localStorage.setItem('tachoguard.compact',cp?'1':'0')}catch(e){}cpUi();window.wrOpen=!cp;window.limOpen=!cp;if(typeof live==='function')live()};cpUi();
+$('cpb').onclick=()=>{cp=!cp;try{localStorage.setItem('tachoguard.compact',cp?'1':'0')}catch(e){}cpUi();if(typeof live==='function')live()};cpUi();
 const sgState={q:'',g:''};
 const LGL={law:['Legal order','You must obey it. It can be enforced.'],adv:['Advisory','Not a legal order. You should still follow it.'],warn:['Warning','Warns of a hazard. Not an order, but take care.'],sh:['Highway Code "should"','Not a direct order, but you can be prosecuted if ignoring it causes danger.'],info:['Information','Gives information. Not an order.'],veh:['Legal requirement for the vehicle','The vehicle must carry or show this.']};
 
@@ -1016,7 +1017,10 @@ function wrOwe(I,detail){const n=Date.now();if(!I||!I.C||!I.C.length)return '';
   return `<div class="owe ${k}"><div class="owh"><span class="owb">${fmt(c.owed)}</span><span><b>of weekly rest owed</b><br><span class="${late?'bad':''}">${dleft(c.left)}</span></span></div><div class="note">You took a reduced weekly rest of ${fmt(c.r.len)} that ended ${dmy(c.r.e)}. Take the missing ${fmt(c.owed)} in one block, attached to a rest of 9 hours or more, ${when}.${detail?' It cannot be split up, and it only counts if it is time clear of every job.':''}</div>${wk}${detail?`<button class="tg" data-k="p${c.r.e}" style="margin-top:8px">I have taken it, mark as paid back</button>`:''}</div>`}).join('')}
 function oweBanner(I){if(!I||!I.C||!I.C.length)return '';const late=I.owedDl<Date.now();
  return `<button class="wkb ${late?'nb':'wn'}" data-owe="1"><b>You owe ${fmt(I.owedTot)} of weekly rest${late?' (overdue)':''}</b><span>Take it ${I.C.some(c=>c.pair)?'before your next weekly rest':'by '+dshort(I.owedDl-6e4)} (${dleft(I.owedDl-Date.now())}), in one block attached to a rest of 9h or more. Tap to see how.</span></button>`}
-window.wrOpen=!cp;window.limOpen=!cp;document.addEventListener('toggle',e=>{const t=e.target;if(t&&t.id==='wrdet')window.wrOpen=t.open;else if(t&&t.id==='limdet')window.limOpen=t.open},true);
+/* dropdowns on Today: open in the normal view while resting, closed in Compact and while a shift is running; your own tap sticks until one of those changes */
+const DD={};const ddCtx=()=>(cp?'c':'n')+(st.active&&st.act&&st.act!=='r'?'b':'i');
+const ddOpen=k=>DD[k]&&DD[k].c===ddCtx()?DD[k].o:!cp&&!(st.active&&st.act&&st.act!=='r');
+document.addEventListener('toggle',e=>{const t=e.target;if(t&&(t.id==='wrdet'||t.id==='limdet'))DD[t.id]={c:ddCtx(),o:t.open}},true);
 function wkRows(){const n=Date.now(),W=window.WKR||{},td=sod(n),q=all().filter(x=>x.t!=='p'&&x.t!=='r'),tdW=sum(q,td,n+1),wkW=sum(q,mon(),n+1);
  const t=W.onS?`<b class="ok">${fmt(W.sw)}</b>`:tdW>0?`<b>${fmt(tdW)}</b>`:`<b class="mt">Shift not started</b>`;
  return `<div class="wkr"><span>Worked today${W.onS?' (since '+hm(W.ss)+')':tdW>0?' (shift finished)':''}</span>${t}</div><div class="wkr"><span>Worked this week</span><b class="${wkW>=60*H?'bad':wkW>=52*H?'warn':''}">${fmt(wkW)} <small style="font-size:12px;font-weight:400;color:var(--mut)">/ 60h</small></b></div>`}
@@ -1038,7 +1042,7 @@ function wrCard(I,join){if(I===undefined)I=wrInfo();const box=join?'wrin':'g cd 
  else line=left>0?`<b>Day ${day} of 6.</b> Your weekly rest must <b>start</b> by <b>${dmy(I.due)}</b>. ${I.full45?'It has to be a full 45 hours.':'It can be a full 45 hours, or a reduced 24 hours if you pay the rest back.'}`:`<b class="bad">Overdue. Your weekly rest should have started by ${dmy(I.due)}.</b> Stop and take it now, and check your tachograph.`;
  const vis=IW?`<div class="bar" style="position:relative"><i style="width:${Math.round(Math.min(100,I.ong/(45*H)*100))}%;background:var(--${I.ong>=45*H?'ok':'acc'})"></i></div><div class="wrm"><span style="left:${(24/45*100).toFixed(1)}%">24h reduced</span><span style="right:0">45h full</span></div>`:wrBar(I);
  const sumr=`<summary><span class="lbl">Weekly Rest ${ib('wkr')}</span><span class="num ${IW?'':c}">${IW?fmt(I.ong):left>0?fd(left):'Overdue'} <small>${IW?'/ 45h':left>0?'to start rest':''}</small></span></summary>`;
- return `<details class="${box} wrdd${I.inWr?' on':''}" id="wrdet"${window.wrOpen?' open':''}>${sumr}<div class="wrdb">${vis}<div class="note">${line}</div>${I.pairBad?`<div class="note bad" style="margin-top:4px">Two reduced weekly rests in a row are only allowed on an international trip abroad. Open More detail to check.</div>`:''}${wrIfStart(I)}${wrOwe(I,0)}${I.mis?`<div class="note bad" style="margin-top:4px">Your logs show work during the weekly rest you entered. Open More detail to fix.</div>`:''}${wrPlanned(I)}${wkRows()}<div class="tr" style="margin-top:8px"><button class="tg" data-wrd="1">More detail</button></div></div></details>`}
+ return `<details class="${box} wrdd${I.inWr?' on':''}" id="wrdet"${ddOpen('wrdet')?' open':''}>${sumr}<div class="wrdb">${vis}<div class="note">${line}</div>${I.pairBad?`<div class="note bad" style="margin-top:4px">Two reduced weekly rests in a row are only allowed on an international trip abroad. Open More detail to check.</div>`:''}${wrIfStart(I)}${wrOwe(I,0)}${I.mis?`<div class="note bad" style="margin-top:4px">Your logs show work during the weekly rest you entered. Open More detail to fix.</div>`:''}${wrPlanned(I)}${wkRows()}<div class="tr" style="margin-top:8px"><button class="tg" data-wrd="1">More detail</button></div></div></details>`}
 function wrDetail(){const I=wrInfo();if(!I||I.anc===null){wrSetup();return}const n=Date.now(),S2=I.S.filter(x=>x.e>I.lastEnd),last=I.S[I.S.length-1],busy=!!st.active&&st.act!=='r';
  const sum2=f=>S2.reduce((q,x)=>f(x)?q+Math.max(0,Math.min(x.e,n)-Math.max(x.s,I.lastEnd)):q,0),dr=sum2(x=>x.t==='d'),wk=sum2(x=>x.t!=='p'),po=sum2(x=>x.t==='p');
  let sh=0;S2.forEach((x,i)=>{if(!i||x.s-S2[i-1].e>=9*H)sh++});
@@ -1180,7 +1184,7 @@ function liveRun(){
  const LM=[];if(onS){if(isTc()){LM.push(['Driving since break',b.d,270*M],['Driving this shift',day,(extLeft?10:9)*H])}LM.push(['Working since break',wc.d,6*H])}
  if(isTc())LM.push(['Driving this week',wkd,56*H],['Driving this fortnight',fn,90*H]);LM.push(['Worked this week',wkW2,60*H],[RP.P.W+' week average',RP.avg,48*H]);
  const lm=LM.slice().sort((x,y)=>y[1]/y[2]-x[1]/x[2])[0],lr=lm[1]/lm[2],lc=lr>=1?'bad':lr>=.8?'warn':'ok';
- set($('s2'),`<details class="g cd w limdd" id="limdet"${window.limOpen?' open':''}><summary><span class="lbl">Limits and Averages</span><span class="num ${lc}"><small>${lm[0]}</small> ${fmt(lm[1])} <small>/ ${fmt(lm[2])}</small></span></summary><div class="limb">${brkCard}${wrkCard}${dayCard}${wkCards}${poaCard}<div class="cs">Working Time Average</div>${avgCard(RP,1)}</div></details>`);
+ set($('s2'),`<details class="g cd w limdd" id="limdet"${ddOpen('limdet')?' open':''}><summary><span class="lbl">Limits and Averages</span><span class="num ${lc}"><small>${lm[0]}</small> ${fmt(lm[1])} <small>/ ${fmt(lm[2])}</small></span></summary><div class="limb">${brkCard}${wrkCard}${dayCard}${wkCards}${poaCard}<div class="cs">Working Time Average</div>${avgCard(RP,1)}</div></details>`);
  if(tab==='tacho'&&tpSel==='ent')tcEnt();
  if(tab==='hours'){const T=dayTot();let cs='';for(let i=0;i<7;i++){const q=new Date(sod(n));q.setDate(q.getDate()-i);const w2=q.getTime(),o=T[w2]||{d:0,w:0},tot=o.d+o.w;
   cs+=`<button class="g cd dayb" data-day="${w2}"><div class="lbl">${i?q.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}):'Today'}</div><div class="num ${tot>13*H?'bad':''}">${fmt(tot)}</div><div class="note">${fmt(o.d)} driving, ${fmt(o.w)} work</div></button>`}
@@ -1217,8 +1221,14 @@ function dayPage(){if(dayView==null)return;const o=buildD()[dayView]||emptyD(),T
  $('dayc').innerHTML=rowsOf(o)||'<div class="g note">Nothing logged this day.</div>'}
 let dayFrom='hours';function openDay(ts,from){dayFrom=from||'hours';dayView=ts;['today','check','log','hours','plan','tacho','signs','set'].forEach(x=>$('t-'+x).hidden=true);$('t-day').hidden=false;ed=null;dayPage();window.scrollTo(0,0)}
 const render=()=>{live();list();if(typeof jobsUi==='function'){jobsUi();rpUi()}setTimeout(chkLong,60)};
-function showTab(k){if(cloudReady&&pushT)queuePush(true);tab=k;dayView=null;ed=null;$('t-day').hidden=true;['today','check','log','hours','plan','tacho','signs','set'].forEach(x=>{$('t-'+x).hidden=x!==k});document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===k));if(k==='check')ckRender();if(k==='tacho'&&typeof tpShow==='function')tpShow(tpSel);if(k==='plan'&&typeof plRender==='function')plRender();if(k==='signs')renderSigns();render()}
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+/* Seven screens in four tabs: Today, Plan, Records (Hours, Log, Tacho) and More (Walkaround, Learn) */
+const GR={hours:'rec',log:'rec',tacho:'rec',check:'more',signs:'more'},LG={rec:'hours',more:'check'},SUBS={rec:[['hours','Hours'],['log','Log'],['tacho','Tacho']],more:[['check','Walkaround'],['signs','Learn']]};
+function subUi(k){const g=GR[k],el=$('subtabs');if(!el)return;el.hidden=!g;if(!g){el.innerHTML='';return}
+ el.innerHTML=SUBS[g].map(([t,n])=>`<button class="stab${t===k?' on':''}${t==='check'&&cDot?' dot':''}" data-t="${t}">${n}</button>`).join('')}
+let cDot=false;
+function showTab(k){if(cloudReady&&pushT)queuePush(true);tab=k;dayView=null;ed=null;$('t-day').hidden=true;['today','check','log','hours','plan','tacho','signs','set'].forEach(x=>{$('t-'+x).hidden=x!==k});const g=GR[k];LG[g]=g?k:LG[g];document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.g?b.dataset.g===g:b.dataset.t===k));subUi(k);if(k==='check')ckRender();if(k==='tacho'&&typeof tpShow==='function')tpShow(tpSel);if(k==='plan'&&typeof plRender==='function')plRender();if(k==='signs')renderSigns();render()}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.g?LG[b.dataset.g]:b.dataset.t));
+$('subtabs').onclick=e=>{const b=e.target.closest('.stab');if(b)showTab(b.dataset.t)};
 document.querySelectorAll('.act').forEach(b=>b.onclick=()=>setAct(b.dataset.a));
 $('s1').addEventListener('click',e=>{if(e.target.closest('[data-wr]')){wrSetup();return}if(e.target.closest('[data-wrd]')&&!e.target.closest('[data-i]')){wrDetail();return}const b=e.target.closest('[data-m]');if(b&&!b.disabled)breakAsk(+b.dataset.m);else if(e.target.closest('[data-ub]'))unBreak()});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-i]'),s=$('sheet');if(b){const k=b.dataset.i;if(infoK===k){infoK=null;s.hidden=true}else{infoK=k;s.innerHTML=(k.startsWith('c:')?infoCk(k.slice(2)):boxify(INFO[k]))+(ISRC[k]?'<div class="srcs">'+srcH(ISRC[k])+'</div>':'')+'<div class="note" style="margin-top:6px">Tap to close.</div>';s.hidden=false}}else if(!s.hidden){infoK=null;s.hidden=true}});
@@ -1699,7 +1709,7 @@ function wkUpdate(){
  else if(act==='d'||dd==='y'){dot=true;h=`<div class="wkb nb"><b>Walkaround not done</b><span>${act==='d'?'You are driving and no walkaround is recorded for this shift.':'Do it before you drive. The DVSA expects it before the first drive of the day.'}</span><div style="display:flex;gap:8px;margin-top:8px">${bt('data-wgo="1"','Do it now')}${bt('data-dd="e"','Done elsewhere')}${bt('data-dd="n"','Not needed')}</div></div>`}
  else if(dd==='n')h=`<div class="wkb dn2"><b>No walkaround needed today</b><span>You said you are not driving this shift. <u data-dd="" style="cursor:pointer">Change</u></span></div>`;
  else h=`<div class="wkb"><b>Walkaround check</b><span>The DVSA expects one before the first drive of the day. Will you do your own, or has it been done elsewhere?</span><div style="display:flex;gap:8px;margin-top:8px">${bt('data-dd="y"','I will do my own')}${bt('data-dd="e"','Done elsewhere')}${bt('data-dd="n"','Not driving')}</div></div>`;
- set($('wkb'),h);document.querySelector('.tab[data-t="check"]').classList.toggle('dot',dot);mxUpdate();issUpdate();if(typeof plBanner==='function')plBanner()}
+ set($('wkb'),h);cDot=!!dot;document.querySelector('.tab[data-g="more"]').classList.toggle('dot',dot);subUi(tab);mxUpdate();issUpdate();if(typeof plBanner==='function')plBanner()}
 function issUpdate(){const I=st.iss||[],el=$('iss');if(!el)return;
  set(el,I.map((x,i)=>`<div class="wkb nb" style="cursor:default"><b>Needs checking: ${NM[x.a]||'Activity'} started ${tt(x.t)}</b><span>${x.r.map(esc).join('. ')}. If a time was logged wrong, fix it in the log. If the times are right, this may be an infringement, so keep a note of why.</span><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="tg" data-isf="${i}" style="flex:1 1 0;min-width:0;white-space:normal;padding-left:6px;padding-right:6px">Fix entries</button><button class="tg" data-isd="${i}" style="flex:1 1 0;min-width:0;white-space:normal;padding-left:6px;padding-right:6px">Fixed</button><button class="tg" data-isk="${i}" style="flex:1 1 0;min-width:0;white-space:normal;padding-left:6px;padding-right:6px">Times are right</button></div></div>`).join(''))}
 $('iss').onclick=e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
