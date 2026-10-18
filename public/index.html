@@ -424,7 +424,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-18-94';
+const APPV='tg-2026-10-18-95';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -1005,6 +1005,14 @@ window.wrOpen=false;window.limOpen=false;document.addEventListener('toggle',e=>{
 function wkRows(){const n=Date.now(),W=window.WKR||{},td=sod(n),q=all().filter(x=>x.t!=='p'&&x.t!=='r'),tdW=sum(q,td,n+1),wkW=sum(q,mon(),n+1);
  const t=W.onS?`<b class="ok">${fmt(W.sw)}</b>`:tdW>0?`<b>${fmt(tdW)}</b>`:`<b class="mt">Shift not started</b>`;
  return `<div class="wkr"><span>Worked today${W.onS?' (since '+hm(W.ss)+')':tdW>0?' (shift finished)':''}</span>${t}</div><div class="wkr"><span>Worked this week</span><b class="${wkW>=60*H?'bad':wkW>=52*H?'warn':''}">${fmt(wkW)} <small style="font-size:12px;font-weight:400;color:var(--mut)">/ 60h</small></b></div>`}
+/* What would happen to the weekly rest if work started right now (only while a rest is in progress). */
+function wrIfStart(I){if(!I||!I.rc)return '';const n=Date.now(),sv=st.sessions,pc=allC;let I2;
+ st.sessions=sv.concat([{s:n,e:n+6e4,t:'w'}]);allC=null;try{I2=wrInfo()}finally{st.sessions=sv;allC=pc}
+ if(!I2||I2.anc===null)return '';
+ const r=I2.lastEnd>I.lastEnd?I2.RH[I2.RH.length-1]:null,head='<b>If you start work now:</b> your rest so far ('+fmt(I.ong)+') will not count as a weekly rest. ';
+ if(r)return '<div class="note warn" style="margin-top:6px">'+head+'Your break of '+fmt(r.len)+' that ended '+dmy(r.e)+' becomes your '+(r.red?'reduced ':'')+'weekly rest'+(r.red?', so you would owe '+fmt(45*H-r.len)+' back, in one block within 3 weeks':'')+'. Your next weekly rest would then have to start by <b>'+dmy(I2.due)+'</b>.</div>';
+ let gap='';if(typeof plSpans==='function'){const sp=plSpans().filter(x=>x.e>n).sort((a,b)=>a.s-b.s);let cur=n+6e4,ok=false;sp.forEach(x=>{if(x.s-cur>=24*H&&cur<=I.due)ok=true;cur=Math.max(cur,x.e)});if(cur<=I.due)ok=true;gap=ok?'':' Nothing in your plan leaves 24 hours clear before then.'}
+ return '<div class="note '+(gap||n>I.due?'bad':'warn')+'" style="margin-top:6px">'+head+'Your weekly rest still has to start by <b>'+dmy(I.due)+'</b>.'+gap+'</div>'}
 function wrCard(I,join){if(I===undefined)I=wrInfo();const box=join?'wrin':'g cd w';
  if(!I)return `<div class="${box}"><div class="row"><span class="lbl">Weekly Rest ${ib('wkr')}</span></div><div class="note">To track your weekly rest, the app needs to know when your last one ended.</div>${wkRows()}<div class="tr" style="margin-top:8px"><button class="tg" data-wr="set">Set up weekly rest</button></div></div>`;
  if(I.anc===null)return `<div class="${box}"><div class="row"><span class="lbl">Weekly Rest ${ib('wkr')}</span></div><div class="note">The 6 day clock starts when you start your next shift. <u data-wr="set" style="cursor:pointer">Change</u></div>${wkRows()}</div>`;
@@ -1015,7 +1023,7 @@ function wrCard(I,join){if(I===undefined)I=wrInfo();const box=join?'wrin':'g cd 
  else line=left>0?`<b>Day ${day} of 6.</b> Your weekly rest must <b>start</b> by <b>${dmy(I.due)}</b>. ${I.full45?'It has to be a full 45 hours.':'It can be a full 45 hours, or a reduced 24 hours if you pay the rest back.'}`:`<b class="bad">Overdue. Your weekly rest should have started by ${dmy(I.due)}.</b> Stop and take it now, and check your tachograph.`;
  const vis=IW?`<div class="bar" style="position:relative"><i style="width:${Math.round(Math.min(100,I.ong/(45*H)*100))}%;background:var(--${I.ong>=45*H?'ok':'acc'})"></i></div><div class="wrm"><span style="left:${(24/45*100).toFixed(1)}%">24h reduced</span><span style="right:0">45h full</span></div>`:wrBar(I);
  const sumr=`<summary><span class="lbl">Weekly Rest ${ib('wkr')}</span><span class="num ${IW?'':c}">${IW?fmt(I.ong):left>0?fd(left):'Overdue'} <small>${IW?'/ 45h':left>0?'to start rest':''}</small></span></summary>`;
- return `<details class="${box} wrdd${I.inWr?' on':''}" id="wrdet"${window.wrOpen?' open':''}>${sumr}<div class="wrdb">${vis}<div class="note">${line}</div>${I.pairBad?`<div class="note bad" style="margin-top:4px">Two reduced weekly rests in a row are only allowed on an international trip abroad. Open More detail to check.</div>`:''}${wrOwe(I,0)}${I.mis?`<div class="note bad" style="margin-top:4px">Your logs show work during the weekly rest you entered. Open More detail to fix.</div>`:''}${wrPlanned(I)}${wkRows()}<div class="tr" style="margin-top:8px"><button class="tg" data-wrd="1">More detail</button></div></div></details>`}
+ return `<details class="${box} wrdd${I.inWr?' on':''}" id="wrdet"${window.wrOpen?' open':''}>${sumr}<div class="wrdb">${vis}<div class="note">${line}</div>${I.pairBad?`<div class="note bad" style="margin-top:4px">Two reduced weekly rests in a row are only allowed on an international trip abroad. Open More detail to check.</div>`:''}${wrIfStart(I)}${wrOwe(I,0)}${I.mis?`<div class="note bad" style="margin-top:4px">Your logs show work during the weekly rest you entered. Open More detail to fix.</div>`:''}${wrPlanned(I)}${wkRows()}<div class="tr" style="margin-top:8px"><button class="tg" data-wrd="1">More detail</button></div></div></details>`}
 function wrDetail(){const I=wrInfo();if(!I||I.anc===null){wrSetup();return}const n=Date.now(),S2=I.S.filter(x=>x.e>I.lastEnd),last=I.S[I.S.length-1],busy=!!st.active&&st.act!=='r';
  const sum2=f=>S2.reduce((q,x)=>f(x)?q+Math.max(0,Math.min(x.e,n)-Math.max(x.s,I.lastEnd)):q,0),dr=sum2(x=>x.t==='d'),wk=sum2(x=>x.t!=='p'),po=sum2(x=>x.t==='p');
  let sh=0;S2.forEach((x,i)=>{if(!i||x.s-S2[i-1].e>=9*H)sh++});
