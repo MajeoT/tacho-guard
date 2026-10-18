@@ -428,7 +428,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-18-100';
+const APPV='tg-2026-10-18-101';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -681,11 +681,11 @@ function breakMenu(){const off=m=>lock||(isTc()&&(prog>=45*M||(m<30&&prog>=15*M)
  mcb={no:moX,now:()=>{brOk=1;moX();setAct('r')}};[15,20,30,45].forEach(m=>mcb['b'+m]=()=>{moX();breakAsk(m)})}
 function restAsk(t,I){const n=Date.now(),le=I.S[I.S.length-1].e;
  mo(`<h3>You are on a weekly rest</h3><p>Your rest began at <b>${dmy(le)}</b> (${fmt(n-le)} ago). A weekly rest needs at least 24 hours clear of work, so starting ${NM[t].toLowerCase()} now ends it early.</p>${wrIfStart(I)}<button class="tg big" data-k="keep">Keep resting</button><button class="tg big" data-k="go">Start ${NM[t].toLowerCase()} anyway</button>`);
- mcb={keep:moX,no:moX,go:()=>{restOk=1;if(jobsOn())st.tmt=0;moX();setAct(t)}}}
+ mcb={keep:moX,no:moX,go:()=>{restOk=1;moX();setAct(t)}}}
 function setAct(t){
  if(t==='r'&&st.act!=='r'&&!brOk&&!lock){breakMenu();return}
  brOk=0;
- if(t!=='r'&&!st.active&&!restOk){const I=wrInfo();if(I&&I.rc){restAsk(t,I);return}}
+ if(t!=='r'&&!st.active&&!restOk){const I=wrInfo();if(I&&I.rc){if(jobsOn()){st.tmt=0}else{restAsk(t,I);return}}}
  restOk=0;
  if(t==='d'&&!isTc())t='x';
  if(t==='r'&&st.act!=='r'&&lock){flash='Break is locked. You have had your full break this shift. It unlocks when a break is due or you pass 9h driving.'+(st.act?' To stop '+NM[st.act]+', change to another activity or tap End Shift.':'');setTimeout(()=>{flash='';live()},8000);live();return}
@@ -697,17 +697,31 @@ function setAct(t){
  const chk1=()=>{if(t!=='r'){const L=legalStart(t);if(L.R.length){warnAsk(t,L,chk1);return}}begin(t)},chk0=()=>{if(t==='x'&&isTc())t='d';if(t==='d'&&!isTc())t='x';const a1=all(),l1=a1[a1.length-1],n1=Date.now();if(t!=='r'&&st.se&&l1&&!l1.live&&st.se>=l1.e&&n1-l1.e<9*H){resumeAsk(t,l1,chk1);return}chk1()};
  if(was&&ps)swapAsk(t,was,ps,n,chk0);
  else{const zs=st.sessions.filter(x=>x.t!=='r'&&x.e>rs),z=zs.length?zs.reduce((a,b)=>b.e>a.e?b:a):null,gp=()=>{const e2=st.sessions.filter(x=>x.e>rs).map(x=>x.e),l2=e2.length?Math.max(...e2):0;if(l2&&n-l2>=60*M&&(st.gq||0)<l2&&!(st.se&&st.se>=l2&&n-l2<9*H))gapAsk(l2,n,chk);else chk()};
-  const nsh=!was&&t!=='r'&&jobsOn()&&(!z||n-z.e>=9*H||!!(st.se&&st.se>=z.e))&&(st.tmt||0)<(z?z.e:1),chk=()=>{if(nsh)startAsk(()=>chk0(),0);else chk0()};
-  if(!was&&z&&n-z.e>=9*H&&(st.fq||0)<z.e)shiftAsk(z,n,gp,chk);else if(!was)gp();else chk0()}}
-function startAsk(next,chg){
+  const nsh=!was&&t!=='r'&&jobsOn()&&(!z||n-z.e>=9*H||!!(st.se&&st.se>=z.e))&&(st.tmt||0)<(z?z.e:1),chk=()=>{if(nsh)startAsk(()=>chk0(),0);else chk0()},shN=!was&&z&&n-z.e>=9*H&&(st.fq||0)<z.e;
+  if(shN&&nsh)startAsk(()=>chk0(),0,{z,n,gp});else if(shN)shiftAsk(z,n,gp,chk);else if(!was)gp();else chk0()}}
+function startAsk(next,chg,sh){
  /* a shift planned for now picks its job and tacho setting for you */
  const J=jobs(),pd=!chg&&typeof plDue==='function'?plDue():null;let sj=jobC(pd?pd.j:st.cj).id,tc=st.tm!==undefined&&st.tm!==null&&!chg&&!pd?!!st.tm:jobC(sj).tc!==false,wk='y';
  const sel=(on,bg,fg)=>on?`style="background:${bg};border-color:${bg};color:${fg||'#fff'};font-weight:700"`:'';
- const draw=()=>{mo(`<h3>${chg?'Change job':'Starting a shift'}</h3>${J.length>1?`<p>Which job is this for?</p>${J.map((j,i)=>`<button class="tg big" data-k="j${i}" ${sel(j.id===sj,JCOL[i])}>${j.id===sj?'✓ ':''}${esc(j.n)}${j.tc===false?' (no tacho)':''}</button>`).join('')}`:''}<p>Will you use a tachograph today?</p><button class="tg big" data-k="ty" ${sel(tc,'var(--ok)')}>${tc?'✓ ':''}${tcIco(1)} Yes, tacho</button><button class="tg big" data-k="tn" ${sel(!tc,'var(--warn)','#1b1300')}>${!tc?'✓ ':''}${tcIco(0)} No tacho</button><p class="note">${tc?'Driving counts towards the 4h 30m, 9h and weekly driving limits.':'Only Work and Break are shown, and everything counts as working time. If you are asked to drive a vehicle that needs a tachograph, tap Switch this shift to tacho on the Today screen.'}</p>${!chg?`<p>Walkaround check?</p><button class="tg big" data-k="wy" ${sel(wk==='y','var(--acc)','var(--onacc)')}>${wk==='y'?'✓ ':''}I will do my own in the app</button><button class="tg big" data-k="we" ${sel(wk==='e','var(--acc)','var(--onacc)')}>${wk==='e'?'✓ ':''}Already done elsewhere, mark it done</button><button class="tg big" data-k="wn" ${sel(wk==='n','var(--acc)','var(--onacc)')}>${wk==='n'?'✓ ':''}Not needed today</button>`:''}<button class="tg big" data-k="ok" style="margin-top:14px;font-weight:700">${chg?'Save':'Start shift'}</button><button class="tg big" data-k="no">← Back</button>`);
-  mcb={no:chg?moX:undo,ty:()=>{tc=true;draw()},tn:()=>{tc=false;draw()},wy:()=>{wk='y';draw()},we:()=>{wk='e';draw()},wn:()=>{wk='n';draw()},
-   ok:()=>{const n=Date.now(),was=st.act,ch=chg&&st.active&&was&&was!=='r';if(ch){snap=null;commit(n)}
+ /* one screen for everything a new shift needs: weekly rest warning, when the last shift ended, job, tacho and walkaround */
+ const RI=!chg?wrInfo():null,rcLE=RI&&RI.rc?RI.S[RI.S.length-1].e:0;let se1=sh?hm(sh.z.e):'',oth=false;
+ const T1=()=>{const v=se1;return v?nearT(v,sh.z.e):null};
+ const rest1=()=>{const el=$('sarest');if(!el)return;const E=T1();if(E===null||E>sh.n||E<=sh.z.s){el.textContent='';return}const r=sh.n-E;el.innerHTML='Rest between shifts: <b>'+fmt(r)+'</b>. '+(r>=45*H?'That is long enough for a weekly rest, if it was taken as one.':r>=11*H?'That is a regular daily rest (11h).':r>=9*H?'That is a reduced daily rest (9h to under 11h). You are allowed 3 of these between weekly rests.':'That is under 9h, which is not enough for a daily rest.')};
+ const shH=()=>sh?`<div class="cs" style="margin-top:6px">Last shift</div>${oth?'':`<div class="tr"><label>Your last shift ended at<input type="time" id="sa1" value="${se1}"></label></div><div class="note bad" id="saerr"></div><div class="note" id="sarest"></div>`}<button class="tg big" data-k="oth" ${sel(oth,'var(--acc)','var(--onacc)')}>${oth?'✓ ':''}I was working or driving since then</button>`:'';
+ const rcH=()=>rcLE?`<div class="wn" style="margin-bottom:8px"><b>You are on a weekly rest.</b> It began ${dmy(rcLE)} (${fmt(Date.now()-rcLE)} ago). Starting now ends it early.</div>${wrIfStart(RI)}`:'';
+ const draw=()=>{mo(`<h3>${chg?'Change job':'Starting a shift'}</h3>${rcH()}${shH()}${J.length>1?`<p>Which job is this for?</p>${J.map((j,i)=>`<button class="tg big" data-k="j${i}" ${sel(j.id===sj,JCOL[i])}>${j.id===sj?'✓ ':''}${esc(j.n)}${j.tc===false?' (no tacho)':''}</button>`).join('')}`:''}<p>Will you use a tachograph today?</p><button class="tg big" data-k="ty" ${sel(tc,'var(--ok)')}>${tc?'✓ ':''}${tcIco(1)} Yes, tacho</button><button class="tg big" data-k="tn" ${sel(!tc,'var(--warn)','#1b1300')}>${!tc?'✓ ':''}${tcIco(0)} No tacho</button><p class="note">${tc?'Driving counts towards the 4h 30m, 9h and weekly driving limits.':'Only Work and Break are shown, and everything counts as working time. If you are asked to drive a vehicle that needs a tachograph, tap Switch this shift to tacho on the Today screen.'}</p>${!chg?`<p>Walkaround check?</p><button class="tg big" data-k="wy" ${sel(wk==='y','var(--acc)','var(--onacc)')}>${wk==='y'?'✓ ':''}I will do my own in the app</button><button class="tg big" data-k="we" ${sel(wk==='e','var(--acc)','var(--onacc)')}>${wk==='e'?'✓ ':''}Already done elsewhere, mark it done</button><button class="tg big" data-k="wn" ${sel(wk==='n','var(--acc)','var(--onacc)')}>${wk==='n'?'✓ ':''}Not needed today</button>`:''}<button class="tg big" data-k="ok" style="margin-top:14px;font-weight:700">${chg?'Save':'Start shift'}</button><button class="tg big" data-k="no">← Back</button>`);
+  if(sh&&!oth){$('sa1').onchange=e=>{se1=e.target.value;rest1()};rest1()}
+  mcb={no:chg?moX:undo,oth:()=>{oth=!oth;draw()},ty:()=>{tc=true;draw()},tn:()=>{tc=false;draw()},wy:()=>{wk='y';draw()},we:()=>{wk='e';draw()},wn:()=>{wk='n';draw()},
+   ok:()=>{const n=Date.now(),was=st.act,ch=chg&&st.active&&was&&was!=='r';
+    if(sh&&!oth){const E=T1(),z=sh.z,er=m=>{$('saerr').textContent=m};
+     if(E===null){er('Enter a time.');return}if(E>n){er('That is in the future. Check the time.');return}if(E<=z.s){er('That is before your last shift started ('+hm(z.s)+').');return}
+     const last=st.sessions.filter(x=>x.t!=='r'&&x.e>(st.rs||0)&&x.e===z.e)[0];
+     if(E<z.e)clear(E,z.e);else if(E>z.e){clear(z.e,E,1);if(last)last.e=E}
+     st.sessions=st.sessions.filter(x=>!(x.t==='r'&&x.s>=E&&x.e<=n));st.sessions.push({s:E,e:n,t:'r'});st.fq=n;st.gq=n;if(st.se&&st.se<E)st.se=E}
+    else if(sh&&oth)st.fq=sh.z.e;
+    if(ch){snap=null;commit(n)}
     st.cj=sj;st.tm=tc;st.tmt=n;if(!chg)st.dd={t:n,v:wk}
-    save();moX();if(ch)begin(was==='x'||was==='d'?(tc?'d':'x'):was);else if(chg)render();else next()}};
+    save();moX();if(ch)begin(was==='x'||was==='d'?(tc?'d':'x'):was);else if(chg)render();else if(sh&&oth)sh.gp();else next()}};
   J.forEach((j,i)=>mcb['j'+i]=()=>{sj=j.id;tc=j.tc!==false;draw()})};draw()}
 function shiftAsk(z,n,gp,chk){
  const ss0=st.sessions.filter(x=>x.t!=='r'&&x.e>(st.rs||0)).sort((a,b)=>a.s-b.s);
