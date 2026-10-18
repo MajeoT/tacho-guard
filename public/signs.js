@@ -275,5 +275,29 @@ const ADD={
 'Low Bridge':'A strike can mean prosecution, losing your job and a referral to the Traffic Commissioner. Know your height every time you change load or trailer, and do not follow a satnav that does not know your vehicle.'
 };
 S.forEach(x=>{const a=ADD[x.n];if(a&&!(x.h||'').includes(a))x.h=((x.h||'')+' '+a).trim()});
+/* Revised notes, checked against the Highway Code (gov.uk) in October 2026 */
+const REV={
+'Mini Roundabout':{h:'Treat it like a normal roundabout: signal as you would there (Rule 186), there is just less room and less time, so signal early (Rule 188). All vehicles must pass round the central markings, except large vehicles that are physically incapable of doing so. If you have to cross the centre, check nobody is close on your nearside first. Avoid U-turns at mini-roundabouts, and watch for others making them.'},
+'Roundabout':{h:'Signals (Rule 186): for the first exit, signal left on the approach and keep it on as you leave. For an exit to the right or going full circle, signal right on the approach and signal left after you pass the exit before yours. For an exit in between, you generally do not signal on the approach, then signal left after you pass the exit before yours. Long vehicles may need a different position from normal, so signal clearly and watch for traffic beside you (Rule 187). Do not cut across cyclists, horse riders or horse-drawn vehicles going round in the left lane.'},
+'Box Junction':{m:'Do not enter the yellow box until your exit road or lane is clear. You may enter and wait to turn right if only oncoming traffic, or other vehicles waiting to turn right, stop you. At a signalled roundabout, do not enter unless you can cross it without stopping (Rule 174).'},
+'Zebra Crossing Ahead':{h:'Look out for people waiting to cross and be ready to stop for them. You must give way once someone has moved onto the crossing (Rule 195). Do not wave people across, flash your lights or sound your horn. Do not overtake the moving vehicle nearest the crossing (Rule 191).'},
+'Horse Riders':{h:'Slow to 10 mph at most and pass wide, leaving at least 2 metres (Rules 163 and 215). Do not sound the horn or rev the engine near them. If you cannot give that room, wait behind.'},
+'Wild Horses or Ponies':{h:'Slow down and be ready to stop. They can step into the road without warning, and they do not move out of the way like traffic.'},
+'Cycle Route Ahead':{h:'Leave at least 1.5 metres when overtaking a cyclist at up to 30 mph, and more at higher speeds (Rule 163). If you cannot, wait behind. Check your nearside before you turn left.'},
+'Pedestrians in Road Ahead':{h:'Pass at low speed with at least 2 metres of space (Rule 163). If you cannot, wait behind. Your mirrors have blind spots, so check them often.'},
+'Bus Lane':{h:'Do not drive along a bus lane when it is in force unless the signs allow your vehicle. Check the times. Any vehicle may enter a bus lane to stop, load or unload where that is not prohibited (Rule 141).'},
+'Yellow Kerb Marks: Loading Ban':{m:'One yellow mark on the kerb or at the edge of the carriageway: no loading or unloading at the times shown on the nearby black and white plate. Passengers may still get on and off. If no days are shown, it applies every day, including Sundays and bank holidays.'},
+'Yellow Kerb Marks: More Than One':{m:'Two yellow marks on the kerb: no loading or unloading at any time. Passengers may still get on and off.',h:'Read the plate too, since it gives any details.',w:''},
+'Blue Light Vehicle':{h:'Let it pass while still obeying all traffic signs (Rule 219). If you need to, pull over and stop, but not on a bend, the brow of a hill or a narrow stretch. Do not brake harshly, mount the kerb or put anyone at risk.'},
+'School Bus Sign':{h:'Drive carefully and slowly past a stationary bus showing it. Children may be getting on or off and can step out in front of it (Rule 209).'},
+'Pedestrian Crossing Zig-Zags':{h:'This applies on both sides of the crossing. In queuing traffic, keep the crossing itself clear, and do not drive onto it unless you can clear it (Rule 192).'},
+'Flashing Amber Beacon':{h:'Approach with caution and give it space (Rule 225). Slow vehicles on an unrestricted dual carriageway must show one, so expect a big speed difference.'},
+'Turn Left':{h:'Use your mirrors and signal well before you turn. Do not overtake just before you turn left, and watch your nearside for cyclists and motorcyclists you cannot see (Rule 182).'},
+'Turn Right':{h:'Check your mirrors, signal right and take up position in good time. A long vehicle may need more room, so watch for traffic coming up beside you.'},
+'Give Way':{h:'You do not have to stop if the way is clear, but you must not pull out in front of traffic on the major road. A long vehicle needs a bigger gap, so wait for one.'},
+'Stop':{h:'You must stop at the line even if the road looks clear, then give way. Check your mirrors and the trailer swing before pulling out.'}
+};
+S.forEach(x=>{const r=REV[x.n];if(!r)return;['m','h','w'].forEach(k=>{if(r[k]!==undefined)x[k]=r[k]})});
+const RN={'Yellow Kerb Marks: Loading Ban':'Yellow Kerb Mark: One (Loading Ban at Times Shown)','Yellow Kerb Marks: More Than One':'Yellow Kerb Marks: Two (No Loading at Any Time)'};S.forEach(x=>{if(RN[x.n])x.n=RN[x.n]});
 window.SIGNS=S;
 })();
