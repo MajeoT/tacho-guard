@@ -298,6 +298,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .h-rw{margin-top:14px;align-items:center}.h-rw .h-state{margin-top:0}.h-capi{margin:0;line-height:1.1}.h-cap.sb{font-size:13px;line-height:1.35}.cp .h-rw{margin-top:8px}.acts-l{font-size:12.5px;color:var(--mut);margin:12px 2px 6px}.act .as{display:block;font:400 10.5px var(--body);color:var(--mut);margin-top:2px;letter-spacing:0;text-transform:none}.cp .act .as,.cp .acts-l{display:none}
 #hero{margin:0}#herow .acts-l{color:#9fb0c3;margin:14px 2px 8px}#herow .act{background:rgba(255,255,255,.07);border-color:rgba(148,163,184,.28);color:#eaf0f8}#herow .act .as{color:#9fb0c3}#herow .act.on{background:rgba(56,189,248,.16);border-color:var(--acc)}#herow .act.lk{opacity:.5}.h-cap.sb{font-size:12px}
 .subtabs{display:flex;gap:6px;margin:-6px 0 14px}.stab{flex:1;padding:7px 4px;border:1px solid var(--bd);border-radius:999px;background:transparent;color:var(--mut);font:600 13px var(--body);cursor:pointer;position:relative}.stab.on{background:var(--soft);color:var(--acc);border-color:var(--acc)}.stab.dot::after{content:'';position:absolute;top:5px;right:8px;width:6px;height:6px;border-radius:50%;background:var(--bad)}.tabs{grid-template-columns:repeat(4,1fr)!important}.tabs .tab{grid-column:auto!important}
+#herow #es{margin:12px 0 0;padding-top:10px;border-top:1px solid rgba(159,176,195,.25)}#herow #es label{color:#9fb0c3}#herow #es input{background:rgba(255,255,255,.07);color:#eaf0f8;border-color:rgba(148,163,184,.28)}#herow #es .tg{background:rgba(255,255,255,.07);color:#eaf0f8;border-color:rgba(148,163,184,.28)}#herow #es #esb.pend{background:var(--acc);color:var(--onacc);border-color:var(--acc)}.cp #herow #es{margin-top:8px;padding-top:6px}
 </style>
 </head>
 <body>
@@ -309,8 +310,8 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div class="alert" id="alert" hidden></div>
 <div id="plb"></div><div id="iss"></div><div id="wkb"></div><div id="mx"></div><div id="owe"></div>
 <div id="herow"><div id="hero"></div>
-<div class="acts-l" id="actl"></div><div class="acts"><button class="act" data-a="d"><b>🚛</b>Driving<small class="as">drive</small></button><button class="act" data-a="w"><b>⚒</b>Work<small class="as">other work</small></button><button class="act" data-a="p"><b>◪</b>POA<small class="as">waiting</small></button><button class="act" data-a="r"><b>🛏</b>Break<small class="as">take a break</small></button></div></div><div id="tcsw"></div>
-<div class="live" id="live"></div><div class="tr" id="es" style="margin-top:10px" hidden><label for="est" id="esl">Started At</label><input type="time" id="est"><button class="tg" id="esb">Change</button></div>
+<div class="acts-l" id="actl"></div><div class="acts"><button class="act" data-a="d"><b>🚛</b>Driving<small class="as">drive</small></button><button class="act" data-a="w"><b>⚒</b>Work<small class="as">other work</small></button><button class="act" data-a="p"><b>◪</b>POA<small class="as">waiting</small></button><button class="act" data-a="r"><b>🛏</b>Break<small class="as">take a break</small></button></div><div class="tr" id="es" hidden><label for="est" id="esl">Started At</label><input type="time" id="est"><button class="tg" id="esb">Change</button></div></div><div id="tcsw"></div>
+<div class="live" id="live"></div>
 <div id="s1"></div><div id="s2"></div><button class="tg" id="esh" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">End Shift</button><button class="tg" id="tlog" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">Today's Log</button><p class="note" style="text-align:center;margin:6px 0 0">See and edit today's driving, work, POA and breaks.</p><button class="tg" id="rd2" style="display:block;width:100%;margin-top:30px;padding:14px;font-size:16px;border-radius:12px;color:#fff;background:var(--bad);border-color:var(--bad)">Reset Day</button><p class="note" style="text-align:center;margin:6px 0 0">Starts breaks, shift and working time again from now. Asks twice and can be undone for 20 seconds.</p></section><section id="t-plan" hidden><h2>Shift Planner</h2><p class="note" style="margin-top:-6px">Plan shifts for all your jobs. Each day is checked against the rest, working time and driving rules, using what you have logged so far.</p><div id="plc"></div></section><section id="t-tacho" hidden><h2>Tacho</h2><div class="pls" id="tpn"><button class="pl on" data-tp="dl">Downloads</button><button class="pl" data-tp="use">Using a tacho</button><button class="pl" data-tp="ent">Your entries</button><button class="pl" data-tp="pap">Manual entries and paper</button></div><div id="tp-dl"><h3 class="h3p">Downloads <button class="i" data-i="tac" aria-label="More info">i</button></h3><div id="tcx"></div><div class="g"><div class="tr"><label for="tc">Driver Card Downloaded</label><input type="date" id="tc"></div><div class="note" id="tcn"></div><div class="tr" style="margin-top:12px"><label for="tu">Vehicle Unit Downloaded</label><input type="date" id="tu"></div><div class="note" id="tun"></div></div>
 
 <div id="tacwhy">
@@ -428,7 +429,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-18-101';
+const APPV='tg-2026-10-18-103';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -682,6 +683,39 @@ function breakMenu(){const off=m=>lock||(isTc()&&(prog>=45*M||(m<30&&prog>=15*M)
 function restAsk(t,I){const n=Date.now(),le=I.S[I.S.length-1].e;
  mo(`<h3>You are on a weekly rest</h3><p>Your rest began at <b>${dmy(le)}</b> (${fmt(n-le)} ago). A weekly rest needs at least 24 hours clear of work, so starting ${NM[t].toLowerCase()} now ends it early.</p>${wrIfStart(I)}<button class="tg big" data-k="keep">Keep resting</button><button class="tg big" data-k="go">Start ${NM[t].toLowerCase()} anyway</button>`);
  mcb={keep:moX,no:moX,go:()=>{restOk=1;moX();setAct(t)}}}
+/* Start of a new day: a quick check of the last shift (hours, break), with the rules checked and the consequences explained */
+const audDue=(z,n)=>!!z&&n-z.e>=9*H&&(st.aud||0)<z.e&&n-z.e<10*864e5;
+function audRules(S){const out=[];if(!S.length)return out;
+ const run=(T,f)=>{let m=0,d=0,q=false;S.forEach((x,i)=>{if(i){const g=x.s-S[i-1].e;if(g>=T*M||(q&&g>=(T-15)*M)){d=0;q=false}else if(g>=15*M&&d>0)q=true}if(f(x))d+=x.e-x.s;m=Math.max(m,d)});return m};
+ const dr=S.filter(x=>x.t==='d').reduce((q,x)=>q+x.e-x.s,0),wk=S.filter(x=>x.t!=='p').reduce((q,x)=>q+x.e-x.s,0),sp=S[S.length-1].e-S[0].s;
+ if(run(45,x=>x.t==='d')>270*M)out.push(['No 45 minute break after 4h 30m of driving','A drivers hours offence. DVSA can issue a fixed penalty of up to £300, or take it to court (a Level 4 fine). It also shows on your tachograph record.']);
+ const need=wk>9*H?45:30;if(run(need,x=>x.t!=='p')>6*H)out.push(['Worked over 6 hours without a '+need+' minute break','This breaks the Road Transport (Working Time) Regulations. It is a criminal offence that DVSA can enforce, and your employer can be held responsible too.']);
+ if(dr>10*H)out.push(['Over 10 hours of driving ('+fmt(dr)+')','Above the 10 hour daily maximum. DVSA can issue a fixed penalty of up to £300 for each offence, depending on how serious it is.']);
+ if(sp>15*H)out.push(['Shift spread over '+fmt(sp),'A 9 hour daily rest cannot fit within 24 hours of the start. A missing daily rest is a drivers hours infringement.']);
+ const n=Date.now(),A=all(),wt=sum(A.filter(x=>x.t!=='p'),mon(),n+1),wd=sum(A.filter(x=>x.t==='d'),mon(),n+1);
+ if(wt>60*H)out.push(['Over 60 hours of working time this week ('+fmt(wt)+')','Above the weekly maximum in the working time rules, and it counts towards your 48 hour average.']);
+ if(wd>56*H)out.push(['Over 56 hours of driving this week ('+fmt(wd)+')','Above the weekly driving limit. DVSA can issue a fixed penalty of up to £300, or take it to court.']);
+ return out}
+function auditAsk(z,n,next){const A=all(),ls0=shiftStart(A),S0=A.filter(x=>x.s>=ls0&&x.t!=='r'),cur=S0.reduce((q,x)=>q+x.e-x.s,0);
+ let gl=null;for(let i=1;i<S0.length;i++){const g=S0[i].s-S0[i-1].e;if(g>=15*M&&!gl)gl={s:S0[i-1].e,len:g}}
+ const dys=[];for(let d=sod(z.e)+864e5;d<sod(n)&&dys.length<7;d+=864e5)if(!A.some(x=>x.e>d&&x.s<d+864e5))dys.push(d);
+ let hh=Math.floor(cur/H),mm=Math.round((cur%H)/M),br=gl?'y':'',bt=hm(gl?gl.s:ls0+Math.floor((z.e-ls0)/2)),bl=gl?Math.min(60,Math.round(gl.len/M/5)*5):30;
+ const draw=()=>{mo(`<h3>Check your last day</h3><p>Your last shift was <b>${tt(ls0)} to ${tt(z.e)}</b>. A quick check keeps your records and rest figures right.</p><div class="tr"><label>Hours worked<input type="number" id="auh" min="0" max="24" value="${hh}"></label><label>Minutes<input type="number" id="aum" min="0" max="59" value="${mm}"></label></div><div class="note">Logged: ${fmt(cur)} of driving and other work (not breaks).</div><p style="margin-top:10px">Did you take a break?</p><div class="tr"><button class="tg${br==='y'?' on2':''}" data-k="by">${br==='y'?'✓ ':''}Yes</button><button class="tg${br==='n'?' on2':''}" data-k="bn">${br==='n'?'✓ ':''}No</button></div>${br==='y'?`<div class="tr"><label>Roughly when<input type="time" id="abt" value="${bt}"></label></div><div class="tr" style="gap:6px">${[15,20,30,45,60].map(m=>`<button class="tg${bl===m?' on2':''}" data-k="l${m}">${bl===m?'✓ ':''}${m} min</button>`).join('')}</div>${gl?'<div class="note">A break is already logged here. Change it only if it is wrong.</div>':''}`:''}${dys.length?`<div class="note" style="margin-top:10px">Nothing logged on ${dys.map(d=>dshort(d)).join(', ')}. If you worked, add it in the Log before carrying on.</div>`:''}<div class="note bad" id="auerr"></div><button class="tg big" data-k="ok">Save and continue</button>${dys.length?'<button class="tg big" data-k="lg">Open the Log</button>':''}<button class="tg big" data-k="sk">Skip, it is right</button>`);
+  const rd=()=>{const h=$('auh'),m=$('aum'),t=$('abt');if(h)hh=+h.value||0;if(m)mm=+m.value||0;if(t&&t.value)bt=t.value};
+  mcb={by:()=>{rd();br='y';draw()},bn:()=>{rd();br='n';draw()},sk:()=>{st.aud=z.e;save();moX();next()},lg:()=>{st.aud=z.e;save();moX();openDay(dys[0],'today')},
+   ok:()=>{rd();const er=x=>{$('auerr').textContent=x},want=(hh*60+mm)*M;if(hh<0||hh>24||mm<0||mm>59||want<=0){er('Enter the hours and minutes you worked.');return}
+    const sv=JSON.stringify(st);let b=null;
+    if(br==='y'&&!(gl&&Math.abs(nearT(bt,ls0+(z.e-ls0)/2)-gl.s)<M)){const t0=nearT(bt,ls0+(z.e-ls0)/2);if(t0<ls0||t0+bl*M>z.e+H){er('The break has to be during your shift ('+hm(ls0)+' to '+hm(z.e)+').');return}b={s:t0,len:bl}}
+    const S1=st.sessions.filter(x=>x.t!=='r'&&x.s>=ls0).sort((a,b2)=>a.s-b2.s),diff=want-S1.reduce((q,x)=>q+x.e-x.s,0);
+    if(diff>0&&S1.length){const l=S1[S1.length-1],ne=Math.min(l.e+diff,n);clear(l.e,ne,1);l.e=ne}
+    else if(diff<0){let rem=-diff;for(let i=S1.length-1;i>=0&&rem>0;i--){const x=S1[i],cut=Math.min(x.e-x.s,rem);x.e-=cut;rem-=cut;if(x.e<=x.s)st.sessions=st.sessions.filter(y=>y!==x)}}
+    if(b){clear(b.s,b.s+b.len*M);st.sessions.push({s:b.s,e:b.s+b.len*M,t:'r'})}
+    if(br==='n'&&gl){/* the logged break was wrong: take it out */}
+    const R=audRules(all().filter(x=>x.s>=ls0));
+    const fin=()=>{st.aud=z.e;save();moX();render();next()};
+    if(!R.length){fin();return}
+    mo(`<h3>This breaks the rules</h3><p>With these answers, your last shift:</p>${R.map(r=>`<div class="wn" style="margin:6px 0"><b>${r[0]}</b><br><span class="note">${r[1]}</span></div>`).join('')}<p class="note">If this is what really happened, confirm it so your records are honest. If you mistyped, go back.</p><button class="tg big bad" data-k="cf">Confirm it is correct</button><button class="tg big" data-k="bk">Go back</button>`);
+    mcb={cf:fin,bk:()=>{st=JSON.parse(sv);save();draw()}}}}};draw()}
 function setAct(t){
  if(t==='r'&&st.act!=='r'&&!brOk&&!lock){breakMenu();return}
  brOk=0;
@@ -698,7 +732,8 @@ function setAct(t){
  if(was&&ps)swapAsk(t,was,ps,n,chk0);
  else{const zs=st.sessions.filter(x=>x.t!=='r'&&x.e>rs),z=zs.length?zs.reduce((a,b)=>b.e>a.e?b:a):null,gp=()=>{const e2=st.sessions.filter(x=>x.e>rs).map(x=>x.e),l2=e2.length?Math.max(...e2):0;if(l2&&n-l2>=60*M&&(st.gq||0)<l2&&!(st.se&&st.se>=l2&&n-l2<9*H))gapAsk(l2,n,chk);else chk()};
   const nsh=!was&&t!=='r'&&jobsOn()&&(!z||n-z.e>=9*H||!!(st.se&&st.se>=z.e))&&(st.tmt||0)<(z?z.e:1),chk=()=>{if(nsh)startAsk(()=>chk0(),0);else chk0()},shN=!was&&z&&n-z.e>=9*H&&(st.fq||0)<z.e;
-  if(shN&&nsh)startAsk(()=>chk0(),0,{z,n,gp});else if(shN)shiftAsk(z,n,gp,chk);else if(!was)gp();else chk0()}}
+  const go1=()=>{if(shN&&nsh)startAsk(()=>chk0(),0,{z,n,gp});else if(shN)shiftAsk(z,n,gp,chk);else if(!was)gp();else chk0()};
+  if(!was&&t!=='r'&&audDue(z,n))auditAsk(z,n,go1);else go1()}}
 function startAsk(next,chg,sh){
  /* a shift planned for now picks its job and tacho setting for you */
  const J=jobs(),pd=!chg&&typeof plDue==='function'?plDue():null;let sj=jobC(pd?pd.j:st.cj).id,tc=st.tm!==undefined&&st.tm!==null&&!chg&&!pd?!!st.tm:jobC(sj).tc!==false,wk='y';
@@ -1021,9 +1056,9 @@ const dleft=ms=>{const d=Math.ceil(ms/864e5);return d>0?d+(d===1?' day':' days')
 /* The six 24 hour periods after the end of your last weekly rest. Each column fills with the time worked in it. */
 function wrBar(I,big){const n=Date.now(),od=n>I.due;
  const days=[0,1,2,3,4,5].map(i=>{const f=I.lastEnd+i*24*H,t=f+24*H,wk=I.S.reduce((q,x)=>x.t==='p'?q:q+Math.max(0,Math.min(x.e,t,n)-Math.max(x.s,f)),0);
-  let u=0,ce=f;I.S.slice().sort((a,b)=>a.s-b.s).forEach(x=>{const a=Math.max(x.s,f,ce),e=Math.min(x.e,t,n);if(e>a){u+=e-a;ce=e}});const rs=Math.max(0,Math.min(t,n)-f-u);return{f,wk,rs,cur:n>=f&&n<t,fut:n<f}});
+  return{f,wk,cur:n>=f&&n<t,fut:n<f}});
  const wf=ms=>{const m=Math.floor(ms/M),h=Math.floor(m/60),r=m%60;return h?h+'h'+(r?(' '+r+'m'):''):r+'m'};
- return `<div class="wrb${big?' big':''}"><div class="wrd">${days.map((d,i)=>`<div class="wrs${d.cur?' cur':''}${d.fut?' fut':''}${i===5&&od?' bad':''}"><i class="rs" style="height:${Math.round(Math.min(1,d.rs/(24*H))*100)}%;bottom:${Math.round(Math.min(1,d.wk/(24*H))*100)}%"></i><i style="height:${Math.round(Math.min(1,d.wk/(24*H))*100)}%"></i><b>${d.fut?'':d.wk?wf(d.wk):d.cur?'–':'rest'}</b></div>`).join('')}</div><div class="wrl">${days.map((d,i)=>`<span class="${d.cur?'cur':''}">${new Date(d.f).toLocaleDateString('en-GB',{weekday:'short'})}<br>day ${i+1}</span>`).join('')}</div><div class="wrk"><span><i class="kw"></i>Worked</span><span><i class="kr"></i>Rest</span></div><div class="wrf"><span><b>Last rest ended</b><br>${dmy(I.lastEnd)}</span><span style="text-align:right"><b class="${od?'bad':''}">Rest must start by</b><br>${dmy(I.due)}</span></div></div>`}
+ return `<div class="wrb${big?' big':''}"><div class="wrd">${days.map((d,i)=>`<div class="wrs${d.cur?' cur':''}${d.fut?' fut':''}${i===5&&od?' bad':''}"><i style="height:${Math.round(Math.min(1,d.wk/(24*H))*100)}%"></i><b>${d.fut?'':d.wk?wf(d.wk):d.cur?'–':'rest'}</b></div>`).join('')}</div><div class="wrl">${days.map((d,i)=>`<span class="${d.cur?'cur':''}">${new Date(d.f).toLocaleDateString('en-GB',{weekday:'short'})}<br>day ${i+1}</span>`).join('')}</div><div class="wrf"><span><b>Last rest ended</b><br>${dmy(I.lastEnd)}</span><span style="text-align:right"><b class="${od?'bad':''}">Rest must start by</b><br>${dmy(I.due)}</span></div></div>`}
 /* Hours owed: the box that is shown on Today, on Plan and in the detail screen. */
 function wrOwe(I,detail){const n=Date.now();if(!I||!I.C||!I.C.length)return '';
  return I.C.map(c=>{const late=c.left<0,soon=c.left<7*864e5,k=late?'bad':soon?'warn':'warn',when=c.pair?'before your next weekly rest starts (latest '+dmy(c.dl)+')':'by the end of '+dshort(c.dl-6e4);
