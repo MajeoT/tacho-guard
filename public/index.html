@@ -303,12 +303,13 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 /* section headings: the tab row already says where you are, so only keep the info button */
 #t-check>h2:first-child,#t-hours>h2:first-child,#t-log>h2:first-child,#t-tacho>h2:first-child,#t-signs>h2:first-child{font-size:0;margin:0 0 4px;text-align:right;line-height:1}#t-check>h2:first-child .i,#t-hours>h2:first-child .i{font-size:12px}#t-tacho .h3p{font-size:0;margin:0 0 4px;text-align:right;line-height:1}#t-tacho .h3p .i{font-size:12px}
 .tabs .tab{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 2px 7px!important;font-size:12px!important}.tabs .tab svg{width:21px;height:21px;flex:none}.tabs .tab.dot::after{position:absolute;top:5px;right:calc(50% - 20px);margin:0}
+.wkb.slim{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;border-left-width:3px}.wkb.slim b{font-size:14px;margin:0}.wkb.slim span{font-size:12.5px;color:var(--mut);margin:0;text-align:right}.wkb.slim.ok{border-left-color:var(--ok)}.cp .wkb.slim span{display:inline}
 </style>
 </head>
 <body>
 <main>
 <div class="hd"><div><div class="kick">Drivers' hours</div><h1>TachoGuard <button class="i" data-i="about" aria-label="More info">i</button></h1></div><div class="hr"><button class="tg hbtn" id="cpb" aria-pressed="false"></button><button class="tab gear" data-t="set" aria-label="Settings">Settings</button></div></div>
-<div class="tabs"><button class="tab on" data-t="today"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Today</span></button><button class="tab" data-t="plan"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Plan</span></button><button class="tab" data-g="rec"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h8l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 6 20V5A1.5 1.5 0 0 1 7 3.5z"/><path d="M9 12h7M9 16h7"/></svg><span>Records</span></button><button class="tab" data-g="more"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg><span>More</span></button></div><div class="subtabs" id="subtabs" hidden></div>
+<div class="tabs"><button class="tab on" data-t="today"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Today</span></button><button class="tab" data-t="plan"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Plan</span></button><button class="tab" data-g="rec"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h8l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 6 20V5A1.5 1.5 0 0 1 7 3.5z"/><path d="M9 12h7M9 16h7"/></svg><span>Records</span></button><button class="tab" data-t="signs"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg><span>Learn</span></button></div><div class="subtabs" id="subtabs" hidden></div>
 <div id="rmb" aria-live="assertive"></div><div id="sync" role="status"></div>
 <section id="t-today">
 <div class="alert" id="alert" hidden></div>
@@ -421,7 +422,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div class="g" style="margin-top:24px"><div class="tr"><span><span class="lbl">Reset Day</span><br><span class="note">Starts breaks, shift and working time again from now. Asks twice and can be undone for 20 seconds.</span></span><button class="tg" id="rd" style="color:#fff;background:var(--bad);border-color:var(--bad)">Reset Day</button></div></div>
 <h2>Backup</h2><div class="g"><div class="note">Your record is saved to your account when you are signed in and kept on this phone. You can also keep your own copy. Defect photos are not included.</div><div class="tr" style="margin-top:10px"><button class="tg" id="bc">Copy Backup</button></div><label for="bf" style="margin-top:12px">Import a Backup File</label><input type="file" id="bf" accept=".json,application/json"><textarea id="bt" aria-label="Paste a backup" placeholder="Or paste a copied backup here" style="width:100%;box-sizing:border-box;margin-top:8px;min-height:60px;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit"></textarea><div class="tr" style="margin-top:8px"><button class="tg" id="bi">Import</button></div><div class="note" id="bm" role="status"></div></div>
 </section>
-<section id="t-check" hidden>
+<section id="t-check" hidden><button class="tg" data-t2="today" style="margin:0 0 10px">← Today</button>
 <h2>Walkaround Check <button class="i" data-i="walk" aria-label="More info">i</button></h2>
 <div id="ck"></div>
 <h2>Recent Checks</h2>
@@ -433,7 +434,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-18-107';
+const APPV='tg-2026-10-18-108';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
@@ -1086,13 +1087,25 @@ function wkRows(){const n=Date.now(),W=window.WKR||{},td=sod(n),q=all().filter(x
  const t=W.onS?`<b class="ok">${fmt(W.sw)}</b>`:tdW>0?`<b>${fmt(tdW)}</b>`:`<b class="mt">Shift not started</b>`;
  return `<div class="wkr"><span>Worked today${W.onS?' (since '+hm(W.ss)+')':tdW>0?' (shift finished)':''}</span>${t}</div><div class="wkr"><span>Worked this week</span><b class="${wkW>=60*H?'bad':wkW>=52*H?'warn':''}">${fmt(wkW)} <small style="font-size:12px;font-weight:400;color:var(--mut)">/ 60h</small></b></div>`}
 /* What would happen to the weekly rest if work started right now (only while a rest is in progress). */
-function wrIfStart(I){if(!I||!I.rc)return '';const n=Date.now(),sv=st.sessions,pc=allC;let I2;
+/* What working today would do to the weekly rest, and where your plan then leaves room for the next one */
+function wrIf(I){if(!I||!I.rc)return null;const n=Date.now(),sv=st.sessions,pc=allC;let I2;
  st.sessions=sv.concat([{s:n,e:n+6e4,t:'w'}]);allC=null;try{I2=wrInfo()}finally{st.sessions=sv;allC=pc}
- if(!I2||I2.anc===null)return '';
- const r=I2.lastEnd>I.lastEnd?I2.RH[I2.RH.length-1]:null,head='<b>If you start work now:</b> your rest so far ('+fmt(I.ong)+') will not count as a weekly rest. ';
- if(r)return '<div class="note warn" style="margin-top:6px">'+head+'Your break of '+fmt(r.len)+' that ended '+dmy(r.e)+' becomes your '+(r.red?'reduced ':'')+'weekly rest'+(r.red?', so you would owe '+fmt(45*H-r.len)+' back, in one block within 3 weeks':'')+'. Your next weekly rest would then have to start by <b>'+dmy(I2.due)+'</b>.</div>';
- let gap='';if(typeof plSpans==='function'){const sp=plSpans().filter(x=>x.e>n).sort((a,b)=>a.s-b.s);let cur=n+6e4,ok=false;sp.forEach(x=>{if(x.s-cur>=24*H&&cur<=I.due)ok=true;cur=Math.max(cur,x.e)});if(cur<=I.due)ok=true;gap=ok?'':' Nothing in your plan leaves 24 hours clear before then.'}
- return '<div class="note '+(gap||n>I.due?'bad':'warn')+'" style="margin-top:6px">'+head+'Your weekly rest still has to start by <b>'+dmy(I.due)+'</b>.'+gap+'</div>'}
+ if(!I2||I2.anc===null)return null;
+ const r=I2.lastEnd>I.lastEnd?I2.RH[I2.RH.length-1]:null,due=r?I2.due:I.due,full45=r?I2.full45||r.red:I.full45;
+ let f45=null,f24=null,ass=false;const np=typeof plSpans!=='function';
+ if(!np){const pl=plSpans().filter(x=>!x.log&&x.e>n).sort((a,b)=>a.s-b.s);
+  const today=pl.some(x=>x.s<sod(n)+864e5);let cur=today?n:n+8*H;ass=!today;
+  const G=[];pl.forEach(x=>{if(x.s>cur)G.push({s:cur,e:x.s,len:x.s-cur});cur=Math.max(cur,x.e)});G.push({s:cur,e:Infinity,len:Infinity,open:1});
+  const ok=G.filter(g=>g.s<=due);f45=ok.find(g=>g.len>=45*H)||null;f24=full45?null:(ok.find(g=>g.len>=24*H)||null)}
+ return{I2,r,due,full45,f45,f24,ass,np}}
+const wrIfPlan=W=>W.np?'':W.f45?'With your plan, a full 45h rest fits from <b>'+dmy(W.f45.s)+'</b>'+(W.ass?' (if you work about 8 hours today)':'')+'.':W.f24?'With your plan, only a reduced 24h rest fits (from <b>'+dmy(W.f24.s)+'</b>), so you would owe the rest back.':'Nothing in your plan leaves '+(W.full45?'45':'24')+' hours clear before then. Free up time or move a shift.';
+function wrIfStart(I){const W=wrIf(I);if(!W)return '';const r=W.r,head='<b>If you start work now:</b> your rest so far ('+fmt(I.ong)+') will not count as a weekly rest. ';
+ const mid=r?'Your break of '+fmt(r.len)+' that ended '+dmy(r.e)+' becomes your '+(r.red?'reduced ':'')+'weekly rest'+(r.red?', so you would owe '+fmt(45*H-r.len)+' back, in one block within 3 weeks':'')+'. Your next weekly rest would then have to start by <b>'+dmy(W.due)+'</b>. ':'Your weekly rest still has to start by <b>'+dmy(W.due)+'</b>. ';
+ const bad=!W.f45&&!W.f24||Date.now()>W.due&&!r;
+ return '<div class="note '+(bad?'bad':'warn')+'" style="margin-top:6px">'+head+mid+wrIfPlan(W)+'</div>'}
+/* the short version for the hero */
+function wrIfHero(I){const W=wrIf(I);if(!W)return '';const r=W.r;
+ return 'If you work today: '+(r?(r.red?'your '+fmt(r.len)+' break before Saturday becomes a reduced weekly rest (you owe '+fmt(45*H-r.len)+'). ':'an earlier break becomes your weekly rest. ').replace('before Saturday','ending '+dmy(r.e)):'this rest will not count. ')+'Next weekly rest by '+dmy(W.due)+(W.full45?' and it must be a full 45h':'')+'. '+wrIfPlan(W).replace(/<\/?b>/g,'')}
 function wrCard(I,join){if(I===undefined)I=wrInfo();const box=join?'wrin':'g cd w';
  if(!I)return `<div class="${box}"><div class="row"><span class="lbl">Weekly Rest ${ib('wkr')}</span></div><div class="note">To track your weekly rest, the app needs to know when your last one ended.</div>${wkRows()}<div class="tr" style="margin-top:8px"><button class="tg" data-wr="set">Set up weekly rest</button></div></div>`;
  if(I.anc===null)return `<div class="${box}"><div class="row"><span class="lbl">Weekly Rest ${ib('wkr')}</span></div><div class="note">The 6 day clock starts when you start your next shift. <u data-wr="set" style="cursor:pointer">Change</u></div>${wkRows()}</div>`;
@@ -1207,7 +1220,7 @@ function liveRun(){
   else if(act0==='w'||act0==='p'||act0==='x'){big=fmt(Math.max(0,6*H-wc.d));cap='of work left';sub='before a '+(sw>9*H?45:30)+' minute break'}
   else if(!act0&&endd&&l&&gap<9*H){big='Resting';cap=fmt(9*H-gap)+' to go';sub='Your shift ended at '+tt(l.e)+', '+fmt(gap)+' ago, so your daily rest is counting. Next shift from '+tt(l.e+9*H)+' with a reduced 9h rest (max 3 between weekly rests), or '+tt(l.e+11*H)+' after a regular 11h rest.'}
   else if(!act0&&endd&&l&&gap<11*H&&nx[1]==='Now'){big='Ready';cap=isTc()?'to drive or work':'to work';sub='Only if you use a reduced 9h rest (1 of your 3 between weekly rests). A regular 11h rest finishes at '+tt(l.e+11*H)+'.'}
-  else if(nx[1]==='Now'){big='Ready';cap=isTc()?'to drive or work':'to work';sub=isTc()?nx[2]:nx[2].replace('driving or working','working');if(WRI&&WRI.rc)sub='Nothing legally stops you, but you are on a weekly rest. Starting work now ends it early.'}
+  else if(nx[1]==='Now'){big='Ready';cap=isTc()?'to drive or work':'to work';sub=isTc()?nx[2]:nx[2].replace('driving or working','working');if(WRI&&WRI.rc)sub=wrIfHero(WRI)||'You are on a weekly rest. Starting work now ends it early.'}
   else{big=nx[1];cap='next legal start';sub=nx[2]}
   const pr=Math.min(100,Math.round(b.d/(270*M)*100)),pc2=pr>=100?'#ff6b5e':pr>=80?'#ffb020':'#3ecf7b',pw=Math.min(100,Math.round(wc.d/(6*H)*100)),pc3=pw>=100?'#ff6b5e':pw>=80?'#ffb020':'#3ecf7b';
   const tl1=act0==='d'?`<div class="h-t"><div class="h-k">${nx[0]} ${ib('next')}</div><div class="h-v">${nx[1]}</div></div>`:'';
@@ -1283,13 +1296,14 @@ function dayPage(){if(dayView==null)return;const o=buildD()[dayView]||emptyD(),T
 let dayFrom='hours';function openDay(ts,from){dayFrom=from||'hours';dayView=ts;['today','check','log','hours','plan','tacho','signs','set'].forEach(x=>$('t-'+x).hidden=true);$('t-day').hidden=false;ed=null;dayPage();window.scrollTo(0,0)}
 const render=()=>{live();list();if(typeof jobsUi==='function'){jobsUi();rpUi()}setTimeout(chkLong,60)};
 /* Seven screens in four tabs: Today, Plan, Records (Hours, Log, Tacho) and More (Walkaround, Learn) */
-const GR={hours:'rec',log:'rec',tacho:'rec',ent:'rec',check:'more',signs:'more'},LG={rec:'hours',more:'check'},SUBS={rec:[['hours','Hours'],['log','Log'],['tacho','Tacho'],['ent','Manual']],more:[['check','Walkaround'],['signs','Learn']]};
-function subUi(k){const g=GR[k],el=$('subtabs');if(!el)return;el.hidden=!g;if(!g){el.innerHTML='';return}
+const GR={hours:'rec',log:'rec',tacho:'rec',ent:'rec',check:'today'},LG={rec:'hours'},SUBS={rec:[['hours','Hours'],['log','Log'],['tacho','Tacho'],['ent','Manual']]};
+function subUi(k){const g=SUBS[GR[k]]?GR[k]:null,el=$('subtabs');if(!el)return;el.hidden=!g;if(!g){el.innerHTML='';return}
  const cur=k==='tacho'&&typeof tpSel!=='undefined'&&tpSel==='ent'?'ent':k;el.innerHTML=SUBS[g].map(([t,n])=>`<button class="stab${t===cur?' on':''}${t==='check'&&cDot?' dot':''}" data-t="${t}">${n}</button>`).join('')}
 let cDot=false;
-function showTab(k){if(cloudReady&&pushT)queuePush(true);tab=k;dayView=null;ed=null;$('t-day').hidden=true;['today','check','log','hours','plan','tacho','signs','set'].forEach(x=>{$('t-'+x).hidden=x!==k});const g=GR[k];LG[g]=g?k:LG[g];document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.g?b.dataset.g===g:b.dataset.t===k));subUi(k);if(k==='check')ckRender();if(k==='tacho'&&typeof tpShow==='function')tpShow(tpSel);if(k==='plan'&&typeof plRender==='function')plRender();if(k==='signs')renderSigns();render()}
+function showTab(k){if(cloudReady&&pushT)queuePush(true);tab=k;dayView=null;ed=null;$('t-day').hidden=true;['today','check','log','hours','plan','tacho','signs','set'].forEach(x=>{$('t-'+x).hidden=x!==k});const g=GR[k];LG[g]=g?k:LG[g];document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.g?b.dataset.g===g:b.dataset.t===k||(g==='today'&&b.dataset.t==='today')));subUi(k);if(k==='check')ckRender();if(k==='tacho'&&typeof tpShow==='function')tpShow(tpSel);if(k==='plan'&&typeof plRender==='function')plRender();if(k==='signs')renderSigns();render()}
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.g?LG[b.dataset.g]:b.dataset.t));
-$('subtabs').onclick=e=>{const b=e.target.closest('.stab');if(!b)return;if(b.dataset.t==='ent'){showTab('tacho');if(typeof tpShow==='function'){tpShow('ent');subUi('tacho')}}else showTab(b.dataset.t)};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-t2]');if(b){showTab(b.dataset.t2);window.scrollTo(0,0)}});
+$('subtabs').onclick=e=>{const b=e.target.closest('.stab');if(!b)return;if(b.dataset.t==='ent'){showTab('tacho');if(typeof tpShow==='function'){tpShow('ent');subUi('tacho')}}else{showTab(b.dataset.t);if(b.dataset.t==='tacho'&&tpSel==='ent')tpShow('dl')}};
 document.querySelectorAll('.act').forEach(b=>b.onclick=()=>setAct(b.dataset.a));
 $('s1').addEventListener('click',e=>{if(e.target.closest('[data-wr]')){wrSetup();return}if(e.target.closest('[data-wrd]')&&!e.target.closest('[data-i]')){wrDetail();return}const b=e.target.closest('[data-m]');if(b&&!b.disabled)breakAsk(+b.dataset.m);else if(e.target.closest('[data-ub]'))unBreak()});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-i]'),s=$('sheet');if(b){const k=b.dataset.i;if(infoK===k){infoK=null;s.hidden=true}else{infoK=k;s.innerHTML=(k.startsWith('c:')?infoCk(k.slice(2)):boxify(INFO[k]))+(ISRC[k]?'<div class="srcs">'+srcH(ISRC[k])+'</div>':'')+'<div class="note" style="margin-top:6px">Tap to close.</div>';s.hidden=false}}else if(!s.hidden){infoK=null;s.hidden=true}});
@@ -1768,13 +1782,13 @@ function wkUpdate(){
  const bt=(k,t,o)=>`<button class="tg" ${k} style="flex:1 1 0;min-width:0;white-space:normal">${t}</button>`;
  if(w){const n=w.D.length,dg=w.D.some(x=>x.d);
   h=n?`<button class="wkb wn"><b>Walkaround done ${hm(w.t)}, ${n} defect${n>1?'s':''}</b><span>${dg?'A dangerous defect is recorded. Do not drive until it is fixed.':'Make sure they are reported in writing.'}</span></button>`
-   :`<button class="wkb dn2"><b>Walkaround done ${hm(w.t)}</b><span>No defects, ${esc(w.reg)}</span></button>`}
- else if(off)h='';
+   :`<button class="wkb slim ok"><b>✓ Walkaround done ${hm(w.t)}</b><span>No defects${w.reg?', '+esc(w.reg):''} ›</span></button>`}
+ else if(off)h=`<button class="wkb slim"><b>Walkaround</b><span>Open the checklist ›</span></button>`;
  else if(dd==='e')h=`<div class="wkb dn2"><b>Walkaround done elsewhere</b><span>Marked as done at ${hm(st.dd.t)}. Nothing is recorded in the app for it.</span><div style="display:flex;gap:8px;margin-top:8px">${bt('data-wgo="1"','Do my own as well')}${bt('data-dd=""','Undo')}</div></div>`
  else if(act==='d'||dd==='y'){dot=true;h=`<div class="wkb nb"><b>Walkaround not done</b><span>${act==='d'?'You are driving and no walkaround is recorded for this shift.':'Do it before you drive. The DVSA expects it before the first drive of the day.'}</span><div style="display:flex;gap:8px;margin-top:8px">${bt('data-wgo="1"','Do it now')}${bt('data-dd="e"','Done elsewhere')}${bt('data-dd="n"','Not needed')}</div></div>`}
- else if(dd==='n')h=`<div class="wkb dn2"><b>No walkaround needed today</b><span>You said you are not driving this shift. <u data-dd="" style="cursor:pointer">Change</u></span></div>`;
+ else if(dd==='n')h=`<div class="wkb slim dn2"><b>Walkaround not needed</b><span>Not driving this shift. <u data-dd="" style="cursor:pointer">Change</u></span></div>`;
  else h=`<div class="wkb"><b>Walkaround check</b><span>The DVSA expects one before the first drive of the day. Will you do your own, or has it been done elsewhere?</span><div style="display:flex;gap:8px;margin-top:8px">${bt('data-dd="y"','I will do my own')}${bt('data-dd="e"','Done elsewhere')}${bt('data-dd="n"','Not driving')}</div></div>`;
- set($('wkb'),h);cDot=!!dot;document.querySelector('.tab[data-g="more"]').classList.toggle('dot',dot);subUi(tab);mxUpdate();issUpdate();if(typeof plBanner==='function')plBanner()}
+ set($('wkb'),h);cDot=!!dot;subUi(tab);mxUpdate();issUpdate();if(typeof plBanner==='function')plBanner()}
 function issUpdate(){const I=st.iss||[],el=$('iss');if(!el)return;
  set(el,I.map((x,i)=>`<div class="wkb nb" style="cursor:default"><b>Needs checking: ${NM[x.a]||'Activity'} started ${tt(x.t)}</b><span>${x.r.map(esc).join('. ')}. If a time was logged wrong, fix it in the log. If the times are right, this may be an infringement, so keep a note of why.</span><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="tg" data-isf="${i}" style="flex:1 1 0;min-width:0;white-space:normal;padding-left:6px;padding-right:6px">Fix entries</button><button class="tg" data-isd="${i}" style="flex:1 1 0;min-width:0;white-space:normal;padding-left:6px;padding-right:6px">Fixed</button><button class="tg" data-isk="${i}" style="flex:1 1 0;min-width:0;white-space:normal;padding-left:6px;padding-right:6px">Times are right</button></div></div>`).join(''))}
 $('iss').onclick=e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
