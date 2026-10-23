@@ -441,7 +441,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-115';
+const APPV='tg-2026-10-23-116';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -632,6 +632,13 @@ function archive(){/* counted back from your newest entry, so a phone clock set 
 function cnt(a,T,f){let d=0,p=false,L=[];const step=g=>{if(g>=T*M||(p&&g>=(T-15)*M)){d=0;p=false;L=[]}else if(g>=15*M&&d>0)p=true};
  a.forEach((x,i)=>{if(i)step(x.s-a[i-1].e);if(f(x)){d+=x.e-x.s;L.push(x)}});
  const l=a[a.length-1],q=p;if(l&&!l.live)step(Date.now()-l.e);return{d,p,q,L}}
+/* Working time breaks (RTWTR reg 5): no more than 6 hours of work in a row, and breaks (each part 15 minutes or more) totalling
+   at least 30 minutes when work is over 6 hours, and 45 when it is over 9. POA is not work and not a break. a = this shift's entries. */
+function wtS(a,n){let rn=0,tot=0,brk=0;a.forEach((x,i)=>{if(i){const g=x.s-a[i-1].e;if(g>=15*M){brk+=g;rn=0}}if(x.t!=='p'){const d=Math.min(x.e,n)-x.s;rn+=d;tot+=d}});
+ const l=a[a.length-1];if(l&&!l.live&&n-l.e>=15*M){brk+=n-l.e;rn=0}
+ /* live, the limit is 6 hours in a row; the 30 or 45 minute total can be made up later in the day, and is checked when the day is reviewed */
+ const left=6*H-rn,need=Math.max(15,Math.ceil((tot>9*H?45:tot>6*H?30:15)-brk/M));
+ return{left,eff:Math.max(0,6*H-left),need,tot,brk,rn}}
 function shiftStart(a){let i=a.length-1;while(i>0&&a[i].s-a[i-1].e<9*H)i--;return a[i].s}
 function shifts(a){const S=[];a.forEach((x,i)=>{if(!i||x.s-a[i-1].e>=9*H)S.push({s:x.s,d:0});if(x.t==='d')S[S.length-1].d+=x.e-x.s});return S}
 const CNT='';
@@ -674,18 +681,31 @@ function begin(t,pl){
  if(!pl&&!bd&&t!=='r'&&typeof plDue==='function'){const o=plDue();if(o){plStartAsk(o,t);return}}
  moX();const us=snap;if(us){const msg=NM[t]+' started at '+hm(bd||Date.now())+'. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';flash=msg;usnap=us;setTimeout(()=>{if(flash===msg){flash='';usnap=null;live()}},12000)}st.active=Date.now();st.act=t;if(bd){const x=bd;bd=0;st.sessions=st.sessions.filter(y=>!(y.e>x&&y.s>=x));st.sessions.forEach(y=>{if(y.e>x)y.e=x});st.active=x;if(st.rs&&x<st.rs)st.rs=x}if(t==='d'){gpsOn();wake()}save();render();setTimeout(tcAsk,50)}
 function undo(){moX();if(snap){st=JSON.parse(snap);snap=null}if(st.act==='d'){gpsOn();wake()}save();render()}
+/* Every rule that can stop you starting (or carrying on). Each entry: [time it allows you, why, 1 = driving only / 2 = work not POA, short name].
+   The Today screen and the start check both use this, so they always agree. */
 function legalStart(t){t=t||'d';
  const a0=all(),rs=st.rs||0,a=a0.filter(x=>x.e>rs).map(x=>x.s<rs?Object.assign({},x,{s:rs}):x),dr=a.filter(x=>x.t==='d'),dr0=a0.filter(x=>x.t==='d'),n=Date.now(),w=mon(),l=a[a.length-1];
  if(!l)return{R:[],n};
- const gap=n-l.e,ss=gap>=9*H?null:shiftStart(a),day=ss?sum(dr,ss,n+1):0,wkd=sum(dr0,w,n+1),fn=sum(dr0,add7(w,-1),n+1),sw=ss?sum(a.filter(x=>x.t!=='p'),ss,n+1):0;
- const b=cnt(a,45,x=>x.t==='d'),wc=cnt(a,sw>9*H?45:30,x=>x.t!=='p');
- const S=shifts(a0),cur=ss?S[S.length-1]:null,isx=z=>z.s>=w&&z.d>9*H+M,used=S.filter(isx).length,prev=used-(cur&&isx(cur)?1:0),extLeft=prev<2,e=l.e,R=[];
- if(b.d>=270*M)R.push([e+(b.q?30:45)*M,'You have driven '+fmt(b.d)+' since your last full break, so you need a '+(b.q?'30':'45')+' minute break before driving',1]);
- if(wc.d>=6*H)R.push([e+(wc.q?(sw>9*H?30:15):(sw>9*H?45:30))*M,'You have worked '+fmt(wc.d)+' without a working time break, so you need a break first',2]);
- if(day>=(extLeft?10:9)*H)R.push([e+11*H,'You have driven '+fmt(day)+' this shift, which is your daily limit, so you need your daily rest before driving again (11 hours, or 9 if reduced)',1]);
- if(ss&&n>ss+15*H)R.push([e+9*H,'Your shift started at '+tt(ss)+'. A daily rest of at least 9 hours has to be finished within 24 hours of the end of your last rest, by about '+tt(ss+24*H)+', so there is no time left to start again before resting',0]);
- if(wkd>=56*H||fn>=90*H)R.push([nwk(w),wkd>=56*H?'You have driven '+fmt(wkd)+' this week, the 56 hour weekly limit':'You have driven '+fmt(fn)+' over two weeks, the 90 hour fortnight limit',1]);
- const D=t==='d';return{R:R.filter(x=>x[0]>n&&(D||!x[2]||(x[2]===2&&t!=='p'))).sort((x,y)=>y[0]-x[0]),l,ss,n,t}}
+ const busy=!!st.active&&st.act!=='r',gap=busy||l.live?0:n-l.e,ss=gap>=9*H?null:shiftStart(a),day=ss?sum(dr,ss,n+1):0,wkd=sum(dr0,w,n+1),fn=sum(dr0,add7(w,-1),n+1),sw=ss?sum(a.filter(x=>x.t!=='p'),ss,n+1):0;
+ const b=cnt(a,45,x=>x.t==='d'),WT=wtS(ss?a.filter(x=>x.s>=ss):[],n);
+ const S=shifts(a0),cur=ss?S[S.length-1]:null,isx=z=>z.s>=w&&z.d>9*H+M,used=S.filter(isx).length,prev=used-(cur&&isx(cur)?1:0),extLeft=prev<2,e=l.live?n:l.e,R=[];
+ const I=typeof wrInfo==='function'?wrInfo():null,wOk=I&&I.anc!==null,need11=wOk&&I.redD>=3,dr9=need11?11:9;
+ if(b.d>=270*M)R.push([e+(b.q?30:45)*M,'You have driven '+fmt(b.d)+' since your last full break, so you need a '+(b.q?'30':'45')+' minute break before driving',1,'driving break']);
+ if(ss&&WT.left<=0)R.push([e+WT.need*M,'You have worked '+fmt(WT.tot)+(WT.rn>=6*H?', '+fmt(WT.rn)+' of it in a row,':'')+' with '+Math.round(WT.brk/M)+' minutes of breaks, so you need a break of '+WT.need+' minutes first',2,'working time break']);
+ if(day>=(extLeft?10:9)*H)R.push([e+11*H,'You have driven '+fmt(day)+' this shift, which is your daily limit, so you need your daily rest before driving again (11 hours, or 9 if reduced)',1,'daily driving limit']);
+ if(ss&&n>ss+24*H-dr9*H)R.push([e+dr9*H,'Your shift started at '+tt(ss)+'. A daily rest of at least '+dr9+' hours has to be finished within 24 hours, by '+tt(ss+24*H)+', so there is no time left to start again before resting',0,'24 hour window']);
+ if(!ss&&need11&&gap<11*H)R.push([l.e+11*H,'You have used all 3 reduced daily rests since your last weekly rest, so this rest has to be a full 11 hours',0,'11 hour daily rest']);
+ if(wkd>=56*H||fn>=90*H)R.push([nwk(w),wkd>=56*H?'You have driven '+fmt(wkd)+' this week, the 56 hour weekly limit':'You have driven '+fmt(fn)+' over two weeks, the 90 hour fortnight limit',1,'weekly driving limit']);
+ {const wkW=sum(a0.filter(x=>x.t!=='p'),w,n+1);if(wkW>=60*H)R.push([nwk(w),'You have worked '+fmt(wkW)+' this week. No week can go over 60 hours of working time',2,'60 hour week'])}
+ /* night work: any work between 00:00 and 04:00 in the shift limits work to 10 hours */
+ if(ss&&sw>=10*H&&a.some(x=>x.s>=ss&&x.t!=='p'&&(()=>{for(let d=sod(x.s);d<x.e;d=nxd(d)){if(x.s<d+4*H&&x.e>d)return true}return false})()))R.push([e+dr9*H,'Part of this shift was between 00:00 and 04:00, so working time is limited to 10 hours. You have worked '+fmt(sw),2,'night work limit']);
+ /* weekly rest */
+ if(wOk&&gap>0&&!busy){
+  if(I.inWr&&I.full45&&gap<45*H)R.push([l.e+45*H,'Your last weekly rest was reduced, so this one has to be a full 45 hours',0,'45 hour weekly rest']);
+  else if(!I.inWr&&n>I.due){const I2=wrSim();if(!(I2&&I2.lastEnd>I.lastEnd&&I2.due>n))R.push([l.e+(I.full45?45:24)*H,'Your weekly rest had to start by '+dmy(I.due)+'. This rest has to reach '+(I.full45?'45':'24')+' hours to count as it',0,'weekly rest'])}}
+ const D=t==='d';return{R:R.filter(x=>x[0]>n&&(D||!x[2]||(x[2]===2&&t!=='p'))).sort((x,y)=>y[0]-x[0]),l,ss,n,t,WT,need11,extLeft}}
+/* the weekly rest as it would be if you started work right now */
+function wrSim(){const n=Date.now(),sv=st.sessions,pc=allC;let I2=null;st.sessions=sv.concat([{s:n,e:n+6e4,t:'w'}]);allC=null;try{I2=wrInfo()}finally{st.sessions=sv;allC=pc}return I2}
 function gapAsk(le,n,next){
  mo(`<h3>Time Since Last Activity</h3><p>Your last activity ended ${tt(le)}, ${fmt(n-le)} ago. What were you doing?</p><button class="tg big" data-k="rest">Resting or a day off</button><button class="tg big" data-k="work">Working elsewhere</button><button class="tg big" data-k="skip">Not sure, leave it blank</button>`);
  mcb={rest:()=>{st.sessions.push({s:le,e:n,t:'r'});st.gq=n;save();moX();next()},
@@ -705,7 +725,7 @@ function resumeAsk(t,l,next){const n=Date.now(),a=all(),ss=shiftStart(a);
  mcb={no:undo,go:()=>{delete st.se;moX();next()},fx:()=>{delete st.se;fixAsk(t,null,null,Date.now(),next,'',()=>{st.se=l.e;resumeAsk(t,l,next)})}}}
 /* starting work while a weekly rest is in progress: say what it will do to the weekly rest first */
 let restOk=0,brOk=0;
-function breakMenu(){const off=m=>lock||(isTc()&&(prog>=45*M||(m<30&&prog>=15*M)));
+function breakMenu(){const off=()=>false;/* a break can always be logged: it may be needed for working time even when the driving break is done */
  mo(`<h3>Break</h3><button class="tg big" data-k="now">Start a break now</button><p class="note" style="margin-top:14px">Or add a break you already took (it is put into your log at the time you choose):</p><div class="qf">${[15,20,30,45].map(m=>`<button data-k="b${m}"${off(m)?' disabled':''}>${m} min</button>`).join('')}</div><button class="tg big" data-k="no" style="margin-top:12px">Cancel</button>`);
  mcb={no:moX,now:()=>{brOk=1;moX();setAct('r')}};[15,20,30,45].forEach(m=>mcb['b'+m]=()=>{moX();breakAsk(m)})}
 function restAsk(t,I){const n=Date.now(),le=I.S[I.S.length-1].e;
@@ -717,10 +737,16 @@ function audRules(S){const out=[];if(!S.length)return out;
  const run=(T,f)=>{let m=0,d=0,q=false;S.forEach((x,i)=>{if(i){const g=x.s-S[i-1].e;if(g>=T*M||(q&&g>=(T-15)*M)){d=0;q=false}else if(g>=15*M&&d>0)q=true}if(f(x))d+=x.e-x.s;m=Math.max(m,d)});return m};
  const dr=S.filter(x=>x.t==='d').reduce((q,x)=>q+x.e-x.s,0),wk=S.filter(x=>x.t!=='p').reduce((q,x)=>q+x.e-x.s,0),sp=S[S.length-1].e-S[0].s;
  if(run(45,x=>x.t==='d')>270*M)out.push(['No 45 minute break after 4h 30m of driving','A drivers hours offence. DVSA can issue a fixed penalty of up to £300, or take it to court (a Level 4 fine). It also shows on your tachograph record.']);
- const need=wk>9*H?45:30;if(run(need,x=>x.t!=='p')>6*H)out.push(['Worked over 6 hours without a '+need+' minute break','This breaks the Road Transport (Working Time) Regulations. It is a criminal offence that DVSA can enforce, and your employer can be held responsible too.']);
+ {/* working time breaks: no more than 6 hours in a row, and 30 (over 6h) or 45 (over 9h) minutes of breaks in parts of 15 or more */
+  let rn=0,mx=0,brk=0;S.forEach((x,i)=>{if(i){const g=x.s-S[i-1].e;if(g>=15*M){brk+=g;rn=0}}if(x.t!=='p')rn+=x.e-x.s;mx=Math.max(mx,rn)});const need=wk>9*H?45:wk>6*H?30:0,WTL='This breaks the Road Transport (Working Time) Regulations. It is a criminal offence that DVSA can enforce, and your employer can be held responsible too.';
+  if(mx>6*H)out.push(['Worked '+fmt(mx)+' in a row without a break',WTL]);else if(need&&brk<need*M)out.push(['Only '+Math.round(brk/M)+' minutes of breaks in '+fmt(wk)+' of work (needs '+need+')',WTL])}
  if(dr>10*H)out.push(['Over 10 hours of driving ('+fmt(dr)+')','Above the 10 hour daily maximum. DVSA can issue a fixed penalty of up to £300 for each offence, depending on how serious it is.']);
  if(sp>15*H)out.push(['Shift spread over '+fmt(sp),'A 9 hour daily rest cannot fit within 24 hours of the start. A missing daily rest is a drivers hours infringement.']);
- const n=Date.now(),A=all(),wt=sum(A.filter(x=>x.t!=='p'),mon(),n+1),wd=sum(A.filter(x=>x.t==='d'),mon(),n+1);
+ const night=S.some(x=>x.t!=='p'&&(()=>{for(let d=sod(x.s);d<x.e;d=nxd(d)){if(x.s<d+4*H&&x.e>d)return true}return false})());
+ if(night&&wk>10*H)out.push(['Night work over 10 hours ('+fmt(wk)+')','Work between 00:00 and 04:00 limits working time to 10 hours in 24, unless a workforce or collective agreement allows more. This breaks the working time rules.']);
+ /* weekly checks use the week of the shift being checked */
+ const n=Date.now(),A=all(),w0=wkS(S[0].s),w1=nwk(w0),wt=sum(A.filter(x=>x.t!=='p'),w0,Math.min(w1,n+1)),wd=sum(A.filter(x=>x.t==='d'),w0,Math.min(w1,n+1));
+ if(dr>9*H){const ex=shifts(A).filter(z=>z.s>=w0&&z.s<w1&&z.d>9*H+M).length;if(ex>2)out.push(['A third 10 hour driving day this week','Driving can go over 9 hours on only two days in a fixed week (Monday to Sunday). DVSA can issue a fixed penalty of up to £300.'])}
  if(wt>60*H)out.push(['Over 60 hours of working time this week ('+fmt(wt)+')','Above the weekly maximum in the working time rules, and it counts towards your 48 hour average.']);
  if(wd>56*H)out.push(['Over 56 hours of driving this week ('+fmt(wd)+')','Above the weekly driving limit. DVSA can issue a fixed penalty of up to £300, or take it to court.']);
  return out}
@@ -745,12 +771,12 @@ function auditAsk(z,n,next){const A=all(),ls0=shiftStart(A),S0=A.filter(x=>x.s>=
     mo(`<h3>Rules Broken</h3><p>With these answers, your last shift:</p>${R.map(r=>`<div class="wn" style="margin:6px 0"><b>${r[0]}</b><br><span class="note">${r[1]}</span></div>`).join('')}<p class="note">If this is what really happened, confirm it so your records are honest. If you mistyped, go back.</p><button class="tg big bad" data-k="cf">Confirm it is correct</button><button class="tg big" data-k="bk">Go back</button>`);
     mcb={cf:fin,bk:()=>{st=JSON.parse(sv);save();draw()}}}}};draw()}
 function setAct(t){
- if(t==='r'&&st.act!=='r'&&!brOk&&!lock){breakMenu();return}
+ if(t==='r'&&st.act!=='r'&&!brOk){breakMenu();return}
  brOk=0;
  if(t!=='r'&&!st.active&&!restOk){const I=wrInfo();if(I&&I.rc){if(jobsOn()){st.tmt=0}else{restAsk(t,I);return}}}
  restOk=0;
  if(t==='d'&&!isTc())t='x';
- if(t==='r'&&st.act!=='r'&&lock){flash='Break is locked. You have had your full break this shift. It unlocks when a break is due or you pass 9h driving.'+(st.act?' To stop '+NM[st.act]+', change to another activity or tap End Shift.':'');setTimeout(()=>{flash='';live()},8000);live();return}
+ 
  if(st.act===t&&st.active){endAsk(1);return}
  const n=Date.now(),was=st.act,ps=st.active;snap=JSON.stringify(st);bd=0;
  commit(n);
@@ -872,7 +898,7 @@ function brkShift(t0,t1,go){const A=all(),ss=shiftStart(A),prev=A.filter(x=>x.e<
   if(st.rs&&x<st.rs)st.rs=x;moX();go()};
  mcb={no:moX,pl:()=>set(o.S),at:()=>{const v=$('bss').value;if(!v){err('Enter the time your shift started.');return}set(nearT(v,ss))}}}
 function fillBreak(N,pre){ot='';
- if(lock||(isTc()&&(prog>=45*M||(N<30&&prog>=15*M))))return;
+ 
  if(bu.length&&bu[bu.length-1].g!==bsig())bu=[];
  const u0=JSON.stringify(st);
  const n=Date.now(),busy=st.act&&st.act!=='r',B=busy?st.active:n,full=N>=45||(prog>=15*M&&N>=30),rs=st.rs||0;
@@ -891,7 +917,7 @@ function fillBreak(N,pre){ot='';
  save();render();
 }
 function breakAsk(N){
- if(lock||(isTc()&&(prog>=45*M||(N<30&&prog>=15*M))))return;
+ 
  const n=Date.now(),onB=st.act==='r'&&st.active,lim=onB?st.active:n;
  mo(`<h3>${N} Minute Break</h3><p>Enter the time the break started. It is put into your log at that time, and whatever was logged then is moved out of the way: the entry before it ends when the break starts, and the entry after it starts when the break ends.</p><div class="tr"><label>Break started<input type="time" id="bk1" value="${hm(lim-N*M)}"></label></div><div class="note" id="bkn" style="margin-bottom:8px"></div><div class="note bad" id="bkerr"></div><button class="tg big" data-k="ok">Add ${N} minute break</button><button class="tg big" data-k="auto">Not sure, put it before what I am doing now</button><button class="tg big" data-k="no">Cancel</button>`);
  const at=()=>{const v=$('bk1').value;return v?nearT(v,lim-N*M):null};
@@ -1052,7 +1078,7 @@ function wrInfo(){const W=st.wr;if(!W)return null;const n=Date.now(),A=all();let
  if(anc===null)return{W,anc:null};
  const S=A.filter(x=>x.e>anc),G=[];for(let i=1;i<S.length;i++){const g=S[i].s-S[i-1].e;if(g>0)G.push({s:S[i-1].e,e:S[i].s,len:g})}
  const last=S[S.length-1],busy=!!st.active&&st.act!=='r',ong=last&&!last.live&&!busy?n-last.e:0;
- const R=[];{let le=anc;const GG=G.concat(last&&!busy?[{s:last.e,e:Infinity,len:Infinity,tail:1}]:[]);GG.forEach((g,i)=>{if(g.tail||g.len<24*H)return;if(g.len<45*H&&GG.slice(i+1).some(h=>h.len>=45*H&&h.s<=le+144*H))return;R.push(Object.assign(g,{red:g.len<45*H}));le=g.e})}
+ const R=[];{let le=anc;const GG=G.concat(last&&!busy?[{s:last.e,e:n,len:Math.max(0,n-last.e),tail:1}]:[]);/* the rest you are on now counts at its real length, so an earlier reduced rest is not skipped while you are resting */GG.forEach((g,i)=>{if(g.tail||g.len<24*H)return;if(g.len<45*H&&GG.slice(i+1).some(h=>h.len>=45*H&&h.s<=le+144*H))return;R.push(Object.assign(g,{red:g.len<45*H}));le=g.e})}
  const lw=R[R.length-1],lastEnd=lw?lw.e:anc,prevRed=lw?lw.red:(!W.fresh&&!!W.red);
  /* every weekly rest known, oldest first: the one you entered, then the ones found in your log. intl = taken abroad on an international trip */
  const WI=st.wri||[],RH=[];if(!W.fresh){const wl=W.len||(W.red?24*H:45*H);RH.push({s:W.e-wl,e:W.e,len:wl,red:!!W.red,intl:!!W.intl,anchor:1})}
@@ -1066,9 +1092,9 @@ function wrInfo(){const W=st.wr;if(!W)return null;const n=Date.now(),A=all();let
  const split=g=>{let k=S.findIndex(y=>y.e===g.s);if(k<0)return false;for(;k>0;k--){const q=S[k].s-S[k-1].e;if(q>=9*H)return false;if(q>=3*H)return true}return false},
   redD=G.filter(g=>g.s>=lastEnd&&g.len>=9*H&&g.len<11*H&&!split(g)).length;
  const reds=[];if(!W.fresh&&W.red)reds.push({s:W.e-(W.len||24*H),e:W.e,len:W.len||24*H});R.forEach(r=>{if(r.red)reds.push(r)});
- const allG=G.concat(ong?[{s:last.e,e:n,len:ong,ong:1}]:[]),C=reds.map(r=>{const owed=45*H-r.len,isP=pair&&(r.e===l1.e||r.e===l2.e),dl=isP?lastEnd+144*H:add7(wkS(r.s),4),paid=(st.wrp||[]).includes(r.e)||allG.some(g=>g.s>=r.e&&!g.ong&&(g.len<24*H?g.len>=9*H+owed:g.len-45*H>=owed));return{r,owed,dl,paid,pair:isP,left:dl-n}}).filter(c=>!c.paid&&c.owed>0);
+ const allG=G.concat(ong?[{s:last.e,e:n,len:ong,ong:1}]:[]),C=reds.map(r=>{const owed=45*H-r.len,isP=pair&&(r.e===l1.e||r.e===l2.e),dl=isP?lastEnd+144*H:add7(wkS(r.s),4),paid=(st.wrp||[]).includes(r.e)||allG.some(g=>g.s>=r.e&&!g.ong&&g.e<=dl&&(R.includes(g)?g.len-(g.red?24*H:45*H)>=owed:g.len>=9*H+owed));return{r,owed,dl,paid,pair:isP,left:dl-n}}).filter(c=>!c.paid&&c.owed>0);
  const mis=!W.fresh?A.find(x=>x.e>W.e-(W.len||45*H)&&x.s<W.e):null;
- const rc=!!last&&ong>0&&ong<24*H&&!st.active&&!!st.se&&st.se>=last.e&&last.e<=lastEnd+144*H;/* resting since End Shift, and the rest began before the deadline */
+ const rc=!!last&&ong>0&&ong<24*H&&!st.active&&!!st.se&&st.se>=last.e&&last.e<=lastEnd+144*H&&(lastEnd+144*H-n<24*H||n>lastEnd+144*H);/* resting since End Shift, and the rest began before the deadline */
  return{W,anc,lastEnd,rc,due:lastEnd+144*H,prevRed,redD,C,ong,R,inWr:ong>=24*H,S,mis,RH,intlOk,pair,pairBad,full45,w4,wk4,owedTot:C.reduce((q,x)=>q+x.owed,0),owedDl:C.reduce((m,x)=>Math.min(m,x.dl),Infinity)}}
 const dmy=x=>new Date(x).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' '+hm(x);
 let wpm_k='',wpm_v='';
@@ -1110,8 +1136,7 @@ function wkRows(){const n=Date.now(),W=window.WKR||{},td=sod(n),q=all().filter(x
  return `<div class="wkr"><span>Worked today${W.onS?' (since '+hm(W.ss)+')':tdW>0?' (shift finished)':''}</span>${t}</div><div class="wkr"><span>Worked this week</span><b class="${wkW>=60*H?'bad':wkW>=52*H?'warn':''}">${fmt(wkW)} <small style="font-size:12px;font-weight:400;color:var(--mut)">/ 60h</small></b></div>`}
 /* What would happen to the weekly rest if work started right now (only while a rest is in progress). */
 /* What working today would do to the weekly rest, and where your plan then leaves room for the next one */
-function wrIf(I){if(!I||!I.rc)return null;const n=Date.now(),sv=st.sessions,pc=allC;let I2;
- st.sessions=sv.concat([{s:n,e:n+6e4,t:'w'}]);allC=null;try{I2=wrInfo()}finally{st.sessions=sv;allC=pc}
+function wrIf(I){if(!I||!I.rc)return null;const n=Date.now(),I2=wrSim();
  if(!I2||I2.anc===null)return null;
  const r=I2.lastEnd>I.lastEnd?I2.RH[I2.RH.length-1]:null,due=r?I2.due:I.due,full45=r?I2.full45||r.red:I.full45;
  let f45=null,f24=null,ass=false;const np=typeof plSpans!=='function';
@@ -1173,7 +1198,8 @@ function liveRun(){
  const a0=all(),rs=st.rs||0,a=a0.filter(x=>x.e>rs).map(x=>x.s<rs?Object.assign({},x,{s:rs}):x),dr=a.filter(x=>x.t==='d'),dr0=a0.filter(x=>x.t==='d'),n=Date.now(),w=mon(),act=st.act,busy=!!act&&act!=='r',l=a[a.length-1];
  const gap=l&&!busy?n-l.e:0,fresh=!l||gap>=9*H,ss=fresh?null:shiftStart(a),endd=!busy&&!!l&&(fresh||!!(st.se&&st.se>=l.e));
  const w1=add7(w,-1),day=ss?sum(dr,ss,n+1):0,wkd=sum(dr0,w,n+1),fn=sum(dr0,w1,n+1),sw=ss?sum(a.filter(x=>x.t!=='p'),ss,n+1):0;
- const b=cnt(a,45,x=>x.t==='d'),wc=cnt(a,sw>9*H?45:30,x=>x.t!=='p');
+ const b=cnt(a,45,x=>x.t==='d'),wc0=cnt(a,sw>9*H?45:30,x=>x.t!=='p'),WT=wtS(ss?a.filter(x=>x.s>=ss):[],n),wc={d:WT.eff,L:wc0.L,q:WT.brk>0};
+ const LS=legalStart(isTc()?'d':'w'),WI=wrInfo(),need11=LS.need11,rd9=need11?11:9;
  {const jsg=(L,f,t)=>{const m={};L.forEach(x=>{const o=Math.max(0,Math.min(x.e,t)-Math.max(x.s,f));if(o>0){const j=jobC(x.j).id;m[j]=(m[j]||0)+o}});return jobs().filter(j=>m[j.id]).map(j=>[JCOL[jobI(j.id)],m[j.id]])};
   JS.brk=jsg(b.L,0,n+1);JS.wrk=jsg(wc.L,0,n+1);JS.day=ss?jsg(dr,ss,n+1):[];JS.wk=jsg(dr0,w,n+1);JS.fn=jsg(dr0,w1,n+1)}
  const RPS=refSets(),RP=RPS[0],S=shifts(a0),cur=ss?S[S.length-1]:null,isx=z=>z.s>=w&&z.d>9*H+M,used=S.filter(isx).length,prev=used-(cur&&isx(cur)?1:0),extLeft=prev<2;
@@ -1186,7 +1212,7 @@ function liveRun(){
  const bi=brkInfo(a,ss);lock=isTc()&&bi.k>0&&day<9*H&&b.d<270*M&&wc.d<6*H;
  const dOn=act==='d',wOn=act==='d'||act==='w'||act==='x',bOn=!busy,so=(x,y)=>x?y:'';
  /* a no-tacho job only needs Work and Break (a running Driving or POA stays visible so it can be seen) */
- {const nt=!isTc();let nv=0;document.querySelectorAll('.act').forEach(x=>{const o=x.dataset.a===(act==='x'?'d':act),hd=nt&&(x.dataset.a==='d'||x.dataset.a==='p')&&!o;x.hidden=hd;if(!hd)nv++;x.classList.toggle('on',o);x.setAttribute('aria-pressed',o);x.classList.toggle('lk',x.dataset.a==='r'&&lock&&act!=='r')});
+ {const nt=!isTc();let nv=0;document.querySelectorAll('.act').forEach(x=>{const o=x.dataset.a===(act==='x'?'d':act),hd=nt&&(x.dataset.a==='d'||x.dataset.a==='p')&&!o;x.hidden=hd;if(!hd)nv++;x.classList.toggle('on',o);x.setAttribute('aria-pressed',o);x.classList.toggle('lk',false)});
   $('actl').textContent=!act?(l&&!fresh&&!endd?'Carry on with:':'Start your shift with:'):act==='r'?'Back to:':'Change to:';const ae=document.querySelector('.acts');if(ae)ae.style.gridTemplateColumns='repeat('+nv+',1fr)'}
  const nd=sw>9*H?45:30;
  $('al').textContent=st.alerts?'Alerts On':'Alerts Off';
@@ -1218,30 +1244,30 @@ function liveRun(){
  L.push(flash);
  set($('live'),L.filter(Boolean).join('<br>'));
  let nx,hc=null,nsv=null;
- if(act==='d'){const c=[[270*M-b.d,'4h 30m break'],[6*H-wc.d,'6 hour working limit'],[9*H-day,'9 hour daily limit'],[56*H-wkd,'weekly limit'],[90*H-fn,'fortnight limit']].sort((x,y)=>x[0]-y[0])[0];hc=c;
-  nx=['Stop Driving By',tt(n+Math.max(0,c[0])),'Because of your '+c[1]+'.'+(extLeft&&c[1]==='9 hour daily limit'?' You can extend to 10h.':'')]}
- else{const R=[],e=l?l.e:n;
-  if(l){if(b.d>=270*M)R.push([e+(b.q?30:45)*M,'45 minute break']);
-   if(wc.d>=6*H)R.push([e+(wc.q?(sw>9*H?30:15):(sw>9*H?45:30))*M,'working time break']);
-   if(day>=(extLeft?10:9)*H)R.push([e+11*H,'daily rest (9h if reduced)'])}
-  if(wkd>=56*H||fn>=90*H)R.push([nwk(w),'weekly or fortnight limit']);
-  const r=R.filter(x=>x[0]>n).sort((x,y)=>y[0]-x[0]);
-  nx=r.length?['Next Legal Start',tt(r[0][0]),'Waiting on: '+r.map(x=>x[1]).join(', ')+'.']:['Next Legal Start','Now','Nothing is stopping you driving or working.']}
+ if(act==='d'){const wkW=sum(a0.filter(x=>x.t!=='p'),w,n+1),night=ss&&a.some(x=>x.s>=ss&&x.t!=='p'&&(()=>{for(let d=sod(x.s);d<x.e;d=nxd(d)){if(x.s<d+4*H&&x.e>d)return true}return false})());
+  const C0=[[270*M-b.d,'4h 30m break'],[WT.left,'working time break'],[(extLeft?10:9)*H-day,extLeft?'daily driving limit (10h, using one of your 2 extensions; 9h without)':'9 hour daily limit'],[56*H-wkd,'weekly limit'],[90*H-fn,'fortnight limit'],[60*H-wkW,'60 hour working week']];
+  if(ss)C0.push([ss+24*H-rd9*H-n,rd9+' hour daily rest, which must finish within 24 hours of your shift start']);
+  if(night)C0.push([10*H-sw,'night work limit of 10 hours']);
+  if(WI&&WI.anc!==null&&!WI.inWr&&WI.due>n)C0.push([WI.due-n,'weekly rest, which must start by '+dmy(WI.due)]);
+  const c=C0.sort((x,y)=>x[0]-y[0])[0];hc=c;
+  nx=['Stop Driving By',tt(n+Math.max(0,c[0])),'Because of your '+c[1]+'.']}
+ else{const r=LS.R;
+  nx=r.length?['Next Legal Start',tt(r[0][0]),'Waiting on: '+[...new Set(r.map(x=>x[3]||'a rule'))].join(', ')+'. '+r[0][1]+'.']:['Next Legal Start','Now','Nothing is stopping you driving or working.']}
  let h='';
  if(l){const dw=x=>{const d=Math.round((sod(x)-sod(n))/864e5);return (d<=0?'Today':d===1?'Tomorrow':new Date(x).toLocaleDateString('en-GB',{weekday:'long'}))+' '+hm(x)},le=l.live?n:l.e,
-  ns=gap>=11*H?['Now','Your daily rest is done.']:[dw(le+11*H),(busy?'If you stop now. ':'')+'Regular 11h rest. With a reduced 9h rest (max 3 between weekly rests): '+dw(le+9*H)+'.'];
+  ns=gap>=11*H?['Now','Your daily rest is done.']:[dw(le+11*H),(busy?'If you stop now. ':'')+(need11?'You have used your 3 reduced daily rests since your last weekly rest, so it has to be a full 11h rest.':'Regular 11h rest. With a reduced 9h rest (max 3 between weekly rests): '+dw(le+9*H)+'.')];
   nsv=ns}
 
  const bl=endd?'Rest':'On break',bks=Math.floor(be/1000),bkc=be>=0&&(be<9*H||endd)?(bks>=3600?Math.floor(bks/3600)+':':'')+String(Math.floor(bks%3600/60)).padStart(bks>=3600?2:1,'0')+':'+String(bks%60).padStart(2,'0'):'';
- window.WKR={onS:!!st.active||(!!l&&!endd),sw,ss};const WRI=wrInfo();
+ window.WKR={onS:!!st.active||(!!l&&!endd),sw,ss};const WRI=WI;
  const lsH=(()=>{if(!(!st.active&&l&&!(!busy&&!!l&&!endd)&&n-l.e<7*864e5))return '';const ls0=shiftStart(a),LS=a.filter(x=>x.s>=ls0),sd=LS.filter(x=>x.t==='d').reduce((q,x)=>q+x.e-x.s,0),sw2=LS.filter(x=>x.t==='w'||x.t==='x').reduce((q,x)=>q+x.e-x.s,0),sp=LS.filter(x=>x.t==='p').reduce((q,x)=>q+x.e-x.s,0);
   return `<div class="h-ls"><div class="h-lh"><b>Last shift</b><span>${tt(ls0)} to ${tt(l.e)}</span></div><div class="h-lv"><b>${fmt(sd+sw2)}</b> worked<span>${fmt(sd)} driving · ${fmt(sw2)} other work${sp?' · '+fmt(sp)+' POA':''}</span></div></div>`})();
  {const act0=act,since=st.active?hm(st.active):'',dc={d:'#3ecf7b',x:'#3ecf7b',w:'#ffb020',p:'#6fb1ff',r:'#9aa6b5'}[act0]||'#9aa6b5';
   let big,cap,sub='';
   if(act0==='d'&&hc){big=fmt(Math.max(0,hc[0]));cap='left to drive';sub='until your '+hc[1]}
-  else if(act0==='w'||act0==='p'||act0==='x'){big=fmt(Math.max(0,6*H-wc.d));cap='of work left';sub='before a '+(sw>9*H?45:30)+' minute break'}
-  else if(!act0&&endd&&l&&gap<9*H){big='Resting';cap=fmt(9*H-gap)+' to go';sub='Your shift ended at '+tt(l.e)+', '+fmt(gap)+' ago, so your daily rest is counting. Next shift from '+tt(l.e+9*H)+' with a reduced 9h rest (max 3 between weekly rests), or '+tt(l.e+11*H)+' after a regular 11h rest.'}
-  else if(!act0&&endd&&l&&gap<11*H&&nx[1]==='Now'){big='Ready';cap=isTc()?'to drive or work':'to work';sub='Only if you use a reduced 9h rest (1 of your 3 between weekly rests). A regular 11h rest finishes at '+tt(l.e+11*H)+'.'}
+  else if(act0==='w'||act0==='p'||act0==='x'){const wkW=sum(a0.filter(x=>x.t!=='p'),w,n+1),C1=[[WT.left,'before a '+WT.need+' minute break']];if(ss)C1.push([ss+24*H-rd9*H-n,'before your daily rest, which must finish within 24 hours of your shift start']);C1.push([60*H-wkW,'before your 60 hour working week']);if(WI&&WI.anc!==null&&!WI.inWr&&WI.due>n)C1.push([WI.due-n,'before your weekly rest, which must start by '+dmy(WI.due)]);const c1=C1.sort((x,y)=>x[0]-y[0])[0];big=fmt(Math.max(0,c1[0]));cap='of work left';sub=c1[1]}
+  else if(!act0&&endd&&l&&gap<rd9*H){big='Resting';cap=fmt(rd9*H-gap)+' to go';sub='Your shift ended at '+tt(l.e)+', '+fmt(gap)+' ago, so your daily rest is counting. '+(need11?'You have used your 3 reduced daily rests, so this one has to be 11 hours: next shift from '+tt(l.e+11*H)+'.':'Next shift from '+tt(l.e+9*H)+' with a reduced 9h rest (max 3 between weekly rests), or '+tt(l.e+11*H)+' after a regular 11h rest.')}
+  else if(!act0&&endd&&l&&gap<11*H&&nx[1]==='Now'){big='Ready';cap=isTc()?'to drive or work':'to work';sub='Only if you use a reduced 9h rest ('+((WI&&WI.anc!==null?WI.redD:0)+1)+' of your 3 between weekly rests). A regular 11h rest finishes at '+tt(l.e+11*H)+'.'}
   else if(nx[1]==='Now'){big='Ready';cap=isTc()?'to drive or work':'to work';sub=isTc()?nx[2]:nx[2].replace('driving or working','working');if(WRI&&WRI.rc)sub=wrIfHero(WRI)||'You are on a weekly rest. Starting work now ends it early.'}
   else{big=nx[1];cap='next legal start';sub=nx[2]}
   const pr=Math.min(100,Math.round(b.d/(270*M)*100)),pc2=pr>=100?'#ff6b5e':pr>=80?'#ffb020':'#3ecf7b',pw=Math.min(100,Math.round(wc.d/(6*H)*100)),pc3=pw>=100?'#ff6b5e':pw>=80?'#ffb020':'#3ecf7b';
@@ -1254,12 +1280,12 @@ function liveRun(){
  if(!busy&&l){restShown=true;
   const c=gap>=11*H?'ok':gap>=9*H?'warn':'acc';
   let t=gap>=45*H?'Weekly rest done.':gap>=11*H?'Regular daily rest done. Weekly rest of 45h is at '+tt(l.e+45*H)+'.':gap>=9*H?'Reduced daily rest done (allowed 3 times between weekly rests). Regular 11h at '+tt(l.e+11*H)+'.':'Reduced 9h rest at '+tt(l.e+9*H)+', regular 11h at '+tt(l.e+11*H)+'.';
-  if(ss)t+=n>ss+24*H?' <span class="bad">Your 24h window has passed. Check your tachograph.</span>':' Take your daily rest by '+tt(ss+24*H)+'.';
+  if(ss)t+=n>ss+24*H-rd9*H?' <span class="bad">Your 24 hour window is up: your daily rest had to start by '+tt(ss+24*H-rd9*H)+'. Check your tachograph.</span>':' Your daily rest must be finished by '+tt(ss+24*H)+', so start it by '+tt(ss+24*H-11*H)+(need11?'':' (or '+tt(ss+15*H)+' for a reduced 9h rest)')+'.';
   const rOn=fresh||(st.se&&st.se>=l.e);
   h+=rOn?`<div class="g cd w on kp"><div class="row"><span class="lbl">Daily Rest ${ib('rest')}${CNT}</span><span class="num">${fmt(gap)} <small>/ 11h</small></span></div><div class="bar"><i style="width:${Math.round(Math.min(100,gap/(11*H)*100))}%;background:var(--${c})"></i></div><div class="note">${t}</div>${ex('rest')}${wrCard(WRI,1)}</div>`
    :`<div class="g cd w off kp"><div class="row"><span class="lbl">Daily Rest ${ib('rest')}</span><span class="num">0h 00m <small>/ 11h</small></span></div><div class="bar"><i style="width:0"></i></div><div class="note">Not counting. Your shift is still running, so this is a break, not rest. It starts when you tap End Shift.</div>${ex('rest')}${wrCard(WRI,1)}</div>`}
  const pm=Math.floor(prog/M),pc=pm>=45?'ok':'acc';
- const room=270*M-b.d,bx=`<div class="note" style="margin-top:6px"><b>Breaks this shift:</b> ${bi.k?bi.k+' full break'+(bi.k>1?'s':'')+', last finished '+hm(bi.last):'no full break yet'}.<br><b>Still required:</b> ${b.d>=270*M?(b.q?'30':'45')+' minutes, due now.':bi.k&&9*H-day<=room?'nothing more for a 9h day. A break is needed if you drive another '+fmt(room)+'.':!busy&&bgc>0&&prog<45*M?Math.ceil(((bp?30:45)*M-bgc)/M)+' more minutes of this break'+(bp?'':', or stop at 15 and take 30 or more later')+'.':(b.p?'30 minutes (15 minute part done)':'45 minutes')+', within '+fmt(room)+' of driving.'}${lock?'<br>Break and +min buttons are locked until a break is due or you pass 9h driving.':''}</div>`;
+ const room=270*M-b.d,bx=`<div class="note" style="margin-top:6px"><b>Breaks this shift:</b> ${bi.k?bi.k+' full break'+(bi.k>1?'s':'')+', last finished '+hm(bi.last):'no full break yet'}.<br><b>Still required:</b> ${b.d>=270*M?(b.q?'30':'45')+' minutes, due now.':bi.k&&9*H-day<=room?'nothing more for a 9h day. A break is needed if you drive another '+fmt(room)+'.':!busy&&bgc>0&&prog<45*M?Math.ceil(((bp?30:45)*M-bgc)/M)+' more minutes of this break'+(bp?'':', or stop at 15 and take 30 or more later')+'.':(b.p?'30 minutes (15 minute part done)':'45 minutes')+', within '+fmt(room)+' of driving.'}${false?'':''}</div>`;
  const onS=!!st.active||(!!l&&!endd);
  set($('tcsw'),onS&&jobsOn()&&!isTc()?`<button class="tg" data-tcsw="1">${tcIco(1)}<span>Switch this shift to tacho</span></button>`:'');
  if(!restShown)h+=wrCard(WRI,0);
@@ -1267,7 +1293,7 @@ function liveRun(){
   h+=`<div class="cs">Breaks</div><div class="g cd w${bOn?' on':' off'}"><div class="row"><span class="lbl">Break Taken${so(bOn,CNT)}</span><span class="num">${busy?(wl?'Last '+hm(wl):'None yet'):Math.min(wp,nd)} <small>${busy?'':'/ '+nd+' min'}</small></span></div>${!busy?`<div class="bar"><i style="width:${Math.round(Math.min(1,wp/nd)*100)}%;background:var(--${wd?'ok':'acc'})"></i></div>`:''}<div class="note">${busy?(wl?'Your last break of 30 minutes or more ended at '+hm(wl)+'. ':'')+'Working time break due after '+fmt(Math.max(0,6*H-wc.d))+' more work.':wd?'Working time break done.':'A working time break needs '+nd+' minutes in one go.'}</div>${bu.length&&bu[bu.length-1].g===bsig()?`<button class="tg" data-ub="1" style="display:block;width:100%;margin-top:10px;padding:12px;font-size:16px;border-radius:10px;border-color:var(--bad)">Undo +${bu[bu.length-1].n} min</button>`:''}</div>`}
  if(onS&&isTc())h+='<div class="cs">Breaks</div>';
  const brkCard=onS&&isTc()?sg('brk',card('brk','Drive Since Break',b.d,270*M,b.q?'Next break must be 30 min or more.':'Take 45 min, or 15 then 30.',b.q?'Take 30 minutes now.':'Take 45 minutes now.',0,bx+SGH,dOn).replace('g cd','g cd w')):'';
- if(onS&&isTc())h+=`<div class="g cd w${bOn?' on':' off'}"><div class="row"><span class="lbl">Break Taken${so(bOn,CNT)}</span><span class="num">${pm} <small>/ 45 min</small></span></div>${bkc?`<div class="row" style="margin-top:6px"><span class="lbl">${endd?'Resting for':'On break for'}</span><span class="num bkc">${bkc}</span></div>`:''}<div class="bar"><i style="width:${Math.round(prog/(45*M)*100)}%;background:var(--${pc})"></i></div><div class="note">${pm>=45?'Full break done.':lock?'Locked. You have had your full break this shift.':(pm?'15 minute part counted. The next part only counts if it is 30 minutes or more.':'Nothing counted yet. A break under 15 minutes does not count.')+(!busy&&bgc>=M?' This break: '+Math.floor(bgc/M)+' min so far'+(bp?(bgc<30*M?', counts at 30.':'.'):(bgc<15*M?', counts at 15.':', full break at 45.')):'')}</div>${bu.length&&bu[bu.length-1].g===bsig()?`<button class="tg" data-ub="1" style="display:block;width:100%;margin-top:10px;padding:12px;font-size:16px;border-radius:10px;border-color:var(--bad)">Undo +${bu[bu.length-1].n} min</button>`:''}</div>`;
+ if(onS&&isTc())h+=`<div class="g cd w${bOn?' on':' off'}"><div class="row"><span class="lbl">Break Taken${so(bOn,CNT)}</span><span class="num">${pm} <small>/ 45 min</small></span></div>${bkc?`<div class="row" style="margin-top:6px"><span class="lbl">${endd?'Resting for':'On break for'}</span><span class="num bkc">${bkc}</span></div>`:''}<div class="bar"><i style="width:${Math.round(prog/(45*M)*100)}%;background:var(--${pc})"></i></div><div class="note">${pm>=45?'Full break done.':false?'':(pm?'15 minute part counted. The next part only counts if it is 30 minutes or more.':'Nothing counted yet. A break under 15 minutes does not count.')+(!busy&&bgc>=M?' This break: '+Math.floor(bgc/M)+' min so far'+(bp?(bgc<30*M?', counts at 30.':'.'):(bgc<15*M?', counts at 15.':', full break at 45.')):'')}</div>${bu.length&&bu[bu.length-1].g===bsig()?`<button class="tg" data-ub="1" style="display:block;width:100%;margin-top:10px;padding:12px;font-size:16px;border-radius:10px;border-color:var(--bad)">Undo +${bu[bu.length-1].n} min</button>`:''}</div>`;
  set($('s1'),h);
  const dt=extLeft?'You can extend to 10h ('+(2-prev)+' left this week).':'No 10h extensions left this week.';
  const td=sod(n),poaD=sum(a0.filter(x=>x.t==='p'),td,n+1),poaW=sum(a0.filter(x=>x.t==='p'),w,n+1),paidD=sum(a0.filter(x=>x.t!=='r'),td,n+1);
