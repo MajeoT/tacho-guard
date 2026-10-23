@@ -13,6 +13,12 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <script src="config.js"></script>
+<script>/* if the app fails to start (for example a damaged saved record), offer a way out instead of a dead screen */
+window.addEventListener('error',()=>{setTimeout(()=>{if(window.TG_OK||document.getElementById('tgrec'))return;const d=document.createElement('div');d.id='tgrec';d.style.cssText='position:fixed;inset:0;z-index:9999;background:#0b1424;color:#eaf0f8;padding:24px;font:16px system-ui,sans-serif;overflow:auto';
+ d.innerHTML='<h2>TachoGuard could not start</h2><p>Your saved record may be damaged. Copy it first so nothing is lost, then start fresh. A copy is also kept on this phone.</p><button id="tgr1" style="display:block;width:100%;padding:14px;margin:10px 0;font-size:16px">Copy my saved record</button><button id="tgr2" style="display:block;width:100%;padding:14px;margin:10px 0;font-size:16px">Start fresh</button><p id="tgr3"></p>';
+ document.body.appendChild(d);const raw=()=>{try{return localStorage.getItem('tachoguard.v1')||''}catch(e){return ''}};
+ d.querySelector('#tgr1').onclick=()=>{const t=raw();(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>{d.querySelector('#tgr3').textContent='Copied. Paste it somewhere safe.'},()=>{d.querySelector('#tgr3').textContent='Could not copy. It is still saved on this phone.'})};
+ d.querySelector('#tgr2').onclick=()=>{try{localStorage.setItem('tachoguard.v1.bad',raw());localStorage.removeItem('tachoguard.v1')}catch(e){}location.reload()}},1500)});</script>
 <script src="signs.js"></script>
 <style>
 :root{--bg:#eef0f2;--card:#fff;--tx:#161a1f;--mut:#5f6b7a;--bd:#d9dee4;--ok:#17803f;--warn:#c77700;--bad:#c4281c;--acc:#0b4f9c;--onacc:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -435,16 +441,30 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-18-114';
+const APPV='tg-2026-10-23-115';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
-let hadLocal=false;try{const r=localStorage.getItem(K);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.sessions)){Object.assign(st,p);hadLocal=true}}}catch(e){}
+/* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
+const okPh=x=>typeof x==='string'&&/^[\w-]{1,40}$/.test(x);
+function san(p){if(!p||typeof p!=='object'||Array.isArray(p))return null;const A=k=>{if(p[k]!==undefined&&!Array.isArray(p[k]))delete p[k]},O=k=>{if(p[k]!==undefined&&(p[k]===null||typeof p[k]!=='object'||Array.isArray(p[k])))delete p[k]};
+ p.sessions=Array.isArray(p.sessions)?p.sessions.filter(x=>x&&typeof x==='object'&&isFinite(x.s)&&isFinite(x.e)&&+x.e>+x.s&&(!x.t||['d','w','x','p','r'].includes(x.t))).map(x=>Object.assign({},x,{s:+x.s,e:+x.e})):[];
+ p.walks=Array.isArray(p.walks)?p.walks.filter(r=>r&&typeof r==='object'&&typeof r.t==='number'&&Array.isArray(r.D)):[];
+ const fp=o=>{if(o&&o.p!==undefined)o.p=Array.isArray(o.p)?o.p.filter(okPh):[]};p.walks.forEach(r=>{r.D.forEach(fp);if(r.it&&typeof r.it==='object')Object.values(r.it).forEach(fp)});
+ ['jobs','plan','pat','plx','wx','wri','wrp','tce','tcp','iss'].forEach(A);['tc','arch','wr','rp','rpb','pls','dd','wd'].forEach(O);
+ if(p.wd&&p.wd.it&&typeof p.wd.it==='object')Object.values(p.wd.it).forEach(fp);
+ if(!p.tc)p.tc={c:'',u:''};if(!p.arch)p.arch={};if(p.jobs)p.jobs=p.jobs.filter(j=>j&&typeof j==='object'&&j.id);
+ if(p.active!=null&&!isFinite(p.active)){p.active=null;p.act=null}
+ return p}
+let hadLocal=false;{let r=null;try{r=localStorage.getItem(K);if(r){const p=san(JSON.parse(r));if(p){Object.assign(st,p);hadLocal=true}}}catch(e){try{if(r)localStorage.setItem(K+'.bad',r)}catch(e2){}}}
 if(st.active&&!st.act)st.act='d';
 const lay=a=>{a=a.filter(x=>x.e>x.s).sort((x,y)=>x.s-y.s);let m=-Infinity,ov=false;for(const x of a){if(x.s<m){ov=true;break}m=Math.max(m,x.e)}if(!ov)return a;let o=[];a.forEach(x=>{const n=[];o.forEach(y=>{if(y.e<=x.s||y.s>=x.e){n.push(y);return}if(y.s<x.s)n.push(Object.assign({},y,{e:x.s}));if(y.e>x.e)n.push(Object.assign({},y,{s:x.e,d:0,a:null}))});n.push(x);o=n});return o.sort((x,y)=>x.s-y.s)};
 const mrg=l=>{const o=[];l.forEach(x=>{const p=o[o.length-1];if(p&&(p.t||'d')===(x.t||'d')&&(p.j||'')===(x.j||'')&&x.s-p.e<M)o[o.length-1]=Object.assign({},p,{e:Math.max(p.e,x.e),d:((p.d||0)+(x.d||0))||p.d,z:x.z||p.z});else o.push(x)});return o};
 const fixOv=()=>{[x=>(x.t||'d')!=='r',x=>x.t==='r'].forEach(nr=>{const w=st.sessions.filter(nr),l=mrg(lay(w));if(l.length!==w.length||l.some(x=>!w.includes(x)))st.sessions=st.sessions.filter(x=>!nr(x)).concat(l)})};
 fixOv();
 let lsOk=true,cloud=null,cloudReady=false,pushT=0,pushing=null,pushAgain=false,lastPush=0,lastMain='',syncMsg='';const remW=new Map();
+try{lastMain=localStorage.getItem(K+'.base')||''}catch(e){}
+/* the record both phones last agreed on is kept, so a later merge knows what each side added or deleted */
+const setBase=j=>{lastMain=j;try{localStorage.setItem(K+'.base',j)}catch(e){}};
 let dirty=false;
 const save=()=>{fixOv();st.u=Date.now();dirty=true;try{localStorage.setItem(K,JSON.stringify(st));lsOk=true}catch(e){lsOk=false}queuePush();pushRemQ();syncNote()};
 /* GPS updates arrive every few seconds while driving: keep them on the phone and let them ride along with the next account save. */
@@ -600,10 +620,10 @@ const sod=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x.getTime()};
 const mon=()=>{const x=new Date(sod(Date.now()));x.setDate(x.getDate()-((x.getDay()+6)%7));return x.getTime()};
 const wkS=ts=>{const d=new Date(ts);d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getTime()};
 const nwk=w=>{const d=new Date(w);d.setDate(d.getDate()+7);return d.getTime()};
-function archive(){const cut=Date.now()-365*864e5,keep=[];let ch=0;
+function archive(){/* counted back from your newest entry, so a phone clock set wrong cannot archive your recent log */const ne=st.sessions.reduce((m,x)=>Math.max(m,x.e),0);if(!ne)return;const cut=Math.min(Date.now(),ne)-365*864e5,keep=[];let ch=0;
  st.sessions.forEach(x=>{if(x.e<cut){ch=1;const k=x.t||'d';if(k==='d'||k==='w'||k==='x'){let w=wkS(x.s);while(w<x.e){const g=Math.min(x.e,nwk(w))-Math.max(x.s,w);if(g>0){const a=st.arch[w]=st.arch[w]||{w:0,d:0};a.w+=g;if(k==='d')a.d+=g}w=nwk(w)}}}else keep.push(x)});
  /* planner records for days over 400 days old are no longer shown or checked, so drop them to stop the record growing forever */
- const pc=ymd(Date.now()-400*864e5);
+ const pc=ymd(Math.min(Date.now(),ne)-400*864e5);
  if(st.plan&&st.plan.some(p=>p.d<pc)){st.plan=st.plan.filter(p=>!(p.d<pc));ch=1}
  const pid=new Set((st.plan||[]).map(p=>p.id)),old=k=>{const i=k.indexOf('|');return i<0?!pid.has(k):k.slice(i+1)<pc};
  if(st.pls&&Object.keys(st.pls).some(old)){const o={};Object.keys(st.pls).forEach(k=>{if(!old(k))o[k]=st.pls[k]});st.pls=o;ch=1}
@@ -1149,7 +1169,7 @@ function wrSetup(){const W=st.wr||{};let mode=W.fresh?'f':'k',red=!!W.red,intl=!
   save();moX();render()}}}
 function live(){allOn++;allC=null;try{liveRun()}finally{if(!--allOn)allC=null}}
 function liveRun(){
- if(pend&&MO.hidden){const[r,ru,lo]=pend;pend=null;if(ru>(st.u||0))adopt(r,ru,lo);else baseU=Math.max(baseU,ru)}
+ if(pend&&MO.hidden){const[r,ru,lo]=pend;pend=null;if(ru>baseU)adopt(r,ru,lo||mainJ()!==lastMain)}
  const a0=all(),rs=st.rs||0,a=a0.filter(x=>x.e>rs).map(x=>x.s<rs?Object.assign({},x,{s:rs}):x),dr=a.filter(x=>x.t==='d'),dr0=a0.filter(x=>x.t==='d'),n=Date.now(),w=mon(),act=st.act,busy=!!act&&act!=='r',l=a[a.length-1];
  const gap=l&&!busy?n-l.e:0,fresh=!l||gap>=9*H,ss=fresh?null:shiftStart(a),endd=!busy&&!!l&&(fresh||!!(st.se&&st.se>=l.e));
  const w1=add7(w,-1),day=ss?sum(dr,ss,n+1):0,wkd=sum(dr0,w,n+1),fn=sum(dr0,w1,n+1),sw=ss?sum(a.filter(x=>x.t!=='p'),ss,n+1):0;
@@ -1420,7 +1440,7 @@ $('bc').onclick=()=>{const t=bkJ();const ok=()=>bm('Backup copied. Paste it into
 let bArm=0;
 const doImport=txt=>{let p;try{p=JSON.parse(txt)}catch(e){bm('That is not a valid backup.');return}if(!p||typeof p!=='object'||!Array.isArray(p.sessions)){bm('That is not a valid backup.');return}
  /* keep only well formed entries, so a damaged or edited file cannot break the app */
- p.sessions=p.sessions.filter(x=>x&&typeof x==='object'&&isFinite(x.s)&&isFinite(x.e)&&+x.e>+x.s&&(!x.t||NM[x.t])).map(x=>Object.assign({},x,{s:+x.s,e:+x.e}));
+ const hadW=p.walks!==undefined;p=san(p);if(!p){bm('That is not a valid backup.');return}if(!hadW)delete p.walks;
  if(p.walks!==undefined)p.walks=Array.isArray(p.walks)?p.walks.filter(r=>r&&typeof r.t==='number'&&Array.isArray(r.D)):[];
  if(!p.tc||typeof p.tc!=='object')delete p.tc;if(!p.arch||typeof p.arch!=='object')delete p.arch;delete p.owner;
  if(!bArm){bArm=1;$('bi').textContent='Tap Again to Replace Data';bm('This replaces your logged activity with the backup ('+p.sessions.length+' entries).');setTimeout(()=>{bArm=0;$('bi').textContent='Import'},5000);return}bArm=0;$('bi').textContent='Import';delete p.u;Object.assign(st,{sessions:[],active:null,act:null,arch:{}},p);if(st.active&&!st.act)st.act='d';gpsOff();fixOv();save();esFor=0;$('tc').value=(st.tc||{}).c||'';$('tu').value=(st.tc||{}).u||'';render();bm('Backup imported.')};
@@ -1692,7 +1712,7 @@ function phShrink(f){return new Promise((res,rej)=>{const u=URL.createObjectURL(
 /* blob URLs hold the photo in memory until revoked, and the list is redrawn on every tap, so let each one go once it has loaded */
 const phSrc=(im,b)=>{const u=URL.createObjectURL(b);im.onload=im.onerror=()=>URL.revokeObjectURL(u);im.src=u};
 async function phThumbs(root){for(const im of root.querySelectorAll('img[data-ph]')){try{const b=await phGet(im.dataset.ph);if(b)phSrc(im,b);else im.style.display='none'}catch(e){im.style.display='none'}}}
-const phs=(ids,k,own)=>(ids||[]).map(id=>`<img class="th" data-ph="${id}" data-pv="${id}"${own?` data-pk="${k}"`:''} alt="Defect photo">`).join('');
+const phs=(ids,k,own)=>(ids||[]).filter(okPh).map(id=>`<img class="th" data-ph="${esc(id)}" data-pv="${esc(id)}"${own?` data-pk="${k}"`:''} alt="Defect photo">`).join('');
 async function phView(id,own,key){let b;try{b=await phGet(id)}catch(e){}
  if(!b)return;mo(`<h3>Defect Photo</h3><img id="pvimg" style="width:100%;border-radius:8px;margin-bottom:10px" alt="Defect photo">${own?'<button class="tg big" data-k="rm">Remove Photo</button>':''}<button class="tg big" data-k="x">Close</button>`);
  phSrc(document.getElementById('pvimg'),b);
@@ -1884,19 +1904,30 @@ function syncNote(){const el=$('sync');if(!el)return;const m=syncMsg||(lsOk?'':'
 let syncT=0;
 const mainJ=()=>{const o=Object.assign({},st);delete o.walks;delete o.u;return JSON.stringify(o)};
 let baseU=0,pend=null;
+/* Three-way merge: entries added on either phone are kept, entries deleted on one phone stay deleted, and other settings keep
+   this phone's value only where this phone was the one that changed them. Without a known base, nothing from either side is dropped. */
+const sKey=x=>x.s+'|'+x.e+'|'+(x.t||'d')+'|'+(x.j||'');
+function merge3(baseJ,loc,rem){let b=null;try{b=baseJ?JSON.parse(baseJ):null}catch(e){}
+ const bs=new Set(((b&&b.sessions)||[]).map(sKey)),ls=new Set((loc.sessions||[]).map(sKey)),rs=new Set((rem.sessions||[]).map(sKey)),out=Object.assign({},rem);
+ out.sessions=(rem.sessions||[]).filter(x=>!(b&&bs.has(sKey(x))&&!ls.has(sKey(x)))).concat((loc.sessions||[]).filter(x=>!rs.has(sKey(x))&&!(b&&bs.has(sKey(x)))));
+ if(b)Object.keys(loc).forEach(k=>{if(k==='sessions'||k==='walks'||k==='u')return;const lj=JSON.stringify(loc[k]),bj=JSON.stringify(b[k]);if(lj!==bj&&JSON.stringify(rem[k])===bj)out[k]=loc[k]});
+ return out}
+const recJ=r=>{const o=Object.assign({},r);delete o.walks;delete o.u;return JSON.stringify(o)};
 function adopt(r,ru,lost){if(!MO.hidden){pend=[r,ru,lost];return}
+ r=san(r)||r;const rJ=recJ(r);let merged=false;
+ if(lost){const m=merge3(lastMain,JSON.parse(JSON.stringify(st)),r);merged=JSON.stringify(m.sessions)!==JSON.stringify(r.sessions)||recJ(m)!==rJ;r=m}
  /* checks deleted on another phone (listed in wx) are removed here too, so they are not uploaded again */
  const wx=[...new Set([...(st.wx||[]),...(r.wx||[])])],gone=new Set(wx.map(String)),lw=(st.walks||[]).filter(x=>{if(!gone.has(String(x.t)))return true;recPh(x).forEach(phDel);return false});
  Object.keys(st).forEach(k=>{if(!(k in r)&&k!=='walks')delete st[k]});Object.assign(st,r);st.walks=lw;st.wx=wx;st.u=ru;baseU=ru;dirty=false;
- if(!st.tc)st.tc={c:'',u:''};if(!st.arch)st.arch={};if(st.active&&!st.act)st.act='d';fixOv();lastMain=mainJ();
+ if(!st.tc)st.tc={c:'',u:''};if(!st.arch)st.arch={};if(st.active&&!st.act)st.act='d';fixOv();if(merged){setBase(rJ);dirty=true;st.u=Math.max(Date.now(),ru+1);setTimeout(()=>queuePush(true),300)}else setBase(mainJ());
  try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}
  if(st.act==='d'){gpsOn();wake()}else gpsOff();
  snap=null;bu=[];esFor=0;ed=null;$('tc').value=st.tc.c;$('tu').value=st.tc.u;
- if(lost){flash='Updated from your account record, which had changed. The change you just made on this screen was not kept, so check it and do it again.';setTimeout(()=>{flash='';live()},12000)}
+ if(merged){flash='Changes from your other phone were added to this one. Check the log in case anything was logged twice.';setTimeout(()=>{flash='';live()},12000)}
  render();if(cloudReady)pullWalks()}
 function fromAcc(s){try{if(!s||!s.exists)return;const d=s.data(),ru=d.u||0;if(ru<=baseU)return;
   if(d.j===lastMain){baseU=ru;return}
-  if(ru>(st.u||0)){const r=JSON.parse(d.j);if(r&&Array.isArray(r.sessions))adopt(r,ru,dirty&&mainJ()!==lastMain)}}catch(e){}}
+  {const r=JSON.parse(d.j);if(r&&Array.isArray(r.sessions))adopt(r,ru,mainJ()!==lastMain)}}catch(e){}}
 function queuePush(now){if(!cloudReady)return;clearTimeout(pushT);pushT=setTimeout(doPush,now?0:Math.max(1200,15000-(Date.now()-lastPush)))}
 const KEEP=['wr','wrp','wri','jobs','rp','rpb','na','cj','rml','rms','tce'];
 function keepKeys(r){let ch=0;if(r)KEEP.forEach(k=>{if(r[k]!==undefined&&r[k]!==null&&st[k]===undefined){st[k]=r[k];ch=1}});if(ch){try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}}return ch}
@@ -1906,12 +1937,12 @@ function doPush(){if(!cloudReady)return;if(pushing){pushAgain=true;return}
     if(cd&&cu>baseU&&cd.j!==lastMain){try{r=JSON.parse(cd.j)}catch(e){}}
     if(r&&Array.isArray(r.sessions)){if(!MO.hidden){pushing=null;setTimeout(()=>queuePush(),4000);return}adopt(r,cu,1);pushing=null;pushAgain=false;syncNote();return}
     let j2=j;if(cd){try{const rr=JSON.parse(cd.j);if(keepKeys(rr))j2=mainJ()}catch(e){}}
-    await cloud.main.set({v:1,u,j:j2});lastMain=j2;baseU=u}
+    await cloud.main.set({v:1,u,j:j2},cd?cu:0);setBase(j2);baseU=u}
    const have=new Set();
    for(const r of(st.walks||[]).slice()){const id=String(r.t),wj=JSON.stringify(r);have.add(id);if(remW.get(id)!==wj){await cloud.walks.doc(id).set({v:1,t:r.t,j:wj});remW.set(id,wj)}}
    for(const id of[...remW.keys()])if(!have.has(id)){await cloud.walks.doc(id).delete();remW.delete(id)}
    syncMsg='';if((st.u||0)===u)dirty=false}
-  catch(e){const c=e&&e.code;syncMsg=(c==='quota_exceeded'||c==='23514'||(e&&e.status===413))?'Account storage is full. Delete old checks to keep saving. Kept on this phone for now.':(c==='invalid_argument'||c==='revoked'||c==='not_granted')?'You are signed out. Sign in again in Settings to keep saving to your account. Kept on this phone for now.':'Could not reach your account just now. Kept on this phone and will retry.';
+  catch(e){const c=e&&e.code;if(c==='conflict'){pushing=null;setTimeout(()=>queuePush(true),400);return}syncMsg=(c==='quota_exceeded'||c==='23514'||(e&&e.status===413))?'Account storage is full. Delete old checks to keep saving. Kept on this phone for now.':(c==='invalid_argument'||c==='revoked'||c==='not_granted')?'You are signed out. Sign in again in Settings to keep saving to your account. Kept on this phone for now.':'Could not reach your account just now. Kept on this phone and will retry.';
    if(c==='invalid_argument'||c==='revoked'||c==='not_granted')cloudReady=false;else if(c!=='quota_exceeded'&&c!=='23514')setTimeout(()=>queuePush(),20000)}
   pushing=null;syncNote();if(pushAgain){pushAgain=false;queuePush()}})()}
 /* Accounts and database: this talks to the Supabase Auth and REST APIs directly with fetch, so there is no library to download or cache. */
@@ -1931,12 +1962,16 @@ async function rest(method,path,body,prefer,again){const t=await token();const r
  if(!r.ok){if(r.status===401&&sess&&!again){sess.exp=0;return rest(method,path,body,prefer,1)}/* expired sign in: refresh it once and try again */
   const d=await r.json().catch(()=>({}));throw sbErr(r,d)}
  return r.status===204?null:await r.json().catch(()=>null)}
+/* read every page, not just the first 1000 rows */
+async function pg(path){let out=[];for(let o=0;o<1e5;o+=1000){const a=(await rest('GET',path+'&limit=1000&offset='+o))||[];out=out.concat(a);if(a.length<1000)break}return out}
 function mkCloud(uid){const q='user_id=eq.'+uid,M='resolution=merge-duplicates,return=minimal';
  return{main:{get:async()=>{const a=await rest('GET','tg_state?'+q+'&select=u,j'),d=a&&a[0];return{exists:!!d,data:()=>({u:Number(d.u),j:d.j})}},
    ver:async()=>{const a=await rest('GET','tg_state?'+q+'&select=u'),d=a&&a[0];return d?Number(d.u):0},/* just the change time, so the regular check downloads a few bytes, not the whole record */
-   set:async o=>{await rest('POST','tg_state?on_conflict=user_id',[{user_id:uid,u:o.u,j:o.j,updated_at:new Date().toISOString()}],M)}},
-  walks:{limit:()=>({get:async()=>{const a=await rest('GET','tg_walks?'+q+'&select=id,j&limit=1000');return{docs:(a||[]).map(x=>({id:x.id,data:()=>({j:x.j})}))}}}),
-   ids:async()=>{const a=await rest('GET','tg_walks?'+q+'&select=id&limit=1000');return(a||[]).map(x=>String(x.id))},
+   /* the write only goes through if nobody else saved since we last read (exp), otherwise the app merges and tries again */
+   set:async(o,exp)=>{if(exp){const a=await rest('PATCH','tg_state?'+q+'&u=eq.'+exp,{u:o.u,j:o.j,updated_at:new Date().toISOString()},'return=representation');if(!a||!a.length){const e=new Error('Changed on another phone');e.code='conflict';throw e}return}
+    await rest('POST','tg_state?on_conflict=user_id',[{user_id:uid,u:o.u,j:o.j,updated_at:new Date().toISOString()}],M)}},
+  walks:{limit:()=>({get:async()=>{const a=await pg('tg_walks?'+q+'&select=id,j&order=id');return{docs:a.map(x=>({id:x.id,data:()=>({j:x.j})}))}}}),
+   ids:async()=>{const a=await pg('tg_walks?'+q+'&select=id&order=id');return a.map(x=>String(x.id))},
    some:async ids=>{const a=await rest('GET','tg_walks?'+q+'&select=id,j&id=in.'+encodeURIComponent('('+ids.map(i=>'"'+String(i).replace(/["\\]/g,'')+'"').join(',')+')'));return a||[]},
    doc:id=>({set:async o=>{let w={};try{w=JSON.parse(o.j)}catch(e){}const D=w.D||[];await rest('POST','tg_walks?on_conflict=user_id,id',[{user_id:uid,id:String(id),checked_at:new Date(o.t||w.t||Date.now()).toISOString(),reg:w.reg||null,vehicle:w.k||null,defects:D.length,dangerous:D.some(x=>x.d),j:o.j,updated_at:new Date().toISOString()}],M)},
     delete:async()=>{await rest('DELETE','tg_walks?'+q+'&id=eq.'+encodeURIComponent(id),null,'return=minimal')}})}}}
@@ -1946,7 +1981,7 @@ async function bootCloud(){
  if(booting||cloudReady||!SBU||!sess)return;booting=true;
  try{
   const uid=sess.uid;cloud=mkCloud(uid);
-  if(st.owner&&st.owner!==uid){const o=freshSt();Object.keys(st).forEach(k=>delete st[k]);Object.assign(st,o);hadLocal=false;lastMain='';remW.clear()}
+  if(st.owner&&st.owner!==uid){try{localStorage.setItem(K+'.prev',JSON.stringify(st))}catch(e){}const o=freshSt();Object.keys(st).forEach(k=>delete st[k]);Object.assign(st,o);hadLocal=false;setBase('');remW.clear()}
   const main=cloud.main,[ms,ws]=await Promise.all([main.get(),cloud.walks.limit(1000).get()]);
   let remote=null;if(ms.exists){try{remote=JSON.parse(ms.data().j);remote.u=ms.data().u||0}catch(e){}}
   const hasLocal=hadLocal||st.sessions.length>0||(st.walks||[]).length>0,lu=st.u||0,rOk=!!remote&&Array.isArray(remote.sessions);let changed=false;
@@ -1963,6 +1998,7 @@ async function bootCloud(){
    st.arch=Object.assign({},la,st.arch||{});if(mineNewer)Object.assign(st,lv);
    if(add.length){flash=add.length+(add.length>1?' entries':' entry')+' from this phone added to your account. Check the log in case anything was logged twice.';setTimeout(()=>{flash='';live()},15000)}
    changed=true}
+  else if(rOk&&hasLocal&&st.owner===uid&&recJ(remote)!==mainJ()){const m=merge3(lastMain,JSON.parse(JSON.stringify(st)),remote),lw0=st.walks;Object.keys(st).forEach(k=>{if(!(k in m))delete st[k]});Object.assign(st,m);st.walks=lw0;st.u=Math.max(Date.now(),(remote.u||0)+1);changed=true}
   else if(rOk&&(!hasLocal||(remote.u||0)>lu)){Object.assign(st,remote);changed=true}
   else if(remote&&keepKeys(remote))changed=true;
   st.walks=lw;st.wx=wx;
@@ -1999,17 +2035,23 @@ AB.onclick=async e=>{const b=e.target.closest('[data-a]');if(!b)return;const k=b
   if(k==='lo'){try{localStorage.setItem(LK,'1')}catch(x){}closeAuth();return}
   if(k==='ok'){if(!pw||pw.length<6){ampMsg('Use at least 6 characters.',1);return}await authReq('user',{password:pw},'PUT',sess&&sess.at);closeAuth();acctUi();bootCloud();return}
   if(!em||!/^\S+@\S+\.\S+$/.test(em.trim())){ampMsg('Enter your email address.',1);return}
-  if(k==='fg'){await authReq('recover?'+red,{email:em.trim()});ampMsg('If that email has an account, a reset link is on its way. Open it on this phone.');return}
+  if(k==='fg'){try{localStorage.setItem('tachoguard.pend',String(Date.now()))}catch(e){}await authReq('recover?'+red,{email:em.trim()});ampMsg('If that email has an account, a reset link is on its way. Open it on this phone.');return}
   if(!pw||pw.length<6){ampMsg('Use a password of at least 6 characters.',1);return}
   ampMsg('Please wait...');
   if(k==='in'){const d=await authReq('token?grant_type=password',{email:em.trim(),password:pw});setS(d);closeAuth();acctUi();bootCloud()}
-  else if(k==='up'){const d=await authReq('signup?'+red,{email:em.trim(),password:pw});if(setS(d)){closeAuth();acctUi();bootCloud()}else ampMsg('Account created. Check your email and tap the link to confirm it, then sign in here.')}
+  else if(k==='up'){try{localStorage.setItem('tachoguard.pend',String(Date.now()))}catch(e){}const d=await authReq('signup?'+red,{email:em.trim(),password:pw});if(setS(d)){closeAuth();acctUi();bootCloud()}else ampMsg('Account created. Check your email and tap the link to confirm it, then sign in here.')}
  }catch(x){ampMsg(/invalid login/i.test(x.message||'')?'That email and password do not match.':aErr(x),1)}};
 (function(){const h=location.hash.replace(/^#/,'');if(!h)return;const p=new URLSearchParams(h);
  if(p.get('error_description')){history.replaceState(null,'',location.pathname+location.search);showAuth({t:p.get('error_description').replace(/\+/g,' ')+'. Sign in or ask for a new link.',bad:1});return}
  const at=p.get('access_token');if(!at)return;history.replaceState(null,'',location.pathname+location.search);
  const base={at,rt:p.get('refresh_token'),exp:Date.now()+(+p.get('expires_in')||3600)*1000-60000};
- authReq('user',null,'GET',at).then(u=>{saveSess(Object.assign(base,{uid:u.id,email:u.email}));acctUi();if(p.get('type')==='recovery')showAuth(null,'recover');else{closeAuth();bootCloud()}}).catch(()=>showAuth({t:'That link did not work. Sign in with your email and password.',bad:1}))})();
+ authReq('user',null,'GET',at).then(u=>{
+  /* only take a link this phone asked for (sign up or password reset in the last week). Anything else, or a different account, has to be confirmed */
+  let pd=0;try{pd=+localStorage.getItem('tachoguard.pend')||0}catch(e){}const asked=Date.now()-pd<7*864e5,other=(sess&&sess.uid&&sess.uid!==u.id)||(st.owner&&st.owner!==u.id);
+  const go=()=>{try{localStorage.removeItem('tachoguard.pend')}catch(e){}saveSess(Object.assign(base,{uid:u.id,email:u.email}));acctUi();if(p.get('type')==='recovery')showAuth(null,'recover');else{closeAuth();bootCloud()}};
+  if(asked&&!other){go();return}
+  mo(`<h3>Sign In From a Link?</h3><p>A sign in link was opened for <b>${esc(u.email||'an account')}</b>.${other?' That is a <b>different account</b> from the one this phone uses.':''} Only continue if you asked for this link yourself.</p>${other?'<p class="note">If you continue, a copy of your current record is kept on this phone.</p>':''}<button class="tg big" data-k="ok">Yes, it is my account</button><button class="tg big" data-k="no">No, ignore it</button>`);
+  mcb={no:moX,ok:()=>{moX();go()}}}).catch(()=>showAuth({t:'That link did not work. Sign in with your email and password.',bad:1}))})();
 /* Account card in Settings */
 let outArm=0;
 function acctUi(){const n=$('acn'),b=$('acb');try{ntUi()}catch(e){}
@@ -2017,7 +2059,9 @@ function acctUi(){const n=$('acn'),b=$('acb');try{ntUi()}catch(e){}
  b.hidden=false;if(sess){n.textContent='Signed in as '+(sess.email||'your account')+'. Your record is saved to your account and kept on this phone.';b.textContent=outArm?'Tap Again to Sign Out':'Sign Out'}else{n.textContent='Guest mode. Your record is saved on this phone only and is lost if you clear the app data or change phone. Sign in to back it up.';b.textContent='Sign In or Create Account'}}
 $('acb').onclick=()=>{if(!sess){showAuth();return}
  if(!outArm){outArm=1;acctUi();setTimeout(()=>{outArm=0;acctUi()},4000);return}
- outArm=0;clearTimeout(pushT);saveSess(null);cloudReady=false;cloud=null;syncMsg='You are signed out. Your record is still on this phone.';syncNote();acctUi()};
+ outArm=0;const fin=()=>{clearTimeout(pushT);const t=sess&&sess.at;saveSess(null);cloudReady=false;cloud=null;if(t)fetch(SBU+'/auth/v1/logout',{method:'POST',headers:{apikey:SBK,Authorization:'Bearer '+t}}).catch(()=>{});syncMsg=mainJ()!==lastMain?'You are signed out. Some changes had not reached your account yet. They are still on this phone and will save when you sign in again.':'You are signed out. Your record is still on this phone.';syncNote();acctUi()};
+ /* send anything not yet saved to the account first */
+ if(cloudReady&&mainJ()!==lastMain){syncMsg='Saving your last changes before signing out...';syncNote();doPush();const w0=Date.now();(function wt(){if(!pushing||Date.now()-w0>8000)fin();else setTimeout(wt,250)})()}else fin()};
 /* Install card in Settings */
 let dip=null;
 function instUi(){const sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;$('inb').hidden=!dip||!!sa;$('inn').textContent=sa?'TachoGuard is installed on this phone.':dip?'Install TachoGuard to open it like an app, full screen, with no signal needed.':'To install, open the Chrome menu and tap Install app or Add to Home screen.'}
@@ -2039,7 +2083,7 @@ try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}
  const d=document.createElement('div');d.id='dsk';d.setAttribute('role','alert');d.style.cssText='position:sticky;top:0;z-index:70;background:var(--bad);color:#fff;padding:14px 16px;font-size:16px;line-height:1.4';
  d.innerHTML='<b>Desktop site is switched on.</b> That makes TachoGuard look zoomed out and small. To fix it, open Chrome, tap the ⋮ menu and untick <b>Desktop site</b>, then reopen the app. <button class="tg" style="margin-top:8px;display:block">Hide this</button>';
  d.querySelector('button').onclick=()=>{try{sessionStorage.setItem('tgDsk','1')}catch(e){}d.remove()};document.body.prepend(d)}catch(e){}})();
-$('ver').textContent='TachoGuard v'+APPV.replace(/^tg-(\d+)-(\d+)-(\d+)-(\d+)$/,'$1.$2.$3.$4');
+window.TG_OK=1;$('ver').textContent='TachoGuard v'+APPV.replace(/^tg-(\d+)-(\d+)-(\d+)-(\d+)$/,'$1.$2.$3.$4');
 addSrc();if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){const hadCtl=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!hadCtl||document.getElementById('upd'))return;const u=document.createElement('button');u.id='upd';u.className='tg';u.textContent='App updated. Tap to reload';u.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60;box-shadow:0 4px 16px rgba(0,0,0,.25)';u.onclick=()=>location.reload();document.body.appendChild(u)});window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 </script>
 <script src="plan.js"></script>
