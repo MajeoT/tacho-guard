@@ -74,7 +74,7 @@ function plCheck(sp){const I=new Map(),add=(x,lv,t)=>{if(x.log)return;const k=x.
  /* 48h average over the reference period, with planned hours */
  const per={};sp.forEach(x=>{if(x.log)return;const P=refP(x.s),k=P.s;(per[k]=per[k]||{P,sp:[]}).sp.push(x)});
  Object.values(per).forEach(({P,sp:ps})=>{let tot=0;sp.forEach(x=>{tot+=x.w*Math.max(0,Math.min(x.e,P.e)-Math.max(x.s,P.s))/((x.e-x.s)||1)});
-  const b=st.rpb&&st.rpb.p===P.s?st.rpb:null;if(b){const span=Math.max(0,(b.to-P.s)/(7*864e5)),lw=Math.min(span,(b.lv||0)/5);tot+=(b.avg||0)*H*Math.max(0,span-lw)+(b.lv||0)*8*H}
+  const b=st.rpb&&st.rpb.p===P.s?st.rpb:null;if(b){const span=Math.max(0,(b.to-P.s)/(7*864e5)),lw=Math.min(span,(b.lv||0)/5);tot+=(b.avg||0)*H*Math.max(0,span-lw)+lvH(b.lv||0)}tot+=lvIn(b?Math.max(P.s,b.to):P.s,P.e);
   const C=Math.max(1,Math.round((P.e-P.s)/(7*864e5)));if(tot>48*H*C)ps.forEach(x=>add(x,'a','With your planned shifts, the average for the period '+dlong(P.s)+' to '+dlong(P.e-864e5)+' would be '+fmt(tot/C)+' a week, over 48 hours.'))});
  return I}
 
