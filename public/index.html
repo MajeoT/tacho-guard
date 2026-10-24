@@ -441,7 +441,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-121';
+const APPV='tg-2026-10-23-122';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1060,10 +1060,12 @@ function refAvg(rp0){const n=Date.now(),P=refP(n,rp0),b=st.rpb&&st.rpb.p===P.s?s
  const C=Math.max(1,Math.round((P.e-P.s)/WK)),el=Math.min(C,Math.max(1,(n-P.s)/WK)),tot=tr+pr+lv;
  return{P,b,tr,tj,pr,lv,tot,avg:tot/el,C,el,left:48*H*C-tot,wl:Math.max(0,C-el)}}
 /* Each company can have its own reference period. All your hours are counted inside each one, and the one closest to 48h is the one that matters. */
-function refSets(){const g=st.rp||{},sig=r=>(r.w===26?26:17)+'|'+(r.s||''),G=new Map(),jl=st.jobs||[];
+/* The distinct reference periods in use: one per company setting, with the job names that use it. */
+function refGroups(){const g=st.rp||{},sig=r=>(r.w===26?26:17)+'|'+(r.s||''),G=new Map(),jl=st.jobs||[];
  const add=(rp,nm)=>{const k=sig(rp);if(!G.has(k))G.set(k,{rp,names:[]});if(nm)G.get(k).names.push(nm)};
- jl.forEach(j=>add(j.rp&&j.rp.w?j.rp:g,j.n));if(!G.size)add(g,'');
- const L=[...G.values()].map(o=>{const R=refAvg(o.rp);R.names=G.size>1?o.names.join(', '):'';return R});
+ jl.forEach(j=>add(j.rp&&j.rp.w?j.rp:g,j.n));if(!G.size)add(g,'');return[...G.values()]}
+function refSets(){const G=refGroups();
+ const L=G.map(o=>{const R=refAvg(o.rp);R.names=G.length>1?o.names.join(', '):'';return R});
  return L.sort((a,b)=>b.avg-a.avg)}
 const refMinS=n=>Math.min(...[st.rp||{}].concat((st.jobs||[]).filter(j=>j.rp&&j.rp.w).map(j=>j.rp)).map(r=>refP(n,r).s));
 const dfm=t=>new Date(t).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});

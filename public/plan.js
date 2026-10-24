@@ -71,11 +71,11 @@ function plCheck(sp){const I=new Map(),add=(x,lv,t)=>{if(x.log)return;const k=x.
   if(o.d>56*H)o.sp.forEach(x=>add(x,'r','Driving in the week of '+dlong(k)+' would be '+fmt(o.d)+', over 56 hours.'));
   if(pr&&o.d+pr.d>90*H)o.sp.forEach(x=>add(x,'r','Driving over this week and last would be '+fmt(o.d+pr.d)+', over the 90 hour fortnight limit.'));
   if(o.ext>2)o.sp.forEach(x=>{if(x.dv>9*H)add(x,'r','More than two 10 hour driving days in the week of '+dlong(k)+'.')})});
- /* 48h average over the reference period, with planned hours */
- const per={};sp.forEach(x=>{if(x.log)return;const P=refP(x.s),k=P.s;(per[k]=per[k]||{P,sp:[]}).sp.push(x)});
+ /* 48h average over each company's reference period, with planned hours. All your hours count in every period. */
+ const RG=refGroups();RG.forEach(g=>{const per={},who=RG.length>1&&g.names.length?' ('+g.names.map(esc).join(', ')+')':'';sp.forEach(x=>{if(x.log)return;const P=refP(x.s,g.rp),k=P.s;(per[k]=per[k]||{P,sp:[]}).sp.push(x)});
  Object.values(per).forEach(({P,sp:ps})=>{let tot=0;sp.forEach(x=>{tot+=x.w*Math.max(0,Math.min(x.e,P.e)-Math.max(x.s,P.s))/((x.e-x.s)||1)});
   const b=st.rpb&&st.rpb.p===P.s?st.rpb:null;if(b){const span=Math.max(0,(b.to-P.s)/(7*864e5)),lw=Math.min(span,(b.lv||0)/5);tot+=(b.avg||0)*H*Math.max(0,span-lw)+lvH(b.lv||0)}tot+=lvIn(b?Math.max(P.s,b.to):P.s,P.e);
-  const C=Math.max(1,Math.round((P.e-P.s)/(7*864e5)));if(tot>48*H*C)ps.forEach(x=>add(x,'a','With your planned shifts, the average for the period '+dlong(P.s)+' to '+dlong(P.e-864e5)+' would be '+fmt(tot/C)+' a week, over 48 hours.'))});
+  const C=Math.max(1,Math.round((P.e-P.s)/(7*864e5)));if(tot>48*H*C)ps.forEach(x=>add(x,'a','With your planned shifts, the average for the period '+dlong(P.s)+' to '+dlong(P.e-864e5)+who+' would be '+fmt(tot/C)+' a week, over 48 hours.'))})});
  return I}
 
 const LVO={r:3,a:2,i:1},worst=L=>(L||[]).reduce((m,x)=>Math.max(m,LVO[x.lv]||0),0);
