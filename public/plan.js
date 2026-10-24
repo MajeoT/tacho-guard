@@ -163,7 +163,7 @@ function plForm(p){p=p||{};const isNew=!p.id;
   I.forEach((A,k)=>{if(k==='new')return;const o=sp.find(x=>x.id===k);A.forEach(x=>{if(x.lv!=='i'&&!(I0.get(k)||[]).some(y=>y.t===x.t))L.push({lv:x.lv,t:'Knock-on for your '+(o&&o.o?esc(jobC(o.o.j).n)+' shift on '+dlong(o.s):'other shift')+': '+x.t})})});
   $('pfiss').innerHTML=L.length?L.map(x=>`<div class="note ${x.lv==='r'?'bad':x.lv==='a'?'warn':''}" style="margin-top:4px">${x.lv==='r'?'✕ ':x.lv==='a'?'⚠ ':'ℹ '}${x.t}</div>`).join(''):'<div class="note ok">✓ No rules broken.</div>';return L};
  mcb={no:()=>{moX();if(p.d)plDay(pdt(p.d))},rpl:()=>plPatList(),chk:()=>{const q=build();if(q)show(q)},ok:()=>{const q=build();if(!q)return;
-  if(+$('pfr').value){const wd=(new Date(pdt(q.d)).getDay()+6)%7;st.pat=(st.pat||[]).concat({id:plId(),j:q.j,days:[wd],s:q.s,e:q.e,br:q.br,dr:q.dr,from:q.d,ev:+$('pfr').value});if(!isNew)st.plan=(st.plan||[]).filter(x=>x.id!==p.id);if(p.fromPat)st.plx=(st.plx||[]).concat(p.fromPat)}
+  if(+$('pfr').value){const wd=(new Date(pdt(q.d)).getDay()+6)%7;st.pat=(st.pat||[]).concat({id:plId(),j:q.j,days:[wd],s:q.s,e:q.e,br:q.br,dr:q.dr,from:q.d,ev:+$('pfr').value});if(!isNew)st.plan=(st.plan||[]).filter(x=>x.id!==p.id);if(p.fromPat){st.plx=(st.plx||[]).concat(p.fromPat);/* the new repeat replaces the old one from this day on, so the two do not both appear */const pid=p.fromPat.split('|')[0];st.pat=(st.pat||[]).map(r=>r.id===pid&&!(r.to&&pdt(r.to)<pdt(q.d))?Object.assign({},r,{to:ymd(pdt(q.d)-864e5)}):r)}}
   else{if(p.fromPat)st.plx=(st.plx||[]).concat(p.fromPat);st.plan=(st.plan||[]).filter(x=>x.id!==q.id).concat(q)}
   save();plRender();plDay(pdt(q.d))}}}
 function plPatList(){const R=st.pat||[],D=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -209,12 +209,14 @@ function plAct(k,oid){const o=plOcc(Date.now()-15*864e5,Date.now()+2*864e5).find
 /* A planned shift whose start time has passed, that has not ended, with nothing logged for it yet. */
 function plDue(){const n=Date.now(),L=all();
  return plOcc(n-20*H,n+1).filter(o=>!o.st&&o.S<=n-5*M&&o.E>n&&!L.some(x=>x.e>o.S-H&&x.s<o.E)).sort((a,b)=>b.S-a.S)[0]||null}
+/* a planned shift starting within the next half hour (or already started), used to pick the job when a shift is started early */
+function plNear(){const n=Date.now(),L=all();return plOcc(n-20*H,n+31*M).filter(o=>!o.st&&o.S<=n+30*M&&o.E>n&&!L.some(x=>x.e>o.S-H&&x.s<o.E)).sort((a,b)=>Math.abs(a.S-n)-Math.abs(b.S-n))[0]||null}
 /* Starting a shift late against the plan: ask whether it really started at the planned time. */
 function plStartAsk(o,t){const n=Date.now(),j=jobC(o.j),A=all(),pe=A.length?A[A.length-1].e:0,ps=o.s.slice(0,5);
  mo(`<h3>Start Time</h3><p>You had <b>${esc(j.n)}</b> planned from <b>${ps}</b> to ${o.e.slice(0,5)} today. If you started at ${ps}, start the shift from then so your hours and breaks count from the right time.</p><button class="tg big" data-k="pl" style="font-weight:700">I started at ${ps}, as planned</button><button class="tg big" data-k="now">I am starting now (${hm(n)})</button><div class="tr" style="margin-top:12px"><label>Or I started at<input type="time" id="pst"></label><button class="tg" data-k="at">Use time</button></div><div class="note bad" id="psterr"></div><button class="tg big" data-k="no">Cancel</button>`);
  const go=x=>plCatch(x,t,()=>plStartAsk(o,t)),err=m=>{$('psterr').textContent=m};
  mcb={no:undo,now:()=>begin(t,1),pl:()=>go(Math.max(o.S,pe)),at:()=>{const v=$('pst').value;if(!v){err('Enter the time you started.');return}
-  const[h,m]=v.split(':').map(Number),q=new Date(n);q.setHours(h,m,0,0);let x=q.getTime();if(x>n)x-=864e5;
+  let x=prevT(v,n);
   if(x<=pe){err('That is before your last activity ended ('+hm(pe)+'). Pick a later time.');return}if(n-x>16*H){err('That is more than 16 hours ago. Check the time.');return}go(x)}}}
 
 document.addEventListener('change',e=>{if(e.target.id==='pfj')plDrv()});

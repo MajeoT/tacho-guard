@@ -441,7 +441,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-116';
+const APPV='tg-2026-10-23-117';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -672,15 +672,20 @@ function unBreak(){const u=bu[bu.length-1];if(!u||u.g!==bsig()){bu=[];render();r
 const mo=h=>{MO.innerHTML='<div class="mb">'+h+'</div>';MO.hidden=false};
 const moX=()=>{MO.hidden=true;MO.innerHTML=''};
 MO.onclick=e=>{const b=e.target.closest('[data-k]'),k=b&&b.dataset.k;if(k&&mcb[k])mcb[k](b)};
-const atT=(v,after)=>{const[h,m]=v.split(':').map(Number),d=new Date(after);d.setHours(h,m,0,0);if(d.getTime()<after)d.setDate(d.getDate()+1);return d.getTime()};
-const nearT=(v,ref)=>{const[h,m]=v.split(':').map(Number);let b=null;[-1,0,1].forEach(k=>{const d=new Date(ref);d.setDate(d.getDate()+k);d.setHours(h,m,0,0);const x=d.getTime();if(b===null||Math.abs(x-ref)<Math.abs(b-ref))b=x});return b};
+/* A typed HH:MM can mean more than one moment: the day before or after, and when the clocks go back 01:00 to 02:00 happens twice.
+   Every matching moment is listed, and each caller picks the one it means. */
+const tCands=(v,ref)=>{const[h,m]=v.split(':').map(Number),o=[];[-2,-1,0,1,2].forEach(k=>{const d=new Date(ref);d.setDate(d.getDate()+k);d.setHours(h,m,0,0);const x=d.getTime();[x-H,x,x+H].forEach(y=>{if(hm(y)===hm(x)&&!o.includes(y))o.push(y)})});return o.sort((a,b)=>a-b)};
+const atT=(v,after)=>tCands(v,after).find(x=>x>=after)||tCands(v,after+864e5).find(x=>x>=after);
+const nearT=(v,ref)=>tCands(v,ref).reduce((b,x)=>b===null||Math.abs(x-ref)<Math.abs(b-ref)?x:b,null);
+const prevT=(v,n)=>{const c=tCands(v,n).filter(x=>x<=n);return c.length?c[c.length-1]:nearT(v,n)};
+const sameDayT=(ts,v)=>{const c=tCands(v,ts).filter(x=>sod(x)===sod(ts));return c.length?c.reduce((b,x)=>Math.abs(x-ts)<Math.abs(b-ts)?x:b):nearT(v,ts)};
 function commit(n){if(st.active){if(n-st.active>=20000)st.sessions.push(rec(st.active,n));if(st.act==='d')gpsOff();st.active=null;st.act=null;st.ad=0;st.as=st.ae=null}}
 let bd=0,usnap=null;
 function begin(t,pl){
  /* a new shift started after its planned start time: ask if it really started on time (pl: already asked) */
  if(!pl&&!bd&&t!=='r'&&typeof plDue==='function'){const o=plDue();if(o){plStartAsk(o,t);return}}
  moX();const us=snap;if(us){const msg=NM[t]+' started at '+hm(bd||Date.now())+'. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';flash=msg;usnap=us;setTimeout(()=>{if(flash===msg){flash='';usnap=null;live()}},12000)}st.active=Date.now();st.act=t;if(bd){const x=bd;bd=0;st.sessions=st.sessions.filter(y=>!(y.e>x&&y.s>=x));st.sessions.forEach(y=>{if(y.e>x)y.e=x});st.active=x;if(st.rs&&x<st.rs)st.rs=x}if(t==='d'){gpsOn();wake()}save();render();setTimeout(tcAsk,50)}
-function undo(){moX();if(snap){st=JSON.parse(snap);snap=null}if(st.act==='d'){gpsOn();wake()}save();render()}
+function undo(){moX();if(snap){const au=st.aud;st=JSON.parse(snap);snap=null;if(au>(st.aud||0))st.aud=au}if(st.act==='d'){gpsOn();wake()}save();render()}
 /* Every rule that can stop you starting (or carrying on). Each entry: [time it allows you, why, 1 = driving only / 2 = work not POA, short name].
    The Today screen and the start check both use this, so they always agree. */
 function legalStart(t){t=t||'d';
@@ -707,15 +712,15 @@ function legalStart(t){t=t||'d';
 /* the weekly rest as it would be if you started work right now */
 function wrSim(){const n=Date.now(),sv=st.sessions,pc=allC;let I2=null;st.sessions=sv.concat([{s:n,e:n+6e4,t:'w'}]);allC=null;try{I2=wrInfo()}finally{st.sessions=sv;allC=pc}return I2}
 function gapAsk(le,n,next){
- mo(`<h3>Time Since Last Activity</h3><p>Your last activity ended ${tt(le)}, ${fmt(n-le)} ago. What were you doing?</p><button class="tg big" data-k="rest">Resting or a day off</button><button class="tg big" data-k="work">Working elsewhere</button><button class="tg big" data-k="skip">Not sure, leave it blank</button>`);
- mcb={rest:()=>{st.sessions.push({s:le,e:n,t:'r'});st.gq=n;save();moX();next()},
+ mo(`<h3>Time Since Last Activity</h3><p>Your last activity ended ${tt(le)}, ${fmt(n-le)} ago. What were you doing?</p><button class="tg big" data-k="rest">Resting or a day off</button><button class="tg big" data-k="work">Working elsewhere</button><button class="tg big" data-k="skip">Not sure, leave it blank</button><button class="tg big" data-k="cx">Cancel</button>`);
+ mcb={cx:undo,rest:()=>{st.sessions.push({s:le,e:n,t:'r'});st.gq=n;save();moX();next()},
   skip:()=>{st.gq=n;moX();next()},
   work:()=>{mo(`<h3>Working Elsewhere</h3><p>When did you start and finish? Work for another employer counts as other work.</p><div class="tr"><label>Start<input type="time" id="w1" value="${hm(le)}"></label><label>End<input type="time" id="w2"></label></div><div class="note bad" id="werr"></div><button class="tg big" data-k="ok">Save</button><button class="tg big" data-k="bk">Back</button>`);
    mcb={bk:()=>gapAsk(le,n,next),ok:()=>{
     if(!$('w1').value||!$('w2').value){$('werr').textContent='Enter a start and end time.';return}
     const s=atT($('w1').value,le-60000),e=atT($('w2').value,s+1);
     if(e>n){$('werr').textContent='That finishes after now. Check the times.';return}
-    clear(s,e);st.sessions.push({s,e,t:'w'});st.gq=n;save();moX();next()}}}}}
+    clear(s,e);st.sessions.push({s,e,t:'w',c:0});st.gq=n;save();moX();next()}}}}}
 function warnAsk(t,L,re){
  const u=L.R[0][0];
  mo(`<h3>Not Yet Legal</h3><p>Earliest legal start: <b>${tt(u)}</b>, in ${fmt(u-L.n)}.</p>${L.R.map(x=>`<div class="wn" style="margin:6px 0">${x[1]}. Allowed from ${tt(x[0])}.</div>`).join('')}<p class="note">If a time was logged wrong (for example a break or rest that was not recorded, or an activity left running), fix it now and the app will check again. Starting early can break the rules: a DVSA fixed penalty is £50 to £300 per offence, and serious cases can go to court or the Traffic Commissioner.</p><button class="tg big" data-k="fx">Check and fix my entries</button><button class="tg big" data-k="go">Start anyway, I will fix it later</button><button class="tg big" data-k="no">Do not start</button>`);
@@ -752,19 +757,20 @@ function audRules(S){const out=[];if(!S.length)return out;
  return out}
 function auditAsk(z,n,next){const A=all(),ls0=shiftStart(A),S0=A.filter(x=>x.s>=ls0&&x.t!=='r'),cur=S0.reduce((q,x)=>q+x.e-x.s,0);
  let gl=null;for(let i=1;i<S0.length;i++){const g=S0[i].s-S0[i-1].e;if(g>=15*M&&!gl)gl={s:S0[i-1].e,len:g}}
- const dys=[];for(let d=sod(z.e)+864e5;d<sod(n)&&dys.length<7;d+=864e5)if(!A.some(x=>x.e>d&&x.s<d+864e5))dys.push(d);
+ const dys=[];for(let d=nxd(sod(z.e));d<sod(n)&&dys.length<7;d=nxd(d))if(!A.some(x=>x.e>d&&x.s<d+864e5))dys.push(d);
  let hh=Math.floor(cur/H),mm=Math.round((cur%H)/M),br=gl?'y':'',bt=hm(gl?gl.s:ls0+Math.floor((z.e-ls0)/2)),bl=gl?Math.min(60,Math.round(gl.len/M/5)*5):30;
- const draw=()=>{mo(`<h3>Last Day Check</h3><p>Your last shift was <b>${tt(ls0)} to ${tt(z.e)}</b>. A quick check keeps your records and rest figures right.</p><div class="tr"><label>Hours worked<input type="number" id="auh" min="0" max="24" value="${hh}"></label><label>Minutes<input type="number" id="aum" min="0" max="59" value="${mm}"></label></div><div class="note">Logged: ${fmt(cur)} of driving and other work (not breaks).</div><p style="margin-top:10px">Did you take a break?</p><div class="tr"><button class="tg${br==='y'?' on2':''}" data-k="by">${br==='y'?'✓ ':''}Yes</button><button class="tg${br==='n'?' on2':''}" data-k="bn">${br==='n'?'✓ ':''}No</button></div>${br==='y'?`<div class="tr"><label>Roughly when<input type="time" id="abt" value="${bt}"></label></div><div class="tr" style="gap:6px;flex-wrap:wrap">${[15,20,30,45,60].map(m=>`<button class="tg${bl===m?' on2':''}" data-k="l${m}">${bl===m?'✓ ':''}${m} min</button>`).join('')}</div>${gl?'<div class="note">A break is already logged here. Change it only if it is wrong.</div>':''}`:''}${dys.length?`<div class="note" style="margin-top:10px">Nothing logged on ${dys.map(d=>dshort(d)).join(', ')}. If you worked, add it in the Log before carrying on.</div>`:''}<div class="note bad" id="auerr"></div><button class="tg big" data-k="ok">Save and continue</button>${dys.length?'<button class="tg big" data-k="lg">Open the Log</button>':''}<button class="tg big" data-k="sk">Skip, it is right</button>`);
+ const draw=()=>{mo(`<h3>Last Day Check</h3><p>Your last shift was <b>${tt(ls0)} to ${tt(z.e)}</b>. A quick check keeps your records and rest figures right.</p><div class="tr"><label>Hours worked<input type="number" id="auh" min="0" max="24" value="${hh}"></label><label>Minutes<input type="number" id="aum" min="0" max="59" value="${mm}"></label></div><div class="note">Logged: ${fmt(cur)} of driving and other work (not breaks).</div><p style="margin-top:10px">Did you take a break?</p><div class="tr"><button class="tg${br==='y'?' on2':''}" data-k="by">${br==='y'?'✓ ':''}Yes</button><button class="tg${br==='n'?' on2':''}" data-k="bn">${br==='n'?'✓ ':''}No</button></div>${br==='y'?`<div class="tr"><label>Roughly when<input type="time" id="abt" value="${bt}"></label></div><div class="tr" style="gap:6px;flex-wrap:wrap">${[15,20,30,45,60].map(m=>`<button class="tg${bl===m?' on2':''}" data-k="l${m}">${bl===m?'✓ ':''}${m} min</button>`).join('')}</div>${gl?'<div class="note">A break is already logged here. Change it only if it is wrong.</div>':''}`:''}${dys.length?`<div class="note" style="margin-top:10px">Nothing logged on ${dys.map(d=>dshort(d)).join(', ')}. If you worked, add it in the Log before carrying on.</div>`:''}<div class="note bad" id="auerr"></div><button class="tg big" data-k="ok">Save and continue</button>${dys.length?'<button class="tg big" data-k="lg">Open the Log</button>':''}<button class="tg big" data-k="sk">Skip, it is right</button><button class="tg big" data-k="cx">Cancel</button>`);
   const rd=()=>{const h=$('auh'),m=$('aum'),t=$('abt');if(h)hh=+h.value||0;if(m)mm=+m.value||0;if(t&&t.value)bt=t.value};
-  mcb={by:()=>{rd();br='y';draw()},bn:()=>{rd();br='n';draw()},sk:()=>{st.aud=z.e;save();moX();next()},lg:()=>{st.aud=z.e;save();moX();openDay(dys[0],'today')},
+  mcb={cx:undo,by:()=>{rd();br='y';draw()},bn:()=>{rd();br='n';draw()},sk:()=>{st.aud=z.e;save();moX();next()},lg:()=>{st.aud=z.e;save();moX();openDay(dys[0],'today')},
    ok:()=>{rd();const er=x=>{$('auerr').textContent=x},want=(hh*60+mm)*M;if(hh<0||hh>24||mm<0||mm>59||want<=0){er('Enter the hours and minutes you worked.');return}
     const sv=JSON.stringify(st);let b=null;
     if(br==='y'&&!(gl&&Math.abs(nearT(bt,ls0+(z.e-ls0)/2)-gl.s)<M)){const t0=nearT(bt,ls0+(z.e-ls0)/2);if(t0<ls0||t0+bl*M>z.e+H){er('The break has to be during your shift ('+hm(ls0)+' to '+hm(z.e)+').');return}b={s:t0,len:bl}}
+    /* breaks first, then the hours, so the total ends up as typed */
+    if(br==='n'&&gl){const pv=st.sessions.filter(x=>x.t!=='r'&&x.e===gl.s)[0];if(pv){clear(gl.s,gl.s+gl.len,1);pv.e=gl.s+gl.len}}
+    if(b){clear(b.s,b.s+b.len*M);st.sessions.push({s:b.s,e:b.s+b.len*M,t:'r'})}
     const S1=st.sessions.filter(x=>x.t!=='r'&&x.s>=ls0).sort((a,b2)=>a.s-b2.s),diff=want-S1.reduce((q,x)=>q+x.e-x.s,0);
     if(diff>0&&S1.length){const l=S1[S1.length-1],ne=Math.min(l.e+diff,n);clear(l.e,ne,1);l.e=ne}
     else if(diff<0){let rem=-diff;for(let i=S1.length-1;i>=0&&rem>0;i--){const x=S1[i],cut=Math.min(x.e-x.s,rem);x.e-=cut;rem-=cut;if(x.e<=x.s)st.sessions=st.sessions.filter(y=>y!==x)}}
-    if(b){clear(b.s,b.s+b.len*M);st.sessions.push({s:b.s,e:b.s+b.len*M,t:'r'})}
-    if(br==='n'&&gl){/* the logged break was wrong: take it out */}
     const R=audRules(all().filter(x=>x.s>=ls0));
     const fin=()=>{st.aud=z.e;save();moX();render();next()};
     if(!R.length){fin();return}
@@ -785,12 +791,12 @@ function setAct(t){
  const chk1=()=>{if(t!=='r'){const L=legalStart(t);if(L.R.length){warnAsk(t,L,chk1);return}}begin(t)},chk0=()=>{if(t==='x'&&isTc())t='d';if(t==='d'&&!isTc())t='x';const a1=all(),l1=a1[a1.length-1],n1=Date.now();if(t!=='r'&&st.se&&l1&&!l1.live&&st.se>=l1.e&&n1-l1.e<9*H){resumeAsk(t,l1,chk1);return}chk1()};
  if(was&&ps)swapAsk(t,was,ps,n,chk0);
  else{const zs=st.sessions.filter(x=>x.t!=='r'&&x.e>rs),z=zs.length?zs.reduce((a,b)=>b.e>a.e?b:a):null,gp=()=>{const e2=st.sessions.filter(x=>x.e>rs).map(x=>x.e),l2=e2.length?Math.max(...e2):0;if(l2&&n-l2>=60*M&&(st.gq||0)<l2&&!(st.se&&st.se>=l2&&n-l2<9*H))gapAsk(l2,n,chk);else chk()};
-  const nsh=!was&&t!=='r'&&jobsOn()&&(!z||n-z.e>=9*H||!!(st.se&&st.se>=z.e))&&(st.tmt||0)<(z?z.e:1),chk=()=>{if(nsh)startAsk(()=>chk0(),0);else chk0()},shN=!was&&z&&n-z.e>=9*H&&(st.fq||0)<z.e;
+  const nsh=!was&&t!=='r'&&jobsOn()&&(!z||n-z.e>=9*H)&&(st.tmt||0)<(z?z.e:1),chk=()=>{if(nsh&&(st.tmt||0)<(z?z.e:1))startAsk(()=>chk0(),0);else chk0()},shN=!was&&z&&n-z.e>=9*H&&(st.fq||0)<z.e;
   const go1=()=>{if(shN&&nsh)startAsk(()=>chk0(),0,{z,n,gp});else if(shN)shiftAsk(z,n,gp,chk);else if(!was)gp();else chk0()};
   if(!was&&t!=='r'&&audDue(z,n))auditAsk(z,n,go1);else go1()}}
 function startAsk(next,chg,sh){
  /* a shift planned for now picks its job and tacho setting for you */
- const J=jobs(),pd=!chg&&typeof plDue==='function'?plDue():null;let sj=jobC(pd?pd.j:st.cj).id,tc=st.tm!==undefined&&st.tm!==null&&!chg&&!pd?!!st.tm:jobC(sj).tc!==false,wk='y';
+ const J=jobs(),pd=!chg&&typeof plDue==='function'?(plDue()||(typeof plNear==='function'?plNear():null)):null;let sj=jobC(pd?pd.j:st.cj).id,tc=st.tm!==undefined&&st.tm!==null&&!chg&&!pd?!!st.tm:jobC(sj).tc!==false,wk='y';
  const sel=(on,bg,fg)=>on?`style="background:${bg};border-color:${bg};color:${fg||'#fff'};font-weight:700"`:'';
  /* one screen for everything a new shift needs: weekly rest warning, when the last shift ended, job, tacho and walkaround */
  const RI=!chg?wrInfo():null,rcLE=RI&&RI.rc?RI.S[RI.S.length-1].e:0;let se1=sh?hm(sh.z.e):'',oth=false;
@@ -831,7 +837,7 @@ function swapAsk(t,was,ps,n,next){
  const o=[5,10,15,30,60].filter(m=>n-m*M>ps);
  mo(`<h3>${NM[t]} Start</h3><p>You were on ${NM[was]} from ${hm(ps)}. If you changed a while ago, say when, and ${NM[was]} will end at that time. To correct what was logged before, tap Edit earlier entries.</p><button class="tg big" data-k="now">Skip, it started just now</button>${o.map(m=>`<button class="tg big" data-k="m${m}">${m===60?'1 hour':m+' minutes'} ago (${hm(n-m*M)})</button>`).join('')}<div class="tr" style="margin-top:12px"><label>Or at this time<input type="time" id="sw1"></label><button class="tg" data-k="at">Use time</button></div><div class="note bad" id="swerr"></div><button class="tg big" data-k="fx" id="swfx">Edit earlier entries</button><button class="tg big" data-k="no">Cancel, stay on ${NM[was]}</button>`);
  mcb={no:undo,fx:()=>fixAsk(t,was,ps,n,next,$('sw1').value),now:()=>{moX();next()},at:()=>{const v=$('sw1').value;if(!v){$('swerr').textContent='Enter a time.';return}
-   const[h,m]=v.split(':').map(Number),q=new Date(n);q.setHours(h,m,0,0);let x=q.getTime();if(x>n)x-=864e5;
+   let x=prevT(v,n);
    if(x<=ps){$('swerr').textContent='That is before '+NM[was]+' started ('+hm(ps)+'). Pick a later time, or tap Edit earlier entries to correct what was logged before.';$('swfx').hidden=false;return}
    bd=x;moX();next()}};
  o.forEach(m=>mcb['m'+m]=()=>{bd=n-m*M;moX();next()})}
@@ -1021,7 +1027,7 @@ async function pushRem(force){if(!sess||!cloudReady||!pushOk()||!pushOn()||Notif
   await rest('DELETE','tg_reminders?sent_at=is.null'+(L.length?'&key=not.in.'+encodeURIComponent('('+L.map(r=>'"'+r.key+'"').join(',')+')'):''),null,'return=minimal');prSig=sig;
   /* tidy: reminders already handled and over a day old */
   rest('DELETE','tg_reminders?sent_at=not.is.null&fire_at=lt.'+encodeURIComponent(new Date(n-864e5).toISOString()),null,'return=minimal').catch(()=>{})}catch(e){prSig=''}}
-$('rmb').onclick=e=>{const b=e.target.closest('[data-rm]');if(!b)return;const a=b.dataset.rm,k=b.dataset.rk;if(a==='snz'){snz[k]=Date.now()+5*M;fired[k]=false}rmq.delete(k);rmDraw();if(a==='brk')setAct('r');else if(a==='start')setAct('w')};
+$('rmb').onclick=e=>{const b=e.target.closest('[data-rm]');if(!b)return;const a=b.dataset.rm,k=b.dataset.rk;if(a==='snz'){snz[k]=Date.now()+5*M;fired[k]=false}rmq.delete(k);rmDraw();if(a==='brk')setAct('r');else if(a==='start'){if(!MO.hidden)return;setAct('w')}};
 $('rml').innerHTML=[5,10,15,20,30,45].map(m=>`<option value="${m}">${m} minutes before</option>`).join('');
 $('rms').innerHTML=[[-1,'Off'],[0,'At the start time'],[5,'5 minutes before'],[10,'10 minutes before'],[15,'15 minutes before'],[30,'30 minutes before']].map(([m,t])=>`<option value="${m}">${t}</option>`).join('');
 $('rml').onchange=()=>{st.rml=+$('rml').value;save();live()};$('rms').onchange=()=>{st.rms=+$('rms').value;save();live()};
@@ -1397,7 +1403,7 @@ $('live').addEventListener('click',e=>{if(e.target.closest('[data-ua]')){if(usna
 /* throw away everything logged in the current shift (with a 20 second undo) */
 function clearShift(ss,a){const cl=a.filter(x=>x.s>=ss);
  mo(`<h3>Clear Shift?</h3><p>This removes everything logged since <b>${tt(ss)}</b>${cl.length?' ('+cl.length+(cl.length===1?' entry':' entries')+')':''}${st.active?' and stops what is running':''}. Your rest and limits go back to how they were before this shift. You will have 20 seconds to tap Undo on the Today page.</p><button class="tg big bad" data-k="ok">Yes, clear this shift</button><button class="tg big" data-k="no">No, go back</button>`);
- mcb={no:moX,ok:()=>{const sv=JSON.stringify(st);if(st.active&&st.act&&st.act!=='r'&&st.act==='d')gpsOff();st.sessions=st.sessions.filter(x=>x.s<ss);st.active=null;st.act=null;st.ad=0;st.as=st.ae=null;if(st.se&&st.se>=ss)delete st.se;usnap=null;snap=null;fired={};moX();flash='Shift cleared. <button class="tg" data-ur="1" style="margin-left:6px">Undo</button>';rsnap=sv;setTimeout(()=>{if(rsnap===sv)rsnap=null;flash='';live()},20000);save();render();live()}}}
+ mcb={no:moX,ok:()=>{const sv=JSON.stringify(st);if(st.active&&st.act&&st.act!=='r'&&st.act==='d')gpsOff();st.sessions=st.sessions.filter(x=>x.s<ss&&!(x.t==='r'&&x.e>=ss));st.active=null;st.act=null;delete st.tmt;delete st.dd;st.fq=0;st.gq=0;st.ad=0;st.as=st.ae=null;if(st.se&&st.se>=ss)delete st.se;usnap=null;snap=null;fired={};moX();flash='Shift cleared. <button class="tg" data-ur="1" style="margin-left:6px">Undo</button>';rsnap=sv;setTimeout(()=>{if(rsnap===sv)rsnap=null;flash='';live()},20000);save();render();live()}}}
 const endAsk=same=>{const n=Date.now(),a=all(),z=a[a.length-1],fresh0=!z||(!z.live&&n-z.e>=9*H),ss=fresh0?n:shiftStart(a);
  const lo=st.act&&st.active?st.active:(z?z.e:0);let T=n,touched=false,note='';
  const pre=same===1&&st.act?NM[st.act]+' is already running and cannot be switched off on its own. To change activity, tap Cancel and then tap the new one. ':'';
@@ -1428,17 +1434,21 @@ const listClick=e=>{
  if(d.more){lim+=14;list();return}
  if(d.ed){ed=+d.ed;list();return}
  if(d.cn){ed=null;list();return}
- if(d.sv){const x=st.sessions.find(y=>String(y.s)===d.sv),f=(ts,v)=>{const q=new Date(ts),[h,m]=v.split(':').map(Number);q.setHours(h,m,0,0);return q.getTime()};
+ if(d.sv){const x=st.sessions.find(y=>String(y.s)===d.sv),f=(ts,v)=>sameDayT(ts,v);
   if(!x||!$('e1').value||!$('e2').value)return;
   const s2=f(x.s,$('e1').value),e2=f(x.e,$('e2').value);
   if(!(e2>s2)){$('eerr').textContent='The end time must be after the start time.';return}
-  const nt=$('e3').value;st.sessions=st.sessions.filter(y=>y!==x);clear(s2,e2,1);x.s=s2;x.e=e2;x.t=nt;x.chk=1;delete x.bq;st.sessions.push(x);ed=null;save();render();return}
+  const nt=$('e3').value,oe=x.e;st.sessions=st.sessions.filter(y=>y!==x);clear(s2,e2,1);x.s=s2;x.e=e2;x.t=nt;x.chk=1;delete x.bq;st.sessions.push(x);/* if the shift was ended at this entry, it stays ended at its new finish */if(st.se&&st.se>=oe&&e2>st.se)st.se=e2;ed=null;save();render();return}
  if(d.s){if(dArm!==d.s){dArm=d.s;clearTimeout(dT);dT=setTimeout(()=>{dArm=null;render()},4000);render();return}dArm=null;clearTimeout(dT);st.sessions=st.sessions.filter(x=>String(x.s)!==d.s);save();render()}
 };
 $('list').onclick=listClick;$('dayc').onclick=listClick;
 $('dback').onclick=()=>showTab(dayFrom);$('tlog').onclick=()=>openDay(sod(Date.now()),'today');
 $('dform').onsubmit=e=>{e.preventDefault();const dv=ymd(dayView),s=new Date(dv+'T'+$('ds').value).getTime(),en=new Date(dv+'T'+$('de').value).getTime();if(!(en>s)){$('derr').textContent='The end time must be after the start time, on the same day. For an overnight entry, use the Log tab.';return}$('derr').textContent='';clear(s,en,1);st.sessions.push({s,e:en,t:$('dt').value,chk:1});save();$('ds').value='';$('de').value='';render()};
-$('esb').onclick=()=>{const v=$('est').value;if(!v)return;const[h,m]=v.split(':').map(Number),q=new Date(),n=Date.now();q.setHours(h,m,0,0);let x=q.getTime();const fut=x>n;if(fut)x-=864e5;const say=t=>{flash=t;setTimeout(()=>{flash='';live()},6000);esFor=0;save();render()};if(fut&&n-x>12*H){say('That time is later than now. Pick a time before now.');return}if(st.active&&st.act!=='r'){if(x<st.active)clear(x,st.active,1);st.active=x;if(st.rs&&x<st.rs)st.rs=x;say(NM[st.act]+' start changed to '+hm(x)+'.');return}const rs=st.rs||0;let k=null;st.sessions.forEach(y=>{if((y.t||'d')!=='r'&&y.e>rs&&(!k||y.e>k.e))k=y});if(k&&n-k.e>=9*H)k=null;if(k){if(x<=k.s){say('Pick a time after your last activity started ('+hm(k.s)+') and before now.');return}k.e=x;if(rs&&x<=rs)st.rs=Math.max(k.s,x-1)}else if(!st.active)return;if(st.active)st.active=x;say(($('esl').textContent.startsWith('Rest')?'Rest':'Break')+' start changed to '+hm(x)+'.')};
+let estOk=0;
+$('esb').onclick=()=>{const v=$('est').value;if(!v)return;const n=Date.now(),near=nearT(v,n),fut=near>n;let x=prevT(v,n);const say=t=>{flash=t;setTimeout(()=>{flash='';live()},6000);esFor=0;save();render()};if(fut&&n-x>12*H){say('That time is later than now. Pick a time before now.');return}if(st.active&&st.act!=='r'){const ov=x<st.active?st.sessions.filter(y=>y.e>x&&y.s<st.active):[];
+  if(ov.length&&!estOk){mo(`<h3>Replace Earlier Entries?</h3><p>Starting ${NM[st.act].toLowerCase()} at <b>${hm(x)}</b> covers ${ov.length===1?'an entry':ov.length+' entries'} you already logged:</p>${ov.map(y=>`<div class="item"><div class="lbl">${IC[y.t||'d']} ${NM[y.t||'d']}</div><div class="note">${hm(y.s)} to ${hm(y.e)}</div></div>`).join('')}<p class="note">They would be replaced by ${NM[st.act].toLowerCase()}. You can undo it for 20 seconds.</p><button class="tg big bad" data-k="ok">Replace them</button><button class="tg big" data-k="no">Keep them</button>`);mcb={ok:()=>{estOk=1;moX();$('esb').onclick()},no:()=>{moX();$('est').value=hm(st.active);estPend()}};return}
+  estOk=0;const sv=ov.length?JSON.stringify(st):null;if(x<st.active)clear(x,st.active,1);st.active=x;if(st.rs&&x<st.rs)st.rs=x;say(NM[st.act]+' start changed to '+hm(x)+'.');
+  if(sv){rsnap=sv;flash=NM[st.act]+' start changed to '+hm(x)+'. <button class="tg" data-ur="1" style="margin-left:6px">Undo</button>';setTimeout(()=>{if(rsnap===sv)rsnap=null;flash='';live()},20000);live()}return}const rs=st.rs||0;let k=null;st.sessions.forEach(y=>{if((y.t||'d')!=='r'&&y.e>rs&&(!k||y.e>k.e))k=y});if(k&&n-k.e>=9*H)k=null;if(k){if(x<=k.s){say('Pick a time after your last activity started ('+hm(k.s)+') and before now.');return}k.e=x;if(rs&&x<=rs)st.rs=Math.max(k.s,x-1)}else if(!st.active)return;if(st.active)st.active=x;say(($('esl').textContent.startsWith('Rest')?'Rest':'Break')+' start changed to '+hm(x)+'.')};
 /* A time picked in "Started At" only counts once saved, so make that obvious: the button lights up as Save,
    and once the picker closes the app asks straight away whether to change it. */
 function estPend(){const p=!!$('est').value&&$('est').value!==$('est').dataset.cur;$('esb').classList.toggle('pend',p);$('esb').textContent=p?'Save':'Change'}
@@ -1899,14 +1909,14 @@ function tcWiz(g,gi){const B=[];tcDays(g).forEach(d=>d.r.forEach(r=>{const t=r.t
   if(i>=B.length){mo(`<h3>Confirm</h3><p>That was the last entry. The tachograph now asks you to confirm them. Check the list it shows, then confirm.</p><p class="note">If it asks for a country, enter where you were (for example UK).</p><button class="tg big" data-k="dn">Done, mark as entered</button><button class="tg big" data-k="bk">Back</button>`);return}
   const b=B[i],st0=i===0?Math.min(wd,b.e-M):b.s;
   mo(`<h3>Entry ${i+1} of ${B.length}</h3><p class="note">The tachograph shows the start: <b>${day(st0)}</b></p><div class="g" style="text-align:center"><div style="font-size:44px;line-height:1">${TLB[b.t][0]}</div><div class="lbl" style="margin-top:6px">${TLB[b.t][1]}</div></div><p>Pick <b>${TLB[b.t][0]} ${TLB[b.t][1].toLowerCase()}</b>, then set the end to <b>${day(b.e)}</b> and press OK.</p><div class="note">${fmt(b.e-st0)}${b.t==='r'?' of break or rest.':b.t==='p'?' of availability.':' of other work.'}</div><button class="tg big" data-k="nx">Next</button><button class="tg big" data-k="bk">Back</button><button class="tg big" data-k="no">Close</button>`)};
- mcb={no:moX,nx:()=>{if(i<0){const v=$('twd').value;if(v)wd=nearT(v,wd)}i++;draw()},bk:()=>{i--;draw()},dn:()=>{const k=String(g.items[0].s),d=st.tce||[];if(!d.includes(k))st.tce=d.concat(k).slice(-40);save();moX();tcEnt()}};draw()}
+ mcb={no:moX,nx:()=>{if(i<0){const v=$('twd').value;if(v)wd=nearT(v,wd)}i++;draw()},bk:()=>{i--;draw()},dn:()=>{const k=String(g.items[0].s),d=st.tce||[];if(!d.includes(k))st.tce=d.concat(k).slice(-40);st.mx=Date.now();save();moX();tcEnt();mxUpdate()}};draw()}
 /* The card has just gone back in after time it could not record: offer the manual entries straight away */
 function tcAsk(){if(!st.active||!MO.hidden||typeof tcGaps!=='function')return;const G=tcGaps(),a=st.active,done=new Set((st.tce||[]).map(String)),seen=st.tcp||[];
  const g=G.find(x=>x.ins&&Math.abs(x.ins-a)<2*M&&!done.has(String(x.items[0].s))&&!seen.includes(String(x.items[0].s)));if(!g)return;
  const k=String(g.items[0].s),cnt=sm=>{let n=0,l=null;tcDays(g,sm).forEach(d=>d.r.forEach(r=>{if(!(l&&l.t===r.t&&l.e===r.s))n++;l=r}));return n},ns=cnt(true),nd=cnt(false);
  st.tcp=seen.concat(k).slice(-40);save();
  mo(`<h3>Manual Entries</h3><p>Your card has been out since <b>${tt(g.wd||g.items[0].s)}</b>, and you did work it could not record. The tachograph will ask you to add it now.</p><button class="tg big" data-k="s" style="font-weight:700">Guide me: Simple (${ns} ${ns===1?'entry':'entries'})</button><button class="tg big" data-k="d">Guide me: Detailed (${nd} ${nd===1?'entry':'entries'})</button><p class="note">Simple puts each working day in as one block. Detailed adds every break. Ask your transport manager if you are not sure which they want.</p><button class="tg big" data-k="dn">Already entered</button><button class="tg big" data-k="no">Not now</button>`);
- mcb={no:moX,s:()=>{st.tcs='s';save();tcWiz(g)},d:()=>{st.tcs='d';save();tcWiz(g)},dn:()=>{const d=st.tce||[];if(!d.includes(k))st.tce=d.concat(k).slice(-40);save();moX()}}}
+ mcb={no:moX,s:()=>{st.tcs='s';save();tcWiz(g)},d:()=>{st.tcs='d';save();tcWiz(g)},dn:()=>{const d=st.tce||[];if(!d.includes(k))st.tce=d.concat(k).slice(-40);st.mx=Date.now();save();moX();mxUpdate()}}}
 function tcText(g){return tcDays(g).map(d=>new Date(d.d).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'})+'\n'+d.r.map(r=>'  '+TLB[r.t][1]+(r.t==='x'?' (driving with no tacho)':'')+': '+hm(r.s)+' to '+(r.e>=nxd(sod(r.s))?'24:00':hm(r.e))).join('\n')).join('\n')}
 function tcEnt(){const el=$('tp-ent');if(!el)return;const G=tcGaps(),done=new Set((st.tce||[]).map(String));
  let h=`<div class="tr" style="gap:6px;margin:0 0 8px"><button class="tg${tcSimple()?' on2':''}" data-tcm="s" style="flex:1">${tcSimple()?'✓ ':''}Simple</button><button class="tg${tcSimple()?'':' on2'}" data-tcm="d" style="flex:1">${tcSimple()?'':'✓ '}Detailed</button></div><p class="note" style="margin-top:0">${tcSimple()?'<b>Simple:</b> each working day is one ⚒ block from your first start to your last finish, with 🛏 rest between days. Breaks under 3 hours are inside the work block. Fewer entries, quicker at the vehicle.':'<b>Detailed:</b> every break and rest exactly as you logged it. Use this if your employer wants breaks shown.'} Ask your transport manager which they prefer.</p><p class="note">These are the periods your card does not know about: work in a no-tacho job, availability, and the rest in between. They are listed in the order the tachograph asks for them, from the time your card last came out.</p><details class="bx"><summary>How manual entries work</summary><div class="dbody"><ol style="margin:0;padding-left:18px"><li>Put your card in. The tachograph shows when it last came out and asks if you want to add manual entries. Choose yes.</li><li>It starts at that time. For each block, pick the symbol (⚒ other work, ◪ availability, 🛏 break or rest) and set the time the block ended.</li><li>It moves on to the next block, and keeps going until it reaches now.</li><li>Confirm the entries, and enter the country if it asks.</li></ol><p style="margin:8px 0 0"><b>Days in an office or another job:</b> enter the work as ⚒ other work, and the time between as 🛏 rest, including the nights and any days off. Breaks in that work can be entered as rest too, so they count as breaks. Every hour from the card coming out to going back in has to be one of these.</p><p style="margin:8px 0 0"><b>Time at the vehicle:</b> putting the entries in takes a few minutes, and the vehicle should not move until it is done. With your card in, that time is recorded as other work, so it counts as working time. Allow for it when you plan your start.</p><p style="margin:8px 0 0">Tap <b>Step by step</b> on a block below and the app walks you through it, one screen per entry, as the tachograph asks.</p></div></details>`;
