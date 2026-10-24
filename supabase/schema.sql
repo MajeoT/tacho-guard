@@ -28,11 +28,11 @@ create index if not exists tg_walks_user_checked on public.tg_walks (user_id, ch
 -- Size limits. Anyone can create an account, so these stop one account filling the database.
 -- A year of records is about 100 KB, so the limits leave plenty of room.
 alter table public.tg_state drop constraint if exists tg_state_j_size;
-alter table public.tg_state add  constraint tg_state_j_size check (octet_length(j) <= 5000000);
+alter table public.tg_state add  constraint tg_state_j_size check (octet_length(j) <= 1000000);  -- a year of entries is about 75-170 KB
 alter table public.tg_state drop constraint if exists tg_state_u_pos;
 alter table public.tg_state add  constraint tg_state_u_pos  check (u >= 0);
 alter table public.tg_walks drop constraint if exists tg_walks_j_size;
-alter table public.tg_walks add  constraint tg_walks_j_size check (octet_length(j) <= 1000000);
+alter table public.tg_walks add  constraint tg_walks_j_size check (octet_length(j) <= 65536);  -- a check without photos is 2-4 KB
 alter table public.tg_walks drop constraint if exists tg_walks_id_len;
 alter table public.tg_walks add  constraint tg_walks_id_len check (char_length(id) between 1 and 64);
 
@@ -64,3 +64,11 @@ create policy "own rows" on public.tg_walks for all to authenticated
 -- which ignores row level security, so take everything away and give back just these four.
 revoke all on public.tg_state, public.tg_walks from anon, authenticated;
 grant select, insert, update, delete on public.tg_state, public.tg_walks to authenticated;
+
+-- New objects in public are not open to anon/authenticated by default; grant each one on purpose.
+alter default privileges for role postgres in schema public revoke all on tables from anon, authenticated;
+alter default privileges for role postgres in schema public revoke all on functions from anon, authenticated, public;
+alter default privileges for role postgres in schema public revoke all on sequences from anon, authenticated;
+revoke all on all tables in schema public from anon;
+revoke all on all sequences in schema public from anon;
+revoke all on table public.tg_push_keys from anon, authenticated;
