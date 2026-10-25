@@ -87,11 +87,17 @@ function plFree(d,base,baseI){const n=Date.now(),D0=Math.max(d,n),D1=nxd(d);if(D
  const ea=Math.max(D0,prev?prev+11*H:D0),laR=nxt===Infinity?Infinity:nxt-11*H,la=Math.min(laR,ea+15*H);
  if(ea>=D1)return{lv:3,ea,la,txt:'No start time today leaves an 11 hour rest after your last shift.',R:[]};
  const win=Math.min(la,D1+15*H)-ea;if(win<4*H)return{lv:3,ea,la,txt:win>0?'Only '+fmt(win)+' between the rests you need around your other shifts.':'No room between the rests you need around your other shifts.',R:[]};
- const s0=ea<d+4*H&&la-(d+4*H)>=8*H?d+4*H:ea,e0=Math.min(s0+12*H,la),tj=jobs().find(j=>j.tc!==false)||jobs()[0],w=e0-s0-(e0-s0>9*H?45:30)*M;
- const hyp={s:s0,e:e0,w,dv:Math.min(w,9*H),tc:tj.tc!==false,br:e0-s0>9*H?45:30,id:'hyp'};
- const I=plCheck(base.concat([hyp]).sort((a,b)=>a.s-b.s)),R=[];
- I.forEach((L,k)=>{L.forEach(x=>{if(x.lv==='i')return;if(k==='hyp')R.push(x);else if(!(baseI.get(k)||[]).some(y=>y.t===x.t)){const o=base.find(z=>z.id===k);R.push({lv:x.lv,t:'Knock-on for your '+(o&&o.o?esc(jobC(o.o.j).n)+' shift on '+dlong(o.s):'next shift')+': '+x.t})}})});
- return{lv:Math.max(1,worst(R)),ea,la:laR,s0,e0,R,txt:''}}
+ const s0=ea<d+4*H&&la-(d+4*H)>=8*H?d+4*H:ea,tj=jobs().find(j=>j.tc!==false)||jobs()[0];
+ const test=(a,e)=>{const w=e-a-(e-a>9*H?45:30)*M,hyp={s:a,e,w,dv:Math.min(w,9*H),tc:tj.tc!==false,br:e-a>9*H?45:30,id:'hyp'};
+  const I=plCheck(base.concat([hyp]).sort((x,y)=>x.s-y.s)),R=[];
+  I.forEach((L,k)=>{L.forEach(x=>{if(x.lv==='i')return;if(k==='hyp')R.push(x);else if(!(baseI.get(k)||[]).some(y=>y.t===x.t)){const o=base.find(z=>z.id===k);R.push({lv:x.lv,t:'Knock-on for your '+(o&&o.o?esc(jobC(o.o.j).n)+' shift on '+dlong(o.s):'next shift')+': '+x.t})}})});
+  return{s0:a,e0:e,R,lv:Math.max(1,worst(R))}};
+ /* A day is only marked unavailable if no sensible shift fits. Try the longest (up to 12h) first, then shorter ones and one that finishes by midnight, so a long test shift running into the night does not make the whole day look closed. */
+ const full=test(s0,Math.min(s0+12*H,la));if(full.lv===1)return{lv:1,ea,la:laR,s0,e0:full.e0,R:full.R,txt:''};
+ const C=[];[10,8,6,4].forEach(h=>{const e=Math.min(s0+h*H,la);if(e-s0>=4*H)C.push([s0,e])});if(D1-s0>=4*H&&D1<full.e0)C.push([s0,Math.min(D1,la)]);
+ let best=full;for(const [a,e] of C){const r=test(a,e);if(r.lv<best.lv||(r.lv===best.lv&&r.e0-r.s0>best.e0-best.s0&&best!==full))best=r;if(best.lv===1)break}
+ if(best!==full){const why=[...new Set(full.R.filter(x=>(LVO[x.lv]||0)>(best.lv>1?best.lv:1)).map(x=>x.t))];best.R=best.R.concat([{lv:'i',t:'A shift from '+plHm(best.s0)+' to '+plHm(best.e0)+' fits. A longer one, to '+plHm(full.e0)+', would not: '+why.join(' ')}])}
+ return{lv:best.lv,ea,la:laR,s0:best.s0,e0:best.e0,R:best.R,txt:''}}
 
 /* Where your NEXT weekly rest can start, from what you have logged plus your plan: the first gap that is long enough for a full 45h rest, and
    the first gap long enough for a reduced 24h rest. Only gaps between one activity and the next count (the time before your first shift since
@@ -142,7 +148,7 @@ function plDay(d){const n=Date.now(),sp=plSpans(),I=plCheck(sp),WR=plRests(sp),o
  if(o2&&o2.d+o2.w)h+=`<div class="item"><div class="lbl">Logged</div><div class="lbl">${fmt(o2.d)} driving, ${fmt(o2.w)} work</div></div>`;
  occ.forEach(o=>{const j=jobC(o.j),stx=o.st==='skip'?' · not worked':o.st==='done'||o.E<=n?' · past':'';
   h+=`<div class="bx" style="margin-top:8px;border-left:4px solid ${JCOL[jobI(j.id)]}"><div class="row"><span class="lbl">${esc(j.n)}${j.tc===false?' (no tacho)':''}${o.pat?' · repeats '+ordW(((st.pat||[]).find(r=>r.id===o.pat)||{}).ev):''}${stx}</span><span class="lbl">${o.s.slice(0,5)}–${o.e.slice(0,5)}</span></div><div class="note">${o.br?o.br+' min unpaid break. ':''}${j.tc!==false&&o.dr?o.dr+'h driving expected. ':''}Working time about ${fmt(o.E-o.S-(o.br||0)*M)}.</div>${o.st==='skip'||o.st==='done'||o.E<=n?'':isz(I.get(o.oid))}<div class="tr" style="margin:8px 0 0;gap:6px;flex-wrap:wrap"><button class="tg" data-k="e:${o.oid}">Edit${o.pat?' this day':''}</button>${o.pat?`<button class="tg" data-k="es:${o.pat}">Edit repeat</button>`:''}<button class="tg" data-k="x:${o.oid}">Remove${o.pat?' this day':''}</button></div></div>`});
- if(fr){h+=`<div class="bx" style="margin-top:8px"><div class="lbl"><span class="pldot ${['','ok','warn','bad'][fr.lv]}"></span> ${fr.lv===3?'Not available':fr.lv===2?'Available with a reduced rest':'Free to work'}</div>${fr.lv<3||fr.la>fr.ea?`<div class="note">Earliest start <b>${hm(fr.ea)}</b>, latest finish <b>${fr.la===Infinity?'no limit from other shifts':hmx(fr.la,d)}</b>, based on 11 hour rests around your other shifts${fr.ea<d+4*H?'. Starting before 04:00 counts as night work (10 hour limit)':''}.</div>`:''}${fr.txt?`<div class="note">${fr.txt}</div>`:''}${fr.lv<3?'<div class="note" style="margin-top:4px">Checked as a 12 hour shift from '+hm(fr.s0)+' to '+hmx(fr.e0,d)+':</div>':''}${isz(fr.R)||(fr.lv===1?'<div class="note ok">✓ No rules broken.</div>':'')}</div>`}
+ if(fr){h+=`<div class="bx" style="margin-top:8px"><div class="lbl"><span class="pldot ${['','ok','warn','bad'][fr.lv]}"></span> ${fr.lv===3?'Not available':fr.lv===2?'Available with a reduced rest':'Free to work'}</div>${fr.lv<3||fr.la>fr.ea?`<div class="note">Earliest start <b>${hm(fr.ea)}</b>, latest finish <b>${fr.la===Infinity?'no limit from other shifts':hmx(fr.la,d)}</b>, based on 11 hour rests around your other shifts${fr.ea<d+4*H?'. Starting before 04:00 counts as night work (10 hour limit)':''}.</div>`:''}${fr.txt?`<div class="note">${fr.txt}</div>`:''}${fr.lv<3?'<div class="note" style="margin-top:4px">Checked as a '+fmt(fr.e0-fr.s0).replace(/ 00m$/,'')+' shift from '+hm(fr.s0)+' to '+hmx(fr.e0,d)+':</div>':''}${isz(fr.R)||(fr.lv===1?'<div class="note ok">✓ No rules broken.</div>':'')}</div>`}
  h+=plRestNote(d,WR);
  h+=`<button class="tg big" data-k="add" style="margin-top:12px">Add shift</button><button class="tg big" data-k="rp">Repeating shift starting this day</button><button class="tg big" data-k="cw">Copy this week to next week</button><button class="tg big" data-k="no">Close</button>`;
  mo(h);mcb={no:moX,add:()=>plForm({d:ymd(d)}),cw:()=>plCopyWeek(d),rp:()=>plPatForm(null,ymd(d))};
