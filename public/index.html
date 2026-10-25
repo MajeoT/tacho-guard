@@ -330,6 +330,11 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .prc.on{background:var(--soft);background:color-mix(in srgb,var(--jc) 22%,var(--card));border-color:var(--jc);border-width:1.5px}
 .prt{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden}
 .pdx.mut{color:var(--mut)}
+.rgrid{display:grid;grid-template-columns:58px repeat(7,1fr);gap:4px;align-items:center}.rgh{font-size:11px;font-weight:700;color:var(--mut);text-align:center}.rgl{font-size:12px;font-weight:700;color:var(--tx2,var(--mut))}
+.rgc{height:38px;border-radius:10px;border:1.5px solid var(--bd2);background:var(--card);color:var(--onacc);font:700 15px var(--body);cursor:pointer;padding:0;min-width:0}.rgc.on{background:var(--acc);border-color:var(--acc)}
+.pdr.pdx0{opacity:.45;cursor:default}.pdr.pdsel{border-color:var(--acc);background:var(--soft)}
+.pdc{flex:none;width:26px;height:26px;border-radius:8px;border:2px solid var(--bd2);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--onacc)}.pdc.on{background:var(--acc);border-color:var(--acc)}
+.pselbar{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);z-index:5;display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;background:var(--card);border:1.5px solid var(--acc);border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.18)}.pselbar span{flex:1}
 .fform{display:flex;flex-direction:column;gap:14px;margin:4px 0 12px}
 .fsec{display:flex;flex-direction:column;gap:8px}
 .flb{font:700 13px var(--body);color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
@@ -488,7 +493,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-140';
+const APPV='tg-2026-10-23-141';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -497,7 +502,7 @@ function san(p){if(!p||typeof p!=='object'||Array.isArray(p))return null;const A
  p.sessions=Array.isArray(p.sessions)?p.sessions.filter(x=>x&&typeof x==='object'&&isFinite(x.s)&&isFinite(x.e)&&+x.e>+x.s&&(!x.t||['d','w','x','p','r'].includes(x.t))).map(x=>Object.assign({},x,{s:+x.s,e:+x.e})):[];
  p.walks=Array.isArray(p.walks)?p.walks.filter(r=>r&&typeof r==='object'&&typeof r.t==='number'&&Array.isArray(r.D)):[];
  const fp=o=>{if(o&&o.p!==undefined)o.p=Array.isArray(o.p)?o.p.filter(okPh):[]};p.walks.forEach(r=>{r.D.forEach(fp);if(r.it&&typeof r.it==='object')Object.values(r.it).forEach(fp)});
- ['jobs','jobx','plan','pat','plx','wx','wri','wrp','tce','tcp','iss','lv'].forEach(A);if(p.lv)p.lv=p.lv.filter(x=>x&&typeof x.f==='string'&&/^\d{4}-\d\d-\d\d$/.test(x.f)&&isFinite(x.d));['tc','arch','wr','rp','rpb','pls','dd','wd'].forEach(O);
+ ['jobs','jobx','plan','pat','rota','plx','wx','wri','wrp','tce','tcp','iss','lv'].forEach(A);if(p.rota)p.rota=p.rota.filter(r=>r&&r.id&&Array.isArray(r.weeks)&&typeof r.from==='string');if(p.lv)p.lv=p.lv.filter(x=>x&&typeof x.f==='string'&&/^\d{4}-\d\d-\d\d$/.test(x.f)&&isFinite(x.d));['tc','arch','wr','rp','rpb','pls','dd','wd'].forEach(O);
  if(p.wd&&p.wd.it&&typeof p.wd.it==='object')Object.values(p.wd.it).forEach(fp);
  if(!p.tc)p.tc={c:'',u:''};if(!p.arch)p.arch={};if(p.jobs)p.jobs=p.jobs.filter(j=>j&&typeof j==='object'&&j.id);
  if(p.active!=null&&!isFinite(p.active)){p.active=null;p.act=null}
