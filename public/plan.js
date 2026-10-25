@@ -155,18 +155,23 @@ const plCompTxt=(o,short)=>{const f=fmt(o.owed).replace(/ 00m$/,''),by=new Date(
 /* Your next weekly rest, from the calendar's time off: the 6 days count from the end of the rest you are on now (or your last
    weekly rest), and after a reduced one the next has to be a full 45 hours. f is the first time off in your plan that is long enough. */
 function plNext(sp,OFF){const n=Date.now(),I=typeof wrInfo==='function'?wrInfo():null;if(!I||I.anc===null)return null;
- const now=OFF.find(b=>b.s<=n&&(b.e>n||b.open))||null;if(now&&now.open)return{now};
- const ls=now?now.e:I.lastEnd,full45=now?!now.full:!!I.full45,due=ls+144*H,need=(full45?45:24)*H,lastE=sp.reduce((m,x)=>Math.max(m,x.e),0);
- const C=OFF.filter(b=>!b.open&&b.s>=ls).concat(lastE>n&&lastE>=ls?[{s:lastE,e:Infinity,len:Infinity,full:true,open:1}]:[]).sort((a,b)=>a.s-b.s);
- const f=C.find(b=>b.s<=due&&b.len>=need)||null,short=f?null:C.find(b=>b.s<=due&&b.len>=24*H)||null;
- return{now,ls,due,full45,f,short,miss:!f}}
+ let now=OFF.find(b=>b.s<=n&&(b.e>n||b.open))||null;if(now&&now.open)return{now};
+ const lastE=sp.reduce((m,x)=>Math.max(m,x.e),0),tail=lastE>n?[{s:lastE,e:Infinity,len:Infinity,full:true,open:1}]:[];
+ /* time off now of 24 to 45 hours only has to be your weekly rest if no full one in your plan starts in time after it; otherwise
+    it is a long daily rest, nothing is owed, and the 6 days still count from your last weekly rest (as the rule check does) */
+ let longRest=false;if(now&&!now.full&&I.lastEnd+144*H>n&&OFF.concat(tail).some(b=>b.s>=now.e&&(b.full||b.open)&&b.s<=I.lastEnd+144*H)){longRest=true}
+ const ls=now&&!longRest?now.e:I.lastEnd,full45=now&&!longRest?!now.full:!!I.full45,due=ls+144*H,need=(full45?45:24)*H;
+ const C=OFF.filter(b=>!b.open&&b.s>=ls&&b!==now).concat(lastE>=ls?tail:[]).sort((a,b)=>a.s-b.s);
+ /* a full weekly rest in time is used before a reduced one, so nothing is owed when the plan already has one */
+ const f=C.find(b=>b.s<=due&&b.full)||C.find(b=>b.s<=due&&b.len>=need)||null,short=f?null:C.find(b=>b.s<=due&&b.len>=24*H)||null;
+ return{now,longRest,ls,due,full45,f,short,miss:!f}}
 /* The summary above the calendar, in plain sentences */
 function plSummary(NX){if(!NX)return '';const n=Date.now(),now=NX.now,L=[];
- if(now)L.push(`<div>🛏 <b>You are off now</b>, since ${dmy(now.s)}. `+(now.open?`Nothing is planned yet. So far that is ${plHrs(now.len)}${now.full?', long enough for a full weekly rest.':'.'}`:`You are back at work ${dmy(now.e)}, so that is ${plHrs(now.len)} off: `+(now.full?'a full weekly rest.':`a reduced weekly rest (under 45 hours), so you owe ${plHrs(45*H-now.len)}, made up in one go within 3 weeks.`))+`</div>`);
+ if(now)L.push(`<div>🛏 <b>You are off now</b>, since ${dmy(now.s)}. `+(now.open?`Nothing is planned yet. So far that is ${plHrs(now.len)}${now.full?', long enough for a full weekly rest.':'.'}`:`You are back at work ${dmy(now.e)}, so that is ${plHrs(now.len)} off: `+(now.full?'a full weekly rest.':NX.longRest?'a long daily rest. It does not have to be your weekly rest, because a full one in your plan starts in time, so nothing is owed.':`a reduced weekly rest (under 45 hours), so you owe ${plHrs(45*H-now.len)}, made up in one go within 3 weeks.`))+`</div>`);
  if(NX.ls){const f=NX.f,sh=NX.short,top=now?'margin-top:6px':'';
   if(f)L.push(`<div style="${top}">✓ <b>Next weekly rest:</b> your plan has you off from ${dmy(f.s)}${f.open?', with nothing planned after that':` until ${dmy(f.e)} (${plHrs(f.len)})`}. `+(f.full?'That is a full weekly rest.':`That is under 45 hours, so it is a reduced weekly rest and you would owe ${plHrs(45*H-f.len)}.`)+`</div>`);
   else if(sh)L.push(`<div class="bad" style="${top}">⚠ <b>Next weekly rest:</b> after a reduced one it has to be a full 45 hours, but your plan only has ${plHrs(sh.len)} off from ${dmy(sh.s)}. Move or remove a shift so you get 45 hours off by ${dmy(NX.due)}.</div>`);
-  else if(NX.due>n)L.push(`<div class="bad" style="${top}">⚠ <b>Weekly rest needed:</b> it must start by ${dmy(NX.due)}, 6 days after ${now?'you go back to work':'your last weekly rest ended'}, but your plan does not leave ${NX.full45?'45':'24'} hours off before then. Move or remove a shift.</div>`);
+  else if(NX.due>n)L.push(`<div class="bad" style="${top}">⚠ <b>Weekly rest needed:</b> it must start by ${dmy(NX.due)}, 6 days after ${now&&!NX.longRest?'you go back to work':'your last weekly rest ended'}, but your plan does not leave ${NX.full45?'45':'24'} hours off before then. Move or remove a shift.</div>`);
   else L.push(`<div class="bad" style="${top}">⚠ <b>Weekly rest overdue:</b> it had to start by ${dmy(NX.due)}. Take your weekly rest now.</div>`)}
  return L.length?`<div class="bx note" style="margin:0 0 10px;color:var(--tx)">${L.join('')}</div>`:''}
 /* What a day's time off means, in the day pop-up */
@@ -174,7 +179,7 @@ function plOffNote(d,OFF,NX,CP){let t='';CP=CP||[];OFF.filter(b=>b.s<nxd(d)&&b.e
   if(daily){t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--ok)"><div class="lbl">Long Rest</div><div class="note">Off from ${dmy(b.s)} until ${dmy(b.e)}: ${plHrs(b.len)}. It does not have to count as a weekly rest, because a full weekly rest in your plan starts in time after it, so nothing is owed for it.</div></div>`;return}
   t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--${b.full?'ok':'warn'})"><div class="lbl">${b.full?'Weekly Rest':'Reduced Weekly Rest'}</div><div class="note">`+(b.open?`Off since ${dmy(b.s)}, with nothing planned yet: ${plHrs(b.len)} so far.`:`Off from ${dmy(b.s)} until ${dmy(b.e)}: ${plHrs(b.len)}.`)+' '+(b.full?'That is long enough for a full weekly rest (45 hours or more).':'That is 24 to 45 hours, so it counts as a reduced weekly rest and you would owe the hours up to 45, made up in one go within 3 weeks.'+(cp?' '+plCompTxt(cp):''))+`</div></div>`});
  CP.filter(c=>c.pay&&c.pay.s<nxd(d)&&c.pay.s>=d).forEach(c=>{t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--ok)"><div class="lbl">Making Up Owed Rest</div><div class="note">Your rest from ${dmy(c.pay.s)} carries the ${fmt(c.owed).replace(/ 00m$/,'')} you owe from the reduced weekly rest of ${dmy(c.s)}. Keep ${plHrs((c.at-c.pay.s)+c.owed)} clear from the end of your shift, in one block.</div></div>`});
- if(NX&&NX.miss&&NX.due>Date.now()&&sod(NX.due)===d)t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--bad)"><div class="lbl">Weekly Rest Needed By ${plHm(NX.due)}</div><div class="note">That is six 24 hour periods after ${NX.now?'you go back to work':'your last weekly rest ended'}. Your plan does not leave ${NX.full45?'45':'24'} hours off before then, so move or remove a shift.</div></div>`;
+ if(NX&&NX.miss&&NX.due>Date.now()&&sod(NX.due)===d)t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--bad)"><div class="lbl">Weekly Rest Needed By ${plHm(NX.due)}</div><div class="note">That is six 24 hour periods after ${NX.now&&!NX.longRest?'you go back to work':'your last weekly rest ended'}. Your plan does not leave ${NX.full45?'45':'24'} hours off before then, so move or remove a shift.</div></div>`;
  return t}
 function plMonth(){if(!PL.m){const t=new Date(sod(Date.now()));t.setDate(1);PL.m=t.getTime()}return PL.m}
 /* What a day means for you, in one word and a reason: Working (a planned shift), Available (you could work, and when) or Rest
@@ -418,7 +423,7 @@ function plForm(p){p=p||{};const isNew=!p.id&&!p.fromPat;const t0=sod(Date.now()
   $('pfiss').innerHTML=L.length?L.map(x=>`<div class="note ${x.lv==='r'?'bad':x.lv==='a'?'warn':''}" style="margin-top:4px">${x.lv==='r'?'✕ ':x.lv==='a'?'⚠ ':'ℹ '}${x.t}</div>`).join(''):'';$('pfiss').innerHTML=plReq(s0,e0,q,tc,sp)+(L.length?'<div class="flb" style="margin-top:8px">Problems</div>'+$('pfiss').innerHTML:'<div class="freq ok"><b class="fi">✓</b><span><b>No rules broken</b> by this shift.</span></div>');return L};
  let lt=0;const live=()=>{clearTimeout(lt);lt=setTimeout(()=>{if(!$('pfiss'))return;const v=plRead(),d=$('pfdt').value;if(d&&v.s&&v.e&&v.s!==v.e)show(Object.assign({id:p.id||plId(),d},v));else $('pfiss').innerHTML='<div class="note">Enter a start and finish to check.</div>'},250)};
  $('mo').querySelector('.fform').addEventListener('input',live);$('mo').querySelector('.fform').addEventListener('change',live);live();
- mcb={no:()=>{moX();if(p.d)plDay(pdt(p.d))},rpl:()=>plPatList(),del:()=>{if(p.fromPat)st.plx=(st.plx||[]).concat(p.fromPat);else st.plan=(st.plan||[]).filter(x=>x.id!==p.id);save();plRender();moX();if(p.d)plDay(pdt(p.d))},ok:()=>{const q=build();if(!q)return;const snap=plSnap();let cid=q.id;
+ mcb={no:()=>{moX();if(p.d)plDay(pdt(p.d))},rpl:()=>plPatList(),del:()=>{const sn=plSnap();plHide(p.fromPat?{pat:p.fromPat.split('|')[0],oid:p.fromPat}:{oid:p.id});save();plRender();moX();if(p.d)plDay(pdt(p.d));plUndo(sn,'Shift removed.')},ok:()=>{const q=build();if(!q)return;const snap=plSnap();let cid=q.id;
   if(+$('pfr').value){const wd=(new Date(pdt(q.d)).getDay()+6)%7;cid=plId();st.pat=(st.pat||[]).concat({id:cid,j:q.j,days:[wd],s:q.s,e:q.e,br:q.br,bp:q.bp,dr:q.dr,rv:q.rv,from:q.d,ev:+$('pfr').value});if(!isNew)st.plan=(st.plan||[]).filter(x=>x.id!==p.id);if(p.fromPat){st.plx=(st.plx||[]).concat(p.fromPat);/* the new repeat replaces the old one from this day on, so the two do not both appear */const pid=p.fromPat.split('|')[0];st.pat=(st.pat||[]).map(r=>r.id===pid&&!(r.to&&pdt(r.to)<pdt(q.d))?Object.assign({},r,{to:ymd(pdt(q.d)-864e5)}):r)}}
   else{if(p.fromPat)st.plx=(st.plx||[]).concat(p.fromPat);st.plan=(st.plan||[]).filter(x=>x.id!==q.id).concat(q)}
   plClash(cid,snap,()=>{save();plRender();plDay(pdt(q.d))},()=>plForm(p))}}}
