@@ -20,6 +20,7 @@ window.addEventListener('error',()=>{setTimeout(()=>{if(window.TG_OK||document.g
  d.querySelector('#tgr1').onclick=()=>{const t=raw();(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>{d.querySelector('#tgr3').textContent='Copied. Paste it somewhere safe.'},()=>{d.querySelector('#tgr3').textContent='Could not copy. It is still saved on this phone.'})};
  d.querySelector('#tgr2').onclick=()=>{try{localStorage.setItem('tachoguard.v1.bad',raw());localStorage.removeItem('tachoguard.v1')}catch(e){}location.reload()}},1500)});</script>
 <script src="signs.js"></script>
+<script src="changes.js"></script>
 <style>
 :root{--bg:#eef0f2;--card:#fff;--tx:#161a1f;--mut:#5f6b7a;--bd:#d9dee4;--ok:#17803f;--warn:#c77700;--bad:#c4281c;--acc:#0b4f9c;--onacc:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161b;--card:#1b2128;--tx:#eef1f5;--mut:#9aa6b5;--bd:#2c343e;--ok:#3ecf7b;--warn:#ffb020;--bad:#ff6b5e;--acc:#ffb020;--onacc:#1b1300}}
@@ -429,6 +430,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <h2>Install</h2><div class="g" id="insg"><div class="note" id="inn"></div><div class="tr" style="margin-top:10px"><button class="tg" id="inb" hidden>Install TachoGuard</button></div></div>
 <div class="g" style="margin-top:24px"><div class="tr"><span><span class="lbl">Reset Day</span><br><span class="note">Starts breaks, shift and working time again from now. Asks twice and can be undone for 20 seconds.</span></span><button class="tg" id="rd" style="color:#fff;background:#c2352b;border-color:#c2352b">Reset Day</button></div></div>
 <h2>Backup</h2><div class="g"><div class="note">Your record is saved to your account when you are signed in and kept on this phone. You can also keep your own copy. Defect photos are not included.</div><div class="tr" style="margin-top:10px"><button class="tg" id="bc">Copy Backup</button></div><label for="bf" style="margin-top:12px">Import a Backup File</label><input type="file" id="bf" accept=".json,application/json"><textarea id="bt" aria-label="Paste a backup" placeholder="Or paste a copied backup here" style="width:100%;box-sizing:border-box;margin-top:8px;min-height:60px;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit"></textarea><div class="tr" style="margin-top:8px"><button class="tg" id="bi">Import</button></div><div class="note" id="bm" role="status"></div></div>
+<details class="bx" id="wnd" style="margin-top:24px"><summary>What's New</summary><div class="dbody" id="wnl"></div></details>
 </section>
 <section id="t-check" hidden><button class="tg" data-t2="today" style="margin:0 0 10px">← Today</button>
 <h2>Walkaround Check <button class="i" data-i="walk" aria-label="More info">i</button></h2>
@@ -442,7 +444,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-125';
+const APPV='tg-2026-10-23-126';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -969,10 +971,14 @@ function longFind(){const n=Date.now(),A=st.sessions.filter(y=>(y.t||'d')!=='r')
 const longSeen=new Set();
 /* Tell an open app when a newer version has been published: a card at the top of every tab that cannot be put away, with an update
    button. The live version is read from sw.js (always fetched fresh), so there is no separate version file to keep in step. */
+/* What's New list in Settings, from changes.js */
+function wnUi(){const L=Array.isArray(window.TG_CHANGES)?window.TG_CHANGES:[],el=$('wnl');if(!el)return;
+ set(el,L.length?L.slice(0,15).map(c=>`<div style="margin:0 0 12px"><div class="lbl">${esc(new Date(c.d+'T12:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}))}${c.v===APPV?' <span class="note ok">· This version</span>':''}</div><ul style="margin:4px 0 0;padding-left:18px">${(c.i||[c.s]).map(x=>`<li class="note">${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="note">No changes listed yet.</div>')}
+const wnOf=t=>{const a=t.indexOf('=[')+1,b=t.lastIndexOf(']');try{return JSON.parse(t.slice(a,b+1))}catch(e){return[]}};
 function updWatch(){if(!/^https?:$/.test(location.protocol))return;let shown=false;const RF='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M3 21v-5h5"/></svg>';
- const show=()=>{if(shown)return;shown=true;const c=$('updc');set(c,`<div class="uh"><span class="ui">${RF}</span><span><b>This version of TachoGuard is out of date</b><p>A newer version is ready. Updating takes a moment and keeps everything you have logged.</p></span></div><button id="updb">${RF}<span>Update now</span></button>`);c.hidden=false;
+ const show=async v=>{if(shown)return;shown=true;let nw='';try{const r=await fetch('changes.js',{cache:'no-store'});const e=r.ok?wnOf(await r.text()).find(x=>x.v===v):null;if(e&&e.s)nw=`<p><b style="display:inline;font:inherit;font-weight:700">New:</b> ${esc(e.s)}</p>`}catch(e){}const c=$('updc');set(c,`<div class="uh"><span class="ui">${RF}</span><span><b>This version of TachoGuard is out of date</b><p>A newer version is ready. Updating takes a moment and keeps everything you have logged.</p>${nw}</span></div><button id="updb">${RF}<span>Update now</span></button>`);c.hidden=false;
   $('updb').onclick=()=>{const b=$('updb');b.disabled=true;b.lastChild.textContent='Updating…';try{save()}catch(e){}setTimeout(()=>location.reload(),1200)}};
- const chk=async()=>{if(shown||document.visibilityState!=='visible')return;try{const r=await fetch('sw.js',{cache:'no-store'});if(!r.ok)return;const m=(await r.text()).match(/VERSION='([^']+)'/);if(m&&m[1]!==APPV)show()}catch(e){}};
+ const chk=async()=>{if(shown||document.visibilityState!=='visible')return;try{const r=await fetch('sw.js',{cache:'no-store'});if(!r.ok)return;const m=(await r.text()).match(/VERSION='([^']+)'/);if(m&&m[1]!==APPV)show(m[1])}catch(e){}};
  setTimeout(chk,5000);setInterval(chk,60000);document.addEventListener('visibilitychange',chk)}
 function chkLong(){if(!MO.hidden||!st||!st.sessions)return;const r=longFind();if(r&&!longSeen.has(sKey(r.x))){longSeen.add(sKey(r.x));longAsk(r)}}
 function longAsk(r){const x=r.x,dv=r.kind==='d',lo=r.rs,hi=x.e;let N=45;
@@ -2153,7 +2159,7 @@ try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}
  d.innerHTML='<b>Desktop site is switched on.</b> That makes TachoGuard look zoomed out and small. To fix it, open Chrome, tap the ⋮ menu and untick <b>Desktop site</b>, then reopen the app. <button class="tg" style="margin-top:8px;display:block">Hide this</button>';
  d.querySelector('button').onclick=()=>{try{sessionStorage.setItem('tgDsk','1')}catch(e){}d.remove()};document.body.prepend(d)}catch(e){}})();
 window.TG_OK=1;$('ver').textContent='TachoGuard v'+APPV.replace(/^tg-(\d+)-(\d+)-(\d+)-(\d+)$/,'$1.$2.$3.$4');
-addSrc();updWatch();if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+addSrc();updWatch();wnUi();if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 </script>
 <script src="plan.js"></script>
 </body>

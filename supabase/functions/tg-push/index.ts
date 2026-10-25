@@ -1,7 +1,8 @@
 // TachoGuard phone notifications.
 // - GET  ?vapid=1            (signed in driver) -> the public key the phone needs to subscribe
 // - POST {test:true}         (signed in driver) -> sends a test notification to that driver's phones
-// - POST {cron:true} + x-cron-secret header (the database timer) -> sends every reminder that is due
+// - POST {cron:true} + x-cron-secret header (the database timer) -> sends every reminder that is due, and tells every phone
+//   with notifications on when a new version of the app has gone live (checked every 5 minutes)
 // The key pair is made on first use and kept in public.tg_push_keys, which only this function (service role) can read.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -39,12 +40,12 @@ async function userOf(req: Request) {
 }
 
 // send one message to every phone a driver has registered; forget phones the push service says are gone
-async function sendTo(userId: string, msg: { title: string; body: string; tag: string }) {
+async function sendTo(userId: string, msg: { title: string; body: string; tag: string }, ttl = 1800) {
   const { data: subs } = await db.from("tg_push_subs").select("endpoint,p256dh,auth").eq("user_id", userId);
   let ok = 0, gone = 0, failed = 0;
   await Promise.all((subs || []).map(async (s) => {
     try {
-      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify({ ...msg, url: "./" }), { TTL: 1800, urgency: "high" });
+      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify({ ...msg, url: "./" }), { TTL: ttl, urgency: "high" });
       ok++;
     } catch (e) {
       const code = (e as { statusCode?: number }).statusCode;
@@ -53,6 +54,46 @@ async function sendTo(userId: string, msg: { title: string; body: string; tag: s
     }
   }));
   return { phones: (subs || []).length, ok, gone, failed };
+}
+
+// The live version is the VERSION line in sw.js, which changes with every release.
+const APP = "https://tacho-guard.slynch85.workers.dev/";
+async function liveVersion() {
+  try {
+    const r = await fetch(APP + "sw.js?t=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) return null;
+    const m = (await r.text()).match(/VERSION='([^']+)'/);
+    return m ? m[1] : null;
+  } catch (_) { return null; }
+}
+
+// The one line about this version from changes.js (What's New), so the notification says what changed.
+async function changeLine(v: string) {
+  try {
+    const r = await fetch(APP + "changes.js?t=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) return null;
+    const t = await r.text();
+    const list = JSON.parse(t.slice(t.indexOf("=[") + 1, t.lastIndexOf("]") + 1)) as { v: string; s?: string }[];
+    const e = list.find((x) => x.v === v);
+    return e && e.s ? String(e.s).slice(0, 180) : null;
+  } catch (_) { return null; }
+}
+
+// Tell every phone once when a new version goes live. The first version seen is only recorded, so nobody is told about the one they have.
+async function updateNotice(k: { last_version?: string | null }) {
+  const v = await liveVersion();
+  if (!v || v === k.last_version) return 0;
+  // claim the change first, so two runs at once cannot both send it
+  const q = db.from("tg_push_keys").update({ last_version: v }).eq("id", 1);
+  const { data: claimed } = await (k.last_version ? q.eq("last_version", k.last_version) : q.is("last_version", null)).select("id");
+  if (!claimed || !claimed.length || !k.last_version) return 0;
+  const { data: subs } = await db.from("tg_push_subs").select("user_id");
+  const users = [...new Set((subs || []).map((s) => s.user_id as string))];
+  if (!users.length) return 0;
+  const line = await changeLine(v);
+  const body = (line ? line + " " : "A new version is live. ") + "Open TachoGuard and tap Update now.";
+  for (const u of users) await sendTo(u, { title: "TachoGuard has been updated", body, tag: "tg-update" }, 86400);
+  return users.length;
 }
 
 Deno.serve(async (req) => {
@@ -91,7 +132,8 @@ Deno.serve(async (req) => {
       }
       // tidy up: reminders over a day old
       await db.from("tg_reminders").delete().lt("fire_at", new Date(now.getTime() - 864e5).toISOString());
-      return json({ due: (due || []).length, sent });
+      const told = await updateNotice(k);
+      return json({ due: (due || []).length, sent, told });
     }
 
     return json({ error: "unknown request" }, 400);

@@ -30,7 +30,9 @@ revoke all on public.tg_push_subs, public.tg_reminders, public.tg_push_keys from
 grant select, insert, update, delete on public.tg_push_subs, public.tg_reminders to authenticated;
 insert into public.tg_push_keys (id, cron_secret) values (1, encode(extensions.gen_random_bytes(24), 'hex')) on conflict (id) do nothing;
 
--- Once a minute: if any reminder is due, wake the edge function.
-create or replace function public.tg_push_tick() returns void language plpgsql security definer set search_path = '' as 'begin if exists (select 1 from public.tg_reminders where sent_at is null and fire_at <= now() and fire_at > now() - interval ''30 minutes'') then perform net.http_post(url := ''https://ixtyqcfbsqmvoaaptmtc.supabase.co/functions/v1/tg-push'', headers := jsonb_build_object(''Content-Type'', ''application/json'', ''x-cron-secret'', (select cron_secret from public.tg_push_keys where id = 1)), body := ''{"cron":true}''::jsonb); end if; end';
+-- The last app version the edge function has seen, so it can tell phones once when a new one goes live.
+alter table public.tg_push_keys add column if not exists last_version text;
+-- Once a minute: if any reminder is due, wake the edge function. Every 5 minutes it is woken anyway to look for a new app version.
+create or replace function public.tg_push_tick() returns void language plpgsql security definer set search_path = '' as 'begin if exists (select 1 from public.tg_reminders where sent_at is null and fire_at <= now() and fire_at > now() - interval ''30 minutes'') or extract(minute from now())::int % 5 = 0 then perform net.http_post(url := ''https://ixtyqcfbsqmvoaaptmtc.supabase.co/functions/v1/tg-push'', headers := jsonb_build_object(''Content-Type'', ''application/json'', ''x-cron-secret'', (select cron_secret from public.tg_push_keys where id = 1)), body := ''{"cron":true}''::jsonb); end if; end';
 revoke execute on function public.tg_push_tick() from public, anon, authenticated;
 select cron.schedule('tg-push-tick', '* * * * *', 'select public.tg_push_tick()');
