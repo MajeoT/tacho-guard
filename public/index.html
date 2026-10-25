@@ -325,6 +325,31 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .pda{flex:none;color:var(--mut);font-size:20px}
 .pld.pk-ok{background:rgba(52,211,153,.16)!important;border-color:rgba(52,211,153,.5)!important}.pld.pk-warn{background:rgba(251,191,36,.2)!important;border-color:rgba(251,191,36,.6)!important}.pld.pk-rest{background:rgba(248,113,113,.16)!important;border-color:rgba(248,113,113,.55)!important}
 .pkw{font-size:9.5px;font-weight:700;line-height:1.15;text-align:center;margin-top:auto;letter-spacing:-.2px}.pk-ok .pkw{color:var(--okc,var(--ok))}.pk-warn .pkw{color:var(--wnc,var(--warn))}.pk-rest .pkw{color:var(--bad)}.pk-work .pkw{color:var(--mut)}
+.fform{display:flex;flex-direction:column;gap:14px;margin:4px 0 12px}
+.fsec{display:flex;flex-direction:column;gap:8px}
+.flb{font:700 13px var(--body);color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.fchips{display:flex;flex-wrap:wrap;gap:6px}
+.fchip{font:600 14px var(--body);color:var(--tx);background:var(--card);border:1.5px solid var(--bd2);border-radius:999px;padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:40px}
+.fchip.on{background:var(--acc);border-color:var(--acc);color:var(--onacc)}
+.fchip small{font-size:11px;font-weight:500;opacity:.75}
+.fjob i{width:10px;height:10px;border-radius:50%;background:var(--jc);flex:none}
+.fjob.on{background:var(--soft);color:var(--tx);border-color:var(--jc);box-shadow:inset 0 0 0 1px var(--jc)}
+.fdays{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}.fdays::-webkit-scrollbar{display:none}
+.fday{flex-direction:column;gap:0;border-radius:14px;padding:6px 10px;min-width:56px;line-height:1.2}.fday b{font-size:13px}.fday span{font-size:12px;opacity:.85}
+.fother{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut);margin:0}.fother input{flex:1;min-width:0;margin:0}
+.fsm .fchip{font-size:13px;padding:6px 12px;min-height:34px}
+.ftimes{display:flex;align-items:center;gap:8px}
+.ftime{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;margin:0;font-size:12px;color:var(--mut);background:var(--sub);border:1.5px solid var(--bd2);border-radius:14px;padding:8px 12px}
+.ftime input{border:0;background:transparent;padding:0;margin:0;font:700 17px var(--body);color:var(--tx);width:100%;min-width:0}
+.ftime input::-webkit-calendar-picker-indicator{margin:0 0 0 2px;padding:0}.ftime input::-webkit-datetime-edit{padding:0}.farr{color:var(--mut);font-size:18px;flex:none}
+.fsum{font-size:14px;color:var(--tx2,var(--mut))}.fsum .warn{color:var(--wnc,var(--warn));font-weight:600}
+.fsw{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 0;cursor:pointer;font-weight:600}.fsw small{display:block;font-weight:400;font-size:12px;color:var(--mut);margin-top:2px}
+.fstep{display:flex;align-items:center;gap:8px}.fstep button{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--bd2);background:var(--card);color:var(--tx);font-size:22px;line-height:1;cursor:pointer;flex:none}
+.fstep input{width:74px;text-align:center;font:700 20px var(--body);margin:0}.fstep span{color:var(--mut);font-size:14px}
+.fchk{background:var(--sub);border-radius:14px;padding:10px 12px}
+.tg.fpri{background:var(--acc)!important;border-color:var(--acc)!important;color:var(--onacc)!important;font-weight:700}
+.tg.fdel{color:var(--bad)!important}
+.flink{display:block;margin:10px auto 0;background:none;border:0;color:var(--acc);font:600 14px var(--body);text-decoration:underline;cursor:pointer;padding:8px}
 .pkf{display:block;font-weight:700;font-size:9.5px;letter-spacing:-.3px;white-space:nowrap}.pki{display:block;font-size:13px;line-height:1.1}.pkl{display:block}.pkf .pkl{display:inline}@media (max-width:420px){.pkl,.pkf .pkl{display:none}.pki{font-size:15px}}.pkey{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:22px;border-radius:6px;font-size:11px;font-weight:700;border:1px solid var(--bd)}.pkey.pk-ok{background:rgba(52,211,153,.16);border-color:rgba(52,211,153,.5);color:var(--okc,var(--ok))}.pkey.pk-warn{background:rgba(251,191,36,.2);border-color:rgba(251,191,36,.6);color:var(--wnc,var(--warn))}.pkey.pk-rest{background:rgba(248,113,113,.16);border-color:rgba(248,113,113,.55);color:var(--bad)}.pkey.pk-work{background:var(--card)}.pkey.pk-did{background:var(--sub);color:var(--mut)}
 .plr.pst{font-size:9px;font-weight:600;letter-spacing:-.3px;padding:1px 2px;text-align:center}.pls2{font-size:10px;font-weight:700;line-height:1.2;margin-top:2px;overflow:hidden}.pls2.ok{color:var(--okc,var(--ok))}.pls2.warn{color:var(--wnc,var(--warn))}
 </style>
@@ -458,7 +483,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-135';
+const APPV='tg-2026-10-23-136';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
