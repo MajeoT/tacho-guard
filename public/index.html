@@ -339,7 +339,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .fchip small{font-size:11px;font-weight:500;opacity:.75}
 .fjob i{width:10px;height:10px;border-radius:50%;background:var(--jc);flex:none}
 .fjob.on{background:var(--soft);color:var(--tx);border-color:var(--jc);box-shadow:inset 0 0 0 1px var(--jc)}
-.fdays{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}.fdays::-webkit-scrollbar{display:none}
+.fdays{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.fdays .fday{min-width:0;justify-content:center}
 .fday{flex-direction:column;gap:0;border-radius:14px;padding:6px 10px;min-width:56px;line-height:1.2}.fday b{font-size:13px}.fday span{font-size:12px;opacity:.85}
 .fother{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut);margin:0}.fother input{flex:1;min-width:0;margin:0}
 .fsm .fchip{font-size:13px;padding:6px 12px;min-height:34px}
@@ -351,7 +351,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .fsw{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 0;cursor:pointer;font-weight:600}.fsw small{display:block;font-weight:400;font-size:12px;color:var(--mut);margin-top:2px}
 .fstep{display:flex;align-items:center;gap:8px}.fstep button{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--bd2);background:var(--card);color:var(--tx);font-size:22px;line-height:1;cursor:pointer;flex:none}
 .fstep input{width:74px;text-align:center;font:700 20px var(--body);margin:0}.fstep span{color:var(--mut);font-size:14px}
-.fchk{background:var(--sub);border-radius:14px;padding:10px 12px}
+.freq{display:flex;gap:8px;font-size:14px;line-height:1.4;margin-top:6px}.freq span{flex:1}.freq.ok{color:var(--tx)}.freq .fi{flex:none;width:16px}.freq.ok .fi{color:var(--okc,var(--ok))}.freq.warn{color:var(--wnc,var(--warn))}.freq.bad{color:var(--bad)}.freq.mut{color:var(--tx2,var(--mut))}.fchk{background:var(--sub);border-radius:14px;padding:10px 12px}
 .tg.fpri{background:var(--acc)!important;border-color:var(--acc)!important;color:var(--onacc)!important;font-weight:700}
 .tg.fdel{color:var(--bad)!important}
 .flink{display:block;margin:10px auto 0;background:none;border:0;color:var(--acc);font:600 14px var(--body);text-decoration:underline;cursor:pointer;padding:8px}
@@ -488,7 +488,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-137';
+const APPV='tg-2026-10-23-138';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
