@@ -501,7 +501,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-148';
+const APPV='tg-2026-10-23-149';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1372,7 +1372,7 @@ function liveRun(){
   const sh={d:'Driving',x:'Driving',w:'Work',p:'POA',r:'Break'},c1=bkc&&act0!=='d'&&act0!=='w'&&act0!=='p'&&act0!=='x'?`<span class="h-chip"><i style="background:#9aa6b5"></i>${bl} ${bkc}</span>`:`<span class="h-chip"><i style="background:${dc}"></i><span>${act0?sh[act0]+(since?'<span class="hs"> since</span> '+since:''):'Idle'}</span></span>`;
   /* the planned shift on the card: before it starts, its times and when its break goes; during it, when to take your break
      so it lasts to the finish, counting the breaks you have had */
-  let hpl='';if(typeof plOcc==='function'){try{if(st.active&&busy&&ss){const po=plOcc(ss-3*H,n+H).filter(o=>o.st!=='skip'&&o.E>n+15*M&&o.S<n+H&&Math.abs(o.S-ss)<4*H).sort((x,y)=>Math.abs(x.S-ss)-Math.abs(y.S-ss))[0];
+  let hpl='';if(typeof plOcc==='function'){try{if(st.active&&busy&&ss){const pc=plOcc(ss-3*H,n+H).filter(o=>o.st!=='skip'&&o.E>n+15*M&&o.S<n+H&&Math.abs(o.S-ss)<4*H).sort((x,y)=>Math.abs(x.S-ss)-Math.abs(y.S-ss)),po=(jobsOn()&&pc.find(o=>o.j===st.cj))||(!jobsOn()&&pc[0])||null;
     if(po){const fe=po.rv?ss+(po.E-po.S):po.E,tc=isTc(),tx=plLive({n,E:fe,mv:po.rv&&fe!==po.E,br:po.br||0,tk:WT.brk,tot:WT.tot,w0:wc.d,d0:tc?b.d:0,Dr:tc?Math.max(0,(po.dr||0)*H-day):0,half:tc&&!!b.q,drv:act==='d'});if(tx)hpl=`<div class="h-pl">${tx}</div>`}}
    else if(!st.active){const L0=a0.filter(x=>x.t!=='r'),po=plOcc(n-2*H,n+20*H).filter(o=>!o.st&&o.E>n&&!L0.some(x=>x.e>o.S-H&&x.s<o.E))[0];
     if(po)hpl=`<div class="h-pl"><span class="h-plk">${sod(po.S)===sod(n)?'Planned today':sod(po.S)===nxd(sod(n))?'Planned tomorrow':'Planned '+new Date(po.S).toLocaleDateString('en-GB',{weekday:'long'})}</span>${plHeroPlan(po)}</div>`}}catch(e){}}
