@@ -108,17 +108,24 @@ function plFree(d,base,baseI){const n=Date.now(),D0=Math.max(d,n),D1=nxd(d);if(D
 /* Where your NEXT weekly rest can start, from what you have logged plus your plan: the first gap that is long enough for a full 45h rest, and
    the first gap long enough for a reduced 24h rest. Only gaps between one activity and the next count (the time before your first shift since
    your last rest is that rest, not a new one). Nothing after that is shown, because it changes as shifts are added. */
-function plRests(sp){const I=typeof wrInfo==='function'?wrInfo():null;if(!I||I.anc===null||I.inWr)return null;
+function plRests(sp){let I=typeof wrInfo==='function'?wrInfo():null;if(!I||I.anc===null)return null;const n=Date.now();
+ /* On a weekly rest now: it ends when the next planned shift starts, so count the next 6 days from there. A rest under 45 hours
+    by then is a reduced one, so the next has to be a full 45 hours. */
+ if(I.inWr){const nx=sp.filter(x=>!x.log&&x.s>n).sort((a,b)=>a.s-b.s)[0];if(!nx)return null;const rs=sp.filter(x=>x.log).reduce((m,x)=>Math.max(m,x.e),0);
+  I={lastEnd:nx.s,rc:false,S:[],full45:!!rs&&nx.s-rs<45*H,cur:rs?{len:nx.s-rs,red:nx.s-rs<45*H}:null}}
  const L=sp.slice().sort((a,b)=>a.s-b.s).filter(x=>x.e>I.lastEnd),G=[];let cur=null;
- const n=Date.now(),RLE=I.rc&&I.S.length?I.S[I.S.length-1].e:0;/* only time that is still ahead can start a rest, unless you are already resting: then it counts from the end of your last shift */
+ const RLE=I.rc&&I.S.length?I.S[I.S.length-1].e:0;/* only time that is still ahead can start a rest, unless you are already resting: then it counts from the end of your last shift */
  const st0=c=>c===RLE?c:Math.max(c,n);
  L.forEach(x=>{if(cur!==null&&x.s>cur){const s=st0(cur);if(x.s>s)G.push({s,e:x.s,len:x.s-s})}cur=cur===null?x.e:Math.max(cur,x.e)});
  G.push({s:cur===null?Math.max(n,I.lastEnd):st0(cur),e:Infinity,len:Infinity,open:1});
  const due=I.lastEnd+144*H,ok=G.filter(g=>g.s>=I.lastEnd&&g.s<=due),f45=ok.find(g=>g.len>=45*H)||null,f24=I.full45?null:(ok.find(g=>g.len>=24*H)||null);
- return{f45,f24,due,miss:!f45&&!f24,full45:I.full45}}
+ return{f45,f24,due,miss:!f45&&!f24,full45:I.full45,ls:I.lastEnd,cur:I.cur||null}}
 const plHm=t=>hm(t).slice(0,5);
 /* the deadline flag: green when a full 45h rest fits before it, yellow when only a reduced 24h rest fits, red when neither does */
 const plFlag=W=>W.miss?'bad':W.f45?'ok':'warn';
+/* One line above the calendar: when the next weekly rest is due and whether your plan leaves room for it */
+function plNextWr(WR){if(!WR||WR.due<=Date.now())return '';const c=plFlag(WR);
+ return `<div class="note ${c==='ok'?'':c==='warn'?'warn':'bad'}" style="margin:0 0 10px">⚑ <b>Next weekly rest</b> must start by <b>${dmy(WR.due)}</b>. `+(WR.f45?`Your plan leaves room for a full 45 hours from ${dmy(WR.f45.s)}.`:WR.f24?`Your plan only leaves room for a reduced 24 hours from ${dmy(WR.f24.s)}, so you would owe the rest.`:(WR.full45?`Your plan does not leave 45 hours clear before then, and this one has to be a full 45 hours.`:`Nothing in your plan leaves 24 hours clear before then.`))+`</div>`}
 function plRestTag(d,WR){if(!WR)return '';let t='';const a=WR.f45,b=WR.f24;
  if(a&&sod(a.s)===d)t+=`<div class="plr ok">45h <span>${plHm(a.s)}</span></div>`;
  if(b&&(!a||b.s!==a.s)&&sod(b.s)===d)t+=`<div class="plr warn">24h <span>${plHm(b.s)}</span></div>`;
@@ -132,12 +139,12 @@ function plRestNote(d,WR){if(!WR)return '';let t='';const a=WR.f45,b=WR.f24,len=
 function plMonth(){if(!PL.m){const t=new Date(sod(Date.now()));t.setDate(1);PL.m=t.getTime()}return PL.m}
 function plRender(){const el=$('plc');if(!el)return;const m0=plMonth(),md=new Date(m0),n=Date.now();
  const gs=wkS(m0),me=new Date(md.getFullYear(),md.getMonth()+1,1).getTime(),ge=nwk(wkS(me-864e5));
- const sp=plSpans(),I=plCheck(sp),occ=plOcc(gs,ge),WR=plRests(sp),T=typeof dayTot==='function'?dayTot():{};
- let h=(typeof oweBanner==='function'?oweBanner(wrInfo()):'')+`<div class="tr" style="margin:0 0 8px;gap:6px"><button class="tg" data-pm="-1" aria-label="Previous month">‹</button><b style="flex:1;text-align:center;font-size:17px">${md.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</b><button class="tg" data-pm="1" aria-label="Next month">›</button><button class="tg" data-pm="0">This month</button></div><div class="tr" style="margin:0 0 10px"><button class="tg" data-pa="1" style="flex:1">Add shift</button></div>`;
+ const sp=plSpans(),I=plCheck(sp),occ=plOcc(gs,Math.max(ge,gs+50*864e5)),WR=plRests(sp),T=typeof dayTot==='function'?dayTot():{};
+ let h=(typeof oweBanner==='function'?oweBanner(wrInfo()):'')+`<div class="tr" style="margin:0 0 8px;gap:6px"><button class="tg" data-pm="-1" aria-label="Previous month">‹</button><b style="flex:1;text-align:center;font-size:17px">${md.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</b><button class="tg" data-pm="1" aria-label="Next month">›</button><button class="tg" data-pm="0">This month</button></div><div class="tr" style="margin:0 0 10px"><button class="tg" data-pa="1" style="flex:1">Add shift</button></div>`+plNextWr(WR);
  h+='<div class="plg">'+['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(x=>`<div class="plh">${x}</div>`).join('');
  let shown=0;const wk0=wkS(n);
  /* the 6 days between your last weekly rest and the latest start of the next one */
- const WI0=typeof wrInfo==='function'?wrInfo():null,WW=WI0&&WI0.anc!==null&&!WI0.inWr?{s:WI0.lastEnd,e:WI0.due,last:WI0.RH[WI0.RH.length-1]}:null;
+ const WI0=typeof wrInfo==='function'?wrInfo():null,WW=WI0&&WI0.anc!==null&&!WI0.inWr?{s:WI0.lastEnd,e:WI0.due,last:WI0.RH[WI0.RH.length-1]}:WI0&&WI0.inWr&&WR?{s:WR.ls,e:WR.due,last:WR.cur}:null;
  for(let d=gs;d<ge||(shown<42&&ge>n);d=nxd(d)){if((new Date(d).getDay()+6)%7===0&&d<wk0){let any=false;for(let q=d,k=0;k<7;k++,q=nxd(q)){const t=T[q];if((t&&t.d+t.w)||occ.some(o=>sod(o.S)===q&&o.st!=='skip')){any=true;break}}if(!any){d=add7(d,1)-864e5;d=sod(d);continue}}shown++;const inM=new Date(d).getMonth()===md.getMonth(),past=nxd(d)<=n,td=d===sod(n),os=occ.filter(o=>sod(o.S)===d&&o.st!=='skip'&&!(o.st==='done'||o.E<=n)),o2=T[d],logged=o2?o2.d+o2.w:0;
   let lv=0;os.forEach(o=>{lv=Math.max(lv,worst(I.get(o.oid)))});
   let fr=null;if(!past&&!os.length&&!logged)fr=plFree(d,sp,I);
