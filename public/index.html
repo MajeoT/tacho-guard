@@ -442,7 +442,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-124';
+const APPV='tg-2026-10-23-125';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -451,7 +451,7 @@ function san(p){if(!p||typeof p!=='object'||Array.isArray(p))return null;const A
  p.sessions=Array.isArray(p.sessions)?p.sessions.filter(x=>x&&typeof x==='object'&&isFinite(x.s)&&isFinite(x.e)&&+x.e>+x.s&&(!x.t||['d','w','x','p','r'].includes(x.t))).map(x=>Object.assign({},x,{s:+x.s,e:+x.e})):[];
  p.walks=Array.isArray(p.walks)?p.walks.filter(r=>r&&typeof r==='object'&&typeof r.t==='number'&&Array.isArray(r.D)):[];
  const fp=o=>{if(o&&o.p!==undefined)o.p=Array.isArray(o.p)?o.p.filter(okPh):[]};p.walks.forEach(r=>{r.D.forEach(fp);if(r.it&&typeof r.it==='object')Object.values(r.it).forEach(fp)});
- ['jobs','plan','pat','plx','wx','wri','wrp','tce','tcp','iss','lv'].forEach(A);if(p.lv)p.lv=p.lv.filter(x=>x&&typeof x.f==='string'&&/^\d{4}-\d\d-\d\d$/.test(x.f)&&isFinite(x.d));['tc','arch','wr','rp','rpb','pls','dd','wd'].forEach(O);
+ ['jobs','jobx','plan','pat','plx','wx','wri','wrp','tce','tcp','iss','lv'].forEach(A);if(p.lv)p.lv=p.lv.filter(x=>x&&typeof x.f==='string'&&/^\d{4}-\d\d-\d\d$/.test(x.f)&&isFinite(x.d));['tc','arch','wr','rp','rpb','pls','dd','wd'].forEach(O);
  if(p.wd&&p.wd.it&&typeof p.wd.it==='object')Object.values(p.wd.it).forEach(fp);
  if(!p.tc)p.tc={c:'',u:''};if(!p.arch)p.arch={};if(p.jobs)p.jobs=p.jobs.filter(j=>j&&typeof j==='object'&&j.id);
  if(p.active!=null&&!isFinite(p.active)){p.active=null;p.act=null}
@@ -474,9 +474,10 @@ const $=id=>document.getElementById(id);
 const set=(el,h)=>{if(el._h!==h){el.innerHTML=h;el._h=h}};
 const NM={d:'Driving',x:'Driving (no tacho)',w:'Other work',p:'POA',r:'Break'},IC={d:'🚛',x:'🚚',w:'⚒',p:'◪',r:'🛏'};
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
-const JCOL=['#3b82f6','#f59e0b','#a855f7'],JS={};
+const JCOL=['#3b82f6','#f59e0b','#a855f7','#94a3b8'],JS={};
 const jobs=()=>st.jobs&&st.jobs.length?st.jobs:[{id:'j1',n:'Main job',tc:true}];
-const jobI=id=>Math.max(0,jobs().findIndex(j=>j.id===id)),jobC=id=>jobs()[jobI(id)],multi=()=>jobs().length>1,jobsOn=()=>!!(st.jobs&&st.jobs.length);
+/* removed jobs stay in st.jobx so old entries keep their name (shown in grey) */
+const jobI=id=>{const i=jobs().findIndex(j=>j.id===id);return i>=0?i:(st.jobx||[]).some(j=>j.id===id)?3:0},jobC=id=>jobs().find(j=>j.id===id)||(st.jobx||[]).find(j=>j.id===id)||jobs()[0],multi=()=>jobs().length>1,jobsOn=()=>!!(st.jobs&&st.jobs.length);
 const isTc=()=>st.tm!==undefined&&st.tm!==null?!!st.tm:jobC(st.cj).tc!==false;
 /* Tachograph dial icon. on=0 adds a line through it for no tacho. c: dial colour (default the text colour), x: line colour, g: background colour for a gap around the line. */
 const tcIco=(on,c,x,g)=>{const k=c||'currentColor',t=on?'Tacho':'No tacho';return `<svg class="tci" viewBox="0 0 24 24" width="18" height="18" role="img" aria-label="${t}" fill="none" stroke="${k}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>${t}</title><path d="M3.5 17a8.5 8.5 0 1 1 17 0"/><path d="M12 9.2v1.4M6.6 11.6l1 1M17.4 11.6l-1 1"/><path d="M12 17l4-4.6"/><circle cx="12" cy="17" r="1.5" fill="${k}"/><path d="M6.5 21h11"/>${on?'':`${g?`<path d="M3.5 3.5l17 17" stroke="${g}" stroke-width="5.5"/>`:''}<path d="M3.5 3.5l17 17" stroke="${x||k}" stroke-width="2.4"/>`}</svg>`};
@@ -1359,7 +1360,7 @@ function buildD(){const D={};const SS=st.sessions.slice();if(st.active&&st.act&&
 function rowsOf(o){return o.I.sort((a,b)=>a.s-b.s).map(({x,s,e,c})=>{const t=x.t||'d';
    if(!c&&x.s===ed)return `<div class="item" style="display:block"><div class="lbl">${IC[t]} ${NM[t]}</div><div class="tr" style="margin:8px 0"><input type="time" id="e1" value="${hm(x.s)}"><input type="time" id="e2" value="${hm(x.e)}"></div><select id="e3" style="margin-bottom:8px">${['d','x','w','p','r'].map(k=>`<option value="${k}"${k===t?' selected':''}>${NM[k]}</option>`).join('')}</select><br><button class="tg" data-sv="${x.s}">Save</button> <button class="tg" data-cn="1">Cancel</button><div class="note bad" id="eerr"></div></div>`;
    if(x.live)return `<div class="item"><div><div class="lbl">${IC[t]} ${NM[t]} (Running Now)</div><div class="note">${hm(s)} to now (${fmt(e-s)}). Change activity or end your shift on the Today tab to edit it.</div></div></div>`;
-   return `<div class="item"><div><div class="lbl">${IC[t]} ${NM[t]}${c?' (from the day before)':''}</div><div class="note">${hm(s)} to ${hm(e)} (${fmt(e-s)}${x.d&&!c?', '+mi(x.d):''})${c?'':lk(x.a,'Start map')+lk(x.z,'End map')}</div></div>${c?'':`<div><button class="del" data-ed="${x.s}">Edit</button><button class="del${dArm===String(x.s)?' bad':''}" data-s="${x.s}">${dArm===String(x.s)?'Tap Again to Delete':'Delete'}</button></div>`}</div>`}).join('')}
+   return `<div class="item"><div><div class="lbl">${IC[t]} ${NM[t]}${c?' (from the day before)':''}</div><div class="note">${hm(s)} to ${hm(e)} (${fmt(e-s)}${x.d&&!c?', '+mi(x.d):''})${x.j&&t!=='r'&&(multi()||!jobs().some(j=>j.id===x.j))?' · '+esc(jobC(x.j).n):''}${c?'':lk(x.a,'Start map')+lk(x.z,'End map')}</div></div>${c?'':`<div><button class="del" data-ed="${x.s}">Edit</button><button class="del${dArm===String(x.s)?' bad':''}" data-s="${x.s}">${dArm===String(x.s)?'Tap Again to Delete':'Delete'}</button></div>`}</div>`}).join('')}
 function list(){
  if(tab==='log'){
  const D=buildD();
@@ -1398,12 +1399,19 @@ const rdF=()=>{mo('<h3>Reset Day?</h3><p>This starts your breaks, shift and work
 $('rd').onclick=rdF;$('rd2').onclick=rdF;
 const jrpV=j=>!j.rp||!j.rp.w?'':(j.rp.w===26?'26':'17')+(j.rp.s?'c':'');
 function jobsUi(){const J=st.jobs||[];
- set($('jobs'),`<div class="note">Add up to 3 jobs if you drive for more than one company. Switch off "Uses a tachograph" for a job where the vehicle has no tachograph or is outside the tacho rules. When you start a shift you are asked which job, and whether you are on tacho rules that day. Working time and rest are counted across all jobs together, because the law counts your total time.</div>${J.map((j,i)=>{const on=j.tc!==false;return `<div class="bx" style="margin-top:10px;border-left:4px solid ${JCOL[i]}"><div class="tr" style="gap:6px;margin:0"><input type="text" value="${esc(j.n)}" maxlength="24" data-jn="${i}" aria-label="Job ${i+1} name" style="flex:1;min-width:0"><button class="tg${confirmJ===j.id?' bad':''}" data-jr="${i}" aria-label="Remove job">${confirmJ===j.id?'Tap again to remove':'Remove'}</button></div><label class="tr" style="margin:10px 0 0;cursor:pointer"><span><span class="lbl">Uses a Tachograph</span><br><span class="note ${on?'ok':'warn'}">${on?'Yes. Driving counts towards the tacho limits.':'No. Only Work and Break are shown, and it counts as working time.'}</span></span><span class="swt"><input type="checkbox" data-jt="${i}"${on?' checked':''} aria-label="${esc(j.n)} uses a tachograph"><i></i></span></label>${J.length>1?`<label style="display:block;margin-top:10px"><span class="lbl">Reference Period for This Company</span><select data-jrp="${i}">${[['','Same as the default above'],['17','17 weeks, default dates'],['17c','17 weeks, company start date'],['26','26 weeks'],['26c','26 weeks, company start date']].map(([v,t])=>`<option value="${v}"${v===jrpV(j)?' selected':''}>${t}</option>`).join('')}</select></label>${jrpV(j).endsWith('c')?`<label style="display:block;margin-top:6px">Date this company's period starts<input type="date" data-jrd="${i}" value="${j.rp.s||''}"></label>`:''}`:''}</div>`}).join('')}${J.length<3?`<div class="tr" style="margin-top:10px"><button class="tg" data-ja="1">${J.length?'Add job':'Set up jobs'}</button></div>`:''}`)}
-let confirmJ=0,cjT=0;
+ set($('jobs'),`<div class="note">Add up to 3 jobs if you drive for more than one company. Switch off "Uses a tachograph" for a job where the vehicle has no tachograph or is outside the tacho rules. When you start a shift you are asked which job, and whether you are on tacho rules that day. Working time and rest are counted across all jobs together, because the law counts your total time.</div>${J.map((j,i)=>{const on=j.tc!==false;return `<div class="bx" style="margin-top:10px;border-left:4px solid ${JCOL[i]}"><div class="tr" style="gap:6px;margin:0"><input type="text" value="${esc(j.n)}" maxlength="24" data-jn="${i}" aria-label="Job ${i+1} name" style="flex:1;min-width:0"><button class="tg" data-jr="${i}" aria-label="Remove job">Remove</button></div><label class="tr" style="margin:10px 0 0;cursor:pointer"><span><span class="lbl">Uses a Tachograph</span><br><span class="note ${on?'ok':'warn'}">${on?'Yes. Driving counts towards the tacho limits.':'No. Only Work and Break are shown, and it counts as working time.'}</span></span><span class="swt"><input type="checkbox" data-jt="${i}"${on?' checked':''} aria-label="${esc(j.n)} uses a tachograph"><i></i></span></label>${J.length>1?`<label style="display:block;margin-top:10px"><span class="lbl">Reference Period for This Company</span><select data-jrp="${i}">${[['','Same as the default above'],['17','17 weeks, default dates'],['17c','17 weeks, company start date'],['26','26 weeks'],['26c','26 weeks, company start date']].map(([v,t])=>`<option value="${v}"${v===jrpV(j)?' selected':''}>${t}</option>`).join('')}</select></label>${jrpV(j).endsWith('c')?`<label style="display:block;margin-top:6px">Date this company's period starts<input type="date" data-jrd="${i}" value="${j.rp.s||''}"></label>`:''}`:''}</div>`}).join('')}${J.length<3?`<div class="tr" style="margin-top:10px"><button class="tg" data-ja="1">${J.length?'Add job':'Set up jobs'}</button></div>`:''}`)}
+
 $('jobs').onclick=e=>{const b=e.target.closest('[data-ja],[data-jr]');if(!b)return;const d=b.dataset;
- if(d.ja){st.jobs=st.jobs||[];if(!st.jobs.length)st.jobs.push({id:'j1',n:'Main job',tc:true});const id='j'+(Date.now()%1e6);st.jobs.push({id,n:'Job '+(st.jobs.length+1),tc:true});if(!st.cj)st.cj=st.jobs[0].id}
- else{const j=st.jobs[+d.jr];if(confirmJ!==j.id){confirmJ=j.id;clearTimeout(cjT);cjT=setTimeout(()=>{confirmJ=0;jobsUi()},4000);jobsUi();return}confirmJ=0;st.jobs.splice(+d.jr,1);if(st.cj===j.id){st.cj=st.jobs[0]?st.jobs[0].id:null;delete st.tm}}
+ if(d.ja){st.jobs=st.jobs||[];if(!st.jobs.length)st.jobs.push({id:'j1',n:'Main job',tc:true});let id='j'+(Date.now()%1e6);while(st.jobs.concat(st.jobx||[]).some(x=>x.id===id))id+='x';st.jobs.push({id,n:'Job '+(st.jobs.length+1),tc:true});if(!st.cj)st.cj=st.jobs[0].id}
+ else{jobDel(st.jobs[+d.jr]);return}
  save();jobsUi();render()};
+/* Removing a job keeps its logged hours and name. Planned shifts for it from today on are removed (after asking); past ones stay as history. */
+function jobDel(j){const td=ymd(Date.now()),yd=ymd(Date.now()-864e5),P=(st.pat||[]).filter(p=>p.j===j.id&&(!p.to||p.to>=td)),O=(st.plan||[]).filter(p=>p.j===j.id&&p.d>=td);
+ const go=()=>{st.jobs=st.jobs.filter(x=>x.id!==j.id);st.jobx=(st.jobx||[]).filter(x=>x.id!==j.id).concat([{id:j.id,n:j.n,tc:j.tc}]);if(st.cj===j.id){st.cj=st.jobs[0]?st.jobs[0].id:null;delete st.tm}
+  st.pat=(st.pat||[]).filter(p=>!(P.includes(p)&&p.from>yd));P.forEach(p=>{if(st.pat.includes(p))p.to=yd});st.plan=(st.plan||[]).filter(p=>!O.includes(p));save();moX();jobsUi();render();live()};
+ const n=P.length+O.length;
+ mo(`<h3>Remove ${esc(j.n)}?</h3><p>Hours you logged for ${esc(j.n)} are kept, still count towards your limits, and keep the name ${esc(j.n)} in your log.</p>${n?`<p>It has ${P.length?P.length+' repeating shift'+(P.length>1?'s':''):''}${P.length&&O.length?' and ':''}${O.length?O.length+' planned shift'+(O.length>1?'s':''):''} from today on. ${n>1?'These':'This'} will be removed from your plan.</p>`:''}<button class="tg big bad" data-k="ok">Remove ${esc(j.n)}</button><button class="tg big" data-k="no">Cancel</button>`);
+ mcb={no:moX,ok:go}}
 $('jobs').onchange=e=>{const d=e.target.dataset;if(d.jrp!==undefined){const j=st.jobs[+d.jrp],v=e.target.value;if(!v)delete j.rp;else{const w=v.startsWith('26')?26:17;j.rp={w};if(v.endsWith('c'))j.rp.s=ymd(refP(Date.now(),{w}).s)}save();jobsUi();render();live()}
  else if(d.jrd!==undefined){if(e.target.value){st.jobs[+d.jrd].rp.s=e.target.value;save();jobsUi();render();live()}}
  else if(d.jn!==undefined){st.jobs[+d.jn].n=(e.target.value||'Job '+(+d.jn+1)).trim();save();jobsUi();live()}
