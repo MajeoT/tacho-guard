@@ -7,17 +7,19 @@ const tmin=s=>{const[h,m]=String(s||'0:0').split(':').map(Number);return(h||0)*6
 const plId=()=>'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const dlong=t=>new Date(t).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
 const ordW=v=>(v||1)===1?'every week':v===2?'every other week':'every '+(['','','','third','fourth','fifth','sixth'][v]||v+'th')+' week';
+/* a clock time on a day (day = its local midnight), right on the days the clocks change */
+const plAt=(day,t)=>{const x=new Date(day),m=tmin(t);x.setHours(Math.floor(m/60),m%60,0,0);return x.getTime()};
 const hmx=(t,base)=>hm(t)+(sod(t)>sod(base)?' (+1)':'');
 
 function plOcc(from,to){const out=[],X=new Set(st.plx||[]),S=st.pls||{};
- (st.plan||[]).forEach(p=>{const s=pdt(p.d)+tmin(p.s)*M;let e=pdt(p.d)+tmin(p.e)*M;if(e<=s)e=nxd(pdt(p.d))+tmin(p.e)*M;if(e>from&&s<to)out.push(Object.assign({},p,{S:s,E:e,oid:p.id,st:S[p.id]}))});
+ (st.plan||[]).forEach(p=>{const s=plAt(pdt(p.d),p.s);let e=plAt(pdt(p.d),p.e);if(e<=s)e=plAt(nxd(pdt(p.d)),p.e);if(e>from&&s<to)out.push(Object.assign({},p,{S:s,E:e,oid:p.id,st:S[p.id]}))});
  (st.pat||[]).forEach(r=>{let d=Math.max(pdt(r.from),sod(from-864e5));const end=Math.min(to,r.to?nxd(pdt(r.to)):to);
   for(;d<end;d=nxd(d)){const wd=(new Date(d).getDay()+6)%7;if(!r.days.includes(wd))continue;if((r.ev||1)>1&&Math.round((wkS(d)-wkS(pdt(r.from)))/(7*864e5))%r.ev!==0)continue;const ds=ymd(d),oid=r.id+'|'+ds;if(X.has(oid))continue;
-   const s=d+tmin(r.s)*M;let e=d+tmin(r.e)*M;if(e<=s)e=nxd(d)+tmin(r.e)*M;if(e>from&&s<to)out.push({id:oid,pat:r.id,d:ds,j:r.j,s:r.s,e:r.e,br:r.br,bp:r.bp,dr:r.dr,rv:r.rv,S:s,E:e,oid,st:S[oid]})}});
+   const s=plAt(d,r.s);let e=plAt(d,r.e);if(e<=s)e=plAt(nxd(d),r.e);if(e>from&&s<to)out.push({id:oid,pat:r.id,d:ds,j:r.j,s:r.s,e:r.e,br:r.br,bp:r.bp,dr:r.dr,rv:r.rv,S:s,E:e,oid,st:S[oid]})}});
  /* rotas: several different weeks that roll round. from is the Monday of week 1 */
  (st.rota||[]).forEach(r=>{const W=(r.weeks||[]).length;if(!W)return;const f=pdt(r.from);let d=Math.max(f,r.on?pdt(r.on):Math.max(f,pdt(PL_ROTA0)),sod(from-864e5));const end=Math.min(to,r.to?nxd(pdt(r.to)):to);
   for(;d<end;d=nxd(d)){const wi=((Math.round((wkS(d)-wkS(f))/(7*864e5))%W)+W)%W,wd=(new Date(d).getDay()+6)%7;if(!r.weeks[wi].includes(wd))continue;const ds=ymd(d),oid=r.id+'|'+ds;if(X.has(oid))continue;
-   const s=d+tmin(r.s)*M;let e=d+tmin(r.e)*M;if(e<=s)e=nxd(d)+tmin(r.e)*M;if(e>from&&s<to)out.push({id:oid,pat:r.id,rot:1,wk:wi+1,d:ds,j:r.j,s:r.s,e:r.e,br:r.br,bp:r.bp,dr:r.dr,rv:r.rv,S:s,E:e,oid,st:S[oid]})}});
+   const s=plAt(d,r.s);let e=plAt(d,r.e);if(e<=s)e=plAt(nxd(d),r.e);if(e>from&&s<to)out.push({id:oid,pat:r.id,rot:1,wk:wi+1,d:ds,j:r.j,s:r.s,e:r.e,br:r.br,bp:r.bp,dr:r.dr,rv:r.rv,S:s,E:e,oid,st:S[oid]})}});
  return out.sort((a,b)=>a.S-b.S)}
 
 /* Spans: logged activity (not rest) plus planned shifts that have not happened yet. */
@@ -26,8 +28,13 @@ function plSpans(extra,skipId){const n=Date.now(),sp=[];
  const cut=Math.min(refMinS(n),wkS(n)-21*864e5);
  all().forEach(x=>{if(x.t==='r'||x.e<cut)return;sp.push({s:x.s,e:Math.min(x.e,n),w:x.t==='p'?0:x.e-x.s,dv:x.t==='d'?Math.min(x.e,n)-x.s:0,tc:x.t==='d'||onCard(x),log:1})});
  const lastLog=sp.length?Math.max(...sp.map(x=>x.e)):0;
- plOcc(n-14*864e5,n+400*864e5).forEach(o=>{if(o.oid===skipId||o.st==='skip'||o.st==='done')return;if(o.E<=n)return;
-  const s=Math.max(o.S,o.S<n?Math.max(n,lastLog):o.S);if(o.E<=s)return;const j=jobC(o.j),tc=j.tc!==false,w=Math.max(0,o.E-s-(o.br||0)*M);
+ const logs=sp.slice();
+ plOcc(n-14*864e5,n+400*864e5).forEach(o=>{if(o.oid===skipId||o.st==='skip'||o.st==='done')return;
+  /* a planned shift that has finished with nothing logged and no answer yet counts as worked (for 2 days), until you say what happened */
+  if(o.E<=n){if(o.E<n-2*864e5||logs.some(x=>x.e>o.S-H&&x.s<o.E+H))return;const j=jobC(o.j),tc=j.tc!==false,w=Math.max(0,o.E-o.S-(o.br||0)*M);sp.push({s:o.S,e:o.E,w,dv:tc?Math.min(w,(o.dr||0)*H):0,tc,br:o.br||0,id:o.oid,o,past:1});return}
+  /* a planned shift that has started with nothing logged for it (you log at the end of the day) counts from its planned start,
+     so the rests and limits around it are not made to look longer than they are */
+  const unlogged=o.S<n&&!st.active&&lastLog<o.S-H,s=unlogged?o.S:Math.max(o.S,o.S<n?Math.max(n,lastLog):o.S);if(o.E<=s)return;const j=jobC(o.j),tc=j.tc!==false,w=Math.max(0,o.E-s-(o.br||0)*M);
   sp.push({s,e:o.E,w,dv:tc?Math.min(w,(o.dr||0)*H):0,tc,br:o.br||0,id:o.oid,o})});
  if(extra)sp.push(extra);
  return sp.sort((a,b)=>a.s-b.s)}
@@ -56,7 +63,7 @@ function plCheck(sp){const I=new Map(),add=(x,lv,t)=>{if(x.log)return;const k=x.
   const len=c.e-c.s;if(len>15*H)pl.forEach(x=>add(x,'r','This shift spreads over '+fmt(len)+' from '+hm(c.s)+'. You need at least a 9 hour rest within 24 hours, so a shift can spread over 15 hours at most.'));
   else if(len>13*H)pl.forEach(x=>add(x,'a','This shift spreads over '+fmt(len)+'. That only leaves room for a reduced 9 hour daily rest.'));
   /* night work: any work between 00:00 and 04:00 limits work to 10h */
-  const night=c.sp.some(x=>{for(let d=sod(x.s);d<x.e;d=nxd(d)){if(x.s<d+4*H&&x.e>d)return true}return false});
+  const night=c.sp.some(x=>{for(let d=sod(x.s);d<x.e;d=nxd(d)){if(x.s<plAt(d,'04:00')&&x.e>d)return true}return false});
   if(night&&c.w>10*H)pl.forEach(x=>add(x,'r','Part of this shift is between 00:00 and 04:00, so working time is limited to 10 hours (this has '+fmt(c.w)+'). Only a workforce or collective agreement can extend it.'));
   else if(night)pl.forEach(x=>add(x,'i','Night work (00:00 to 04:00): working time is limited to 10 hours in 24 hours.'));
   /* working time breaks */
@@ -90,7 +97,7 @@ function plFree(d,base,baseI){const n=Date.now(),D0=Math.max(d,n),D1=nxd(d);if(D
  const ea=Math.max(D0,prev?prev+11*H:D0),laR=nxt===Infinity?Infinity:nxt-11*H,la=Math.min(laR,ea+15*H);
  if(ea>=D1)return{lv:3,ea,la,txt:'No start time today leaves an 11 hour rest after your last shift.',R:[]};
  const win=Math.min(la,D1+15*H)-ea;if(win<4*H)return{lv:3,ea,la,txt:win>0?'Only '+fmt(win)+' between the rests you need around your other shifts.':'No room between the rests you need around your other shifts.',R:[]};
- const s0=ea<d+4*H&&la-(d+4*H)>=8*H?d+4*H:ea,tj=jobs().find(j=>j.tc!==false)||jobs()[0];
+ const s0=ea<plAt(d,'04:00')&&la-(plAt(d,'04:00'))>=8*H?plAt(d,'04:00'):ea,tj=jobs().find(j=>j.tc!==false)||jobs()[0];
  const test=(a,e)=>{const tc=tj.tc!==false,bm=e-a>9*H||tc&&e-a>5*H?45:30,w=e-a-bm*M,hyp={s:a,e,w,dv:tc?Math.min(w,9*H):0,tc,br:bm,id:'hyp'};
   const I=plCheck(base.concat([hyp]).sort((x,y)=>x.s-y.s)),R=[];
   I.forEach((L,k)=>{L.forEach(x=>{if(x.lv==='i')return;if(k==='hyp')R.push(x);else if(!(baseI.get(k)||[]).some(y=>y.t===x.t)){const o=base.find(z=>z.id===k);R.push({lv:x.lv,t:'Knock-on for your '+(o&&o.o?esc(jobC(o.o.j).n)+' shift on '+dlong(o.s):'next shift')+': '+x.t})}})});
@@ -129,7 +136,7 @@ function plComp(sp,OFF){const n=Date.now(),I=typeof wrInfo==='function'?wrInfo()
  const O=[];((I&&I.C)||[]).forEach(c=>O.push({s:c.r.s,e:c.r.e,len:c.r.len,owed:c.owed,dl:c.dl,log:1}));
  /* which time off in the plan has to be a weekly rest: one has to start within 6 days of the last one ending, and a rest of
     24 to 45 hours is only a reduced weekly rest if no full one starts in time after it (otherwise it is just a long daily rest) */
- let le=I&&I.anc!==null?I.lastEnd:null;const B=OFF.filter(b=>le===null||b.s>=le-6e4),WR=[];
+ let le=I&&I.anc!==null?I.lastEnd:null;const lastE=L.length?Math.max(...L.map(x=>x.e)):0,B=OFF.filter(b=>le===null||b.s>=le-6e4).concat(lastE>n&&!OFF.some(b=>b.open)?[{s:lastE,e:Infinity,len:Infinity,full:true,open:1}]:[]),WR=[];/* after your last planned shift you are taken to be off, as the rule check does */
  B.forEach((b,i)=>{if(le!==null&&b.s<le-6e4)return;const by=(le===null?b.s:le)+144*H;
   if(!b.full&&!b.open&&B.slice(i+1).some(h=>(h.full||h.open)&&h.s<=by))return;le=b.e;WR.push(b);
   if(b.full||b.open||b.e<=n||O.some(o=>Math.abs(o.e-b.e)<H))return;O.push({s:b.s,e:b.e,len:b.len,owed:45*H-b.len,dl:add7(wkS(b.s),4)})});
@@ -246,7 +253,7 @@ function plDay(d){const n=Date.now(),sp=plSpans(),I=plCheck(sp),OFF=plOffs(sp),N
  if(o2&&o2.d+o2.w)h+=`<div class="item"><div class="lbl">Logged</div><div class="lbl">${fmt(o2.d)} driving, ${fmt(o2.w)} work</div></div>`;
  occ.forEach(o=>{const j=jobC(o.j),stx=o.st==='skip'?' · not worked':o.st==='done'||o.E<=n?' · past':'';
   h+=`<div class="bx" style="margin-top:8px;border-left:4px solid ${JCOL[jobI(j.id)]}"><div class="row"><span class="lbl">${esc(j.n)}${j.tc===false?' (no tacho)':''}${o.rot?' · rota week '+o.wk:o.pat?' · repeats '+ordW(((st.pat||[]).find(r=>r.id===o.pat)||{}).ev):''}${stx}</span><span class="lbl">${o.s.slice(0,5)}–${o.e.slice(0,5)}</span></div><div class="note">${o.br?o.br+' min break'+(o.bp?' (paid)':'')+'. ':''}${j.tc!==false&&o.dr?o.dr+'h driving expected. ':''}Working time about ${fmt(o.E-o.S-(o.br||0)*M)}.</div>${o.E>n&&o.st!=='skip'&&o.st!=='done'?'<div class="note" style="margin-top:4px">☕ '+plBrk(o.S,o.E,o.br||0,o.dr||0,j.tc!==false)+'</div>':''}${o.st==='skip'||o.st==='done'||o.E<=n?'':isz(I.get(o.oid))}<div class="tr" style="margin:8px 0 0;gap:6px;flex-wrap:wrap"><button class="tg" data-k="e:${o.oid}">Edit${o.pat?' this day':''}</button>${o.pat?`<button class="tg" data-k="es:${o.pat}">${o.rot?'Edit rota':'Edit repeat'}</button>`:''}<button class="tg" data-k="x:${o.oid}">Remove${o.pat?' this day':''}</button>${o.pat?`<button class="tg" data-k="xf:${o.oid}">Remove this and later</button>`:''}</div></div>`});
- if(fr){h+=`<div class="bx" style="margin-top:8px"><div class="lbl"><span class="pldot ${['','ok','warn','bad'][fr.lv]}"></span> ${fr.lv===3?'Rest: '+plRestWhy(fr):fr.lv===2?'Available, with a short daily rest':'Available'}</div>${fr.lv<3||fr.la>fr.ea?`<div class="note">Earliest start <b>${hm(fr.ea)}</b>, latest finish <b>${fr.la===Infinity?'no limit from other shifts':hmx(fr.la,d)}</b>, based on 11 hour rests around your other shifts${fr.ea<d+4*H?'. Starting before 04:00 counts as night work (10 hour limit)':''}.</div>`:''}${fr.txt?`<div class="note">${fr.txt}</div>`:''}${fr.lv<3&&!fr.cut?(fr.lv===1&&!fr.R.length?'<div class="note ok" style="margin-top:4px">✓ '+(/^(8|11|18)h/.test(fmt(fr.e0-fr.s0))?'An ':'A ')+fmt(fr.e0-fr.s0).replace(/ 00m$/,'')+' shift from '+hm(fr.s0)+' to '+hmx(fr.e0,d)+' breaks no rules.</div>':'<div class="note" style="margin-top:4px">'+(/^(8|11|18)h/.test(fmt(fr.e0-fr.s0))?'An ':'A ')+fmt(fr.e0-fr.s0).replace(/ 00m$/,'')+' shift from '+hm(fr.s0)+' to '+hmx(fr.e0,d)+':</div>'):''}${isz(fr.R)}</div>`}
+ if(fr){h+=`<div class="bx" style="margin-top:8px"><div class="lbl"><span class="pldot ${['','ok','warn','bad'][fr.lv]}"></span> ${fr.lv===3?'Rest: '+plRestWhy(fr):fr.lv===2?'Available, with a short daily rest':'Available'}</div>${fr.lv<3||fr.la>fr.ea?`<div class="note">Earliest start <b>${hm(fr.ea)}</b>, latest finish <b>${fr.la===Infinity?'no limit from other shifts':hmx(fr.la,d)}</b>, based on 11 hour rests around your other shifts${fr.ea<plAt(d,'04:00')?'. Starting before 04:00 counts as night work (10 hour limit)':''}.</div>`:''}${fr.txt?`<div class="note">${fr.txt}</div>`:''}${fr.lv<3&&!fr.cut?(fr.lv===1&&!fr.R.length?'<div class="note ok" style="margin-top:4px">✓ '+(/^(8|11|18)h/.test(fmt(fr.e0-fr.s0))?'An ':'A ')+fmt(fr.e0-fr.s0).replace(/ 00m$/,'')+' shift from '+hm(fr.s0)+' to '+hmx(fr.e0,d)+' breaks no rules.</div>':'<div class="note" style="margin-top:4px">'+(/^(8|11|18)h/.test(fmt(fr.e0-fr.s0))?'An ':'A ')+fmt(fr.e0-fr.s0).replace(/ 00m$/,'')+' shift from '+hm(fr.s0)+' to '+hmx(fr.e0,d)+':</div>'):''}${isz(fr.R)}</div>`}
  h+=plOffNote(d,OFF,NX,plComp(sp,OFF));
  h+=`<button class="tg big" data-k="add" style="margin-top:12px">Add shift</button><button class="tg big" data-k="rp">Repeating shift starting this day</button><button class="tg big" data-k="cw">Copy this week to next week</button><button class="tg big" data-k="no">Close</button>`;
  mo(h);mcb={no:moX,add:()=>plForm({d:ymd(d)}),cw:()=>plCopyWeek(d),rp:()=>plPatForm(null,ymd(d))};
@@ -328,7 +335,11 @@ function plBrkAt(S,E,br,dr,tc){const w=E-S-br*M,X=plWin(0,0,w,tc?(dr||0)*H:0);if
 /* The breaks to log for a planned shift: one in the advised window, or as many as the shift needs, each as late as allowed */
 function plBrkList(S,E,br,dr,tc){br=br||0;const w=E-S-br*M,dv=tc?(dr||0)*H:0,X=plWin(0,0,w,dv);if(!br)return [];
  if(!X||X.ok)return [{at:plBrkAt(S,E,br,dr,tc),len:br*M}];
- const G=plGreedy(w,dv);if(!G||!G.length)return [{at:plBrkAt(S,E,br,dr,tc),len:br*M}];const tot=G.reduce((q,x)=>q+x.len,0);if(br>tot)G[G.length-1].len+=br-tot;
+ const G=plGreedy(w,dv);if(!G||!G.length)return [{at:plBrkAt(S,E,br,dr,tc),len:br*M}];const tot=G.reduce((q,x)=>q+x.len,0);
+ /* never log more break than you planned: if the shift needed more, share out what was planned (driving breaks first, none under
+    15 minutes) and the rule check shows what is missing */
+ if(br>tot)G[G.length-1].len+=br-tot;else if(br<tot){let left=br;const ord=G.map((x,i)=>i).sort((a,b)=>(G[b].d||0)-(G[a].d||0)||a-b);ord.forEach(i=>{const g=Math.min(G[i].len,left);G[i].len=g>=15?g:0;left-=G[i].len});
+  for(let i=0;i<G.length&&left>0;i++)if(G[i].len){G[i].len+=left;left=0}for(let i=G.length-1;i>=0;i--)if(!G[i].len)G.splice(i,1)}
  let used=0;return G.map(x=>{const at=S+x.t+used;used+=x.len*M;return{at,len:x.len*M}})}
 /* The shift form: chips you tap instead of dropdowns. The values live in the same inputs as before (hidden where a chip row
    sets them), so plRead and both forms keep working. plFsync marks the chosen chips and writes the length line. */
@@ -401,7 +412,7 @@ function plForm(p){p=p||{};const isNew=!p.id&&!p.fromPat;const t0=sod(Date.now()
  <div class="fsec fchk"><div class="flb">Rules check</div><div id="pfiss"><div class="note">Checking…</div></div></div><div class="note bad" id="pferr"></div></div>
  <button class="tg big fpri" data-k="ok">${isNew?'Add shift':'Save changes'}</button>${isNew?'':`<button class="tg big fdel" data-k="del">${p.fromPat?'Remove this day':'Remove shift'}</button>`}<button class="tg big" data-k="no">Cancel</button>${isNew?'<button class="flink" data-k="rpl">Repeating shifts and rotas</button>':''}`);plDrv();plFsync();
  const build=()=>{const v=plRead(),d=$('pfdt').value;if(!d||!v.s||!v.e){$('pferr').textContent='Enter the date, start and finish.';return null}if(v.s===v.e){$('pferr').textContent='Start and finish cannot be the same.';return null}$('pferr').textContent='';return Object.assign({id:p.id||plId(),d},v)};
- const show=q=>{const s0=pdt(q.d)+tmin(q.s)*M;let e0=pdt(q.d)+tmin(q.e)*M;if(e0<=s0)e0=nxd(pdt(q.d))+tmin(q.e)*M;const j=jobC(q.j),tc=j.tc!==false,w=Math.max(0,e0-s0-q.br*M);
+ const show=q=>{const s0=plAt(pdt(q.d),q.s);let e0=plAt(pdt(q.d),q.e);if(e0<=s0)e0=plAt(nxd(pdt(q.d)),q.e);const j=jobC(q.j),tc=j.tc!==false,w=Math.max(0,e0-s0-q.br*M);
   const sk=p.id||p.fromPat,sp=plSpans({s:s0,e:e0,w,dv:tc?Math.min(w,q.dr*H):0,tc,br:q.br,id:'new'},sk),I=plCheck(sp),I0=plCheck(plSpans(null,sk)),L=(I.get('new')||[]).slice();
   I.forEach((A,k)=>{if(k==='new')return;const o=sp.find(x=>x.id===k);A.forEach(x=>{if(x.lv!=='i'&&!(I0.get(k)||[]).some(y=>y.t===x.t))L.push({lv:x.lv,t:'Knock-on for your '+(o&&o.o?esc(jobC(o.o.j).n)+' shift on '+dlong(o.s):'other shift')+': '+x.t})})});
   $('pfiss').innerHTML=L.length?L.map(x=>`<div class="note ${x.lv==='r'?'bad':x.lv==='a'?'warn':''}" style="margin-top:4px">${x.lv==='r'?'✕ ':x.lv==='a'?'⚠ ':'ℹ '}${x.t}</div>`).join(''):'';$('pfiss').innerHTML=plReq(s0,e0,q,tc,sp)+(L.length?'<div class="flb" style="margin-top:8px">Problems</div>'+$('pfiss').innerHTML:'<div class="freq ok"><b class="fi">✓</b><span><b>No rules broken</b> by this shift.</span></div>');return L};
@@ -507,24 +518,27 @@ function plPending(){const n=Date.now(),out=[],L=all(),src=o=>o.pat?(st.rota||[]
  if(out.dirty){delete out.dirty;save()}return out}
 function plBanner(){const el=$('plb');if(!el)return;const P=plPending();
  set(el,P.slice(0,2).map(({o,k})=>{const j=jobC(o.j);return `<div class="wkb wn" style="cursor:default"><b>${k==='end'?'Planned shift: what happened?':'Planned shift not started'}</b><span>${esc(j.n)} ${dlong(o.S)} ${o.rv?'about ':''}${o.s.slice(0,5)}–${o.e.slice(0,5)}. ${k==='end'?'Nothing was logged for it.':'It was due to start at '+o.s.slice(0,5)+'.'}</span><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${k==='end'?`<button class="tg" data-pbk="as:${o.oid}" style="flex:1 1 0;white-space:normal">Worked as planned</button><button class="tg" data-pbk="df:${o.oid}" style="flex:1 1 0;white-space:normal">Different times</button>`:`<button class="tg" data-pbk="go:${o.oid}" style="flex:1 1 0;white-space:normal">Start this shift</button>`}<button class="tg" data-pbk="sk:${o.oid}" style="flex:1 1 0;white-space:normal">Didn't work</button></div></div>`}).join(''))}
-/* Log a planned shift afterwards, as Other work with its breaks cut out. bk is the breaks you took ({at, len}), else the
-   planned break goes in the middle of the advised window. */
-function plLog(o,s,e,bk){const j=jobC(o.j),tc=j.tc!==false,mk=(a,b)=>{if(b>a){const x={s:a,e:b,t:'w'};if(jobsOn()){x.j=j.id;x.c=tc?1:0}clear(a,b,1);st.sessions.push(x)}};
+/* Log a planned shift afterwards with its breaks cut out. bk is the breaks you took ({at, len}), else the planned break goes
+   in the advised window (or as many breaks as the shift needs). drv is the driving for a tacho job (planned driving unless
+   given): it is put at the start of each stretch between breaks, shared out evenly, so your driving totals are counted. */
+function plLog(o,s,e,bk,drv){const j=jobC(o.j),tc=j.tc!==false,mk=(a,b,t)=>{if(b>a){const x={s:a,e:b,t};if(jobsOn()){x.j=j.id;x.c=t==='d'?1:tc?1:0}clear(a,b,1);st.sessions.push(x)}};
  if(!bk)bk=(o.br||0)*M<e-s?plBrkList(s,e,o.br||0,o.dr,tc):[];
- let c=s;bk.filter(x=>x.len>0&&x.at>=s&&x.at+x.len<=e).sort((x,y)=>x.at-y.at).forEach(x=>{if(x.at>=c){mk(c,x.at);c=x.at+x.len}});mk(c,e);
- st.pls=Object.assign({},st.pls,{[o.oid]:'done'})}
+ const seg=[];let c=s;bk.filter(x=>x.len>0&&x.at>=s&&x.at+x.len<=e).sort((x,y)=>x.at-y.at).forEach(x=>{if(x.at>=c){seg.push([c,x.at]);c=x.at+x.len}});seg.push([c,e]);
+ const W=seg.reduce((q,x)=>q+Math.max(0,x[1]-x[0]),0),D=tc?Math.min(W,drv===undefined?(o.dr||0)*H:drv):0,r=W>0?D/W:0;
+ seg.forEach(([a,b])=>{const dd=Math.round((b-a)*r/M)*M;mk(a,a+dd,'d');mk(a+dd,b,'w')});
+ st.pls=Object.assign({},st.pls,{[o.oid]:'done'});return D}
 function plAct(k,oid){const o=plOcc(Date.now()-15*864e5,Date.now()+2*864e5).find(x=>x.oid===oid);if(!o)return;
  if(k==='sk'){st.pls=Object.assign({},st.pls,{[oid]:'skip'});save();render();return}
- if(k==='as'){plLog(o,o.S,o.E);save();render();flash='Logged '+esc(jobC(o.j).n)+' '+o.s.slice(0,5)+'–'+o.e.slice(0,5)+' as Other work. Edit it in the log to split out any driving.';setTimeout(()=>{flash='';live()},9000);return}
+ if(k==='as'){const D=plLog(o,o.S,o.E);save();render();flash='Logged '+esc(jobC(o.j).n)+' '+o.s.slice(0,5)+'–'+o.e.slice(0,5)+(D?' with '+fmt(D).replace(/ 00m$/,'')+' of driving (at the start of each stretch between breaks) and the rest as Other work':' as Other work')+'. Edit it in the log if it was different.';setTimeout(()=>{flash='';live()},9000);return}
  if(k==='go'){if(jobsOn()){st.cj=o.j;st.tm=jobC(o.j).tc!==false;st.tmt=Date.now()}save();setAct('w');return}
  if(k==='df'){const d0=sod(o.S),ba=plBrkAt(o.S,o.E,o.br||0,o.dr,jobC(o.j).tc!==false);
   mo(`<h3>Work Done</h3><p>${esc(jobC(o.j).n)}, planned ${dlong(o.S)} ${o.s.slice(0,5)}–${o.e.slice(0,5)}.</p><div class="tr"><label>Started<input type="time" id="pas" value="${o.s.slice(0,5)}"></label><label>Finished<input type="time" id="pae" value="${o.e.slice(0,5)}"></label></div>
   <div class="lbl" style="margin-top:6px">Breaks you took</div><div class="note" style="margin-bottom:4px">When each one started and how long it was. Leave the second one empty if you took one break.</div>
   ${[0,1].map(i=>`<div class="tr"><label>Break ${i+1} started<input type="time" id="pba${i}" value="${i?'':hm(ba)}"></label><label>Minutes<input type="number" id="pbm${i}" min="0" max="180" value="${i?'':o.br||0}"></label></div>`).join('')}
-  <div class="note bad" id="paerr"></div><button class="tg big" data-k="ok">Log it</button><button class="tg big" data-k="no">Cancel</button>`);
-  mcb={no:moX,ok:()=>{const a=$('pas').value,b=$('pae').value;if(!a||!b){$('paerr').textContent='Enter both times.';return}const s=d0+tmin(a)*M;let e=d0+tmin(b)*M;if(e<=s)e=nxd(d0)+tmin(b)*M;if(e>Date.now()){$('paerr').textContent='The finish is in the future.';return}
-   const bk=[];for(const i of [0,1]){const t=$('pba'+i).value,m=+$('pbm'+i).value||0;if(!t||!m)continue;let at=d0+tmin(t)*M;if(at<s)at+=864e5;if(at<s||at+m*M>e){$('paerr').textContent='Break '+(i+1)+' is not inside the shift.';return}bk.push({at,len:m*M})}
-   plLog(o,s,e,bk);save();moX();render()}}}}
+  ${jobC(o.j).tc!==false?`<label>Driving (hours)<input type="number" id="pdr" min="0" max="15" step="0.25" value="${o.dr||0}"></label><div class="note" style="margin-top:-4px">Counted towards your driving limits. It goes at the start of each stretch between breaks: edit the log if you want it exact.</div>`:''}<div class="note bad" id="paerr"></div><button class="tg big" data-k="ok">Log it</button><button class="tg big" data-k="no">Cancel</button>`);
+  mcb={no:moX,ok:()=>{const a=$('pas').value,b=$('pae').value;if(!a||!b){$('paerr').textContent='Enter both times.';return}const s=plAt(d0,a);let e=plAt(d0,b);if(e<=s)e=plAt(nxd(d0),b);if(e>Date.now()){$('paerr').textContent='The finish is in the future.';return}
+   const bk=[];for(const i of [0,1]){const t=$('pba'+i).value,m=+$('pbm'+i).value||0;if(!t||!m)continue;let at=plAt(d0,t);if(at<s)at=plAt(nxd(d0),t);if(at<s||at+m*M>e){$('paerr').textContent='Break '+(i+1)+' is not inside the shift.';return}bk.push({at,len:m*M})}
+   const dv=$('pdr')?(parseFloat($('pdr').value)||0)*H:0;if(dv>e-s){$('paerr').textContent='There is more driving than the shift is long.';return}plLog(o,s,e,bk,dv);save();moX();render()}}}}
 
 /* A planned shift whose start time has passed, that has not ended, with nothing logged for it yet. */
 function plDue(){const n=Date.now(),L=all();
@@ -574,4 +588,4 @@ $('plc').addEventListener('click',e=>{const t=e.target.closest('[data-pm],[data-
  if(d.pm!==undefined){if(d.pm==='0')PL.m=null;else{const m=new Date(plMonth());m.setMonth(m.getMonth()+ +d.pm);PL.m=m.getTime()}plRender()}
  else if(d.pa)plAddMenu();else if(d.pp)plPatList();else if(d.pd)plDay(+d.pd)});
 $('plc').addEventListener('click',e=>{if(e.target.closest('[data-owe]'))wrDetail()});
-if(typeof KEEP!=='undefined')['plan','pat','plx','pls','rota'].forEach(k=>{if(!KEEP.includes(k))KEEP.push(k)});
+if(typeof KEEP!=='undefined')['plan','pat','plx','pls','rota','plxc'].forEach(k=>{if(!KEEP.includes(k))KEEP.push(k)});
