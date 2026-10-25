@@ -143,6 +143,9 @@ function plMonth(){if(!PL.m){const t=new Date(sod(Date.now()));t.setDate(1);PL.m
    (the rules mean you cannot work). Free days are checked with a test shift by plFree. */
 function plRestWhy(fr){const t=(fr.txt||'')+' '+(fr.R||[]).filter(x=>x.lv==='r').map(x=>x.t).join(' ');
  return /weekly rest/i.test(t)?'needed for your weekly rest':/60 hour/.test(t)?'your 60 hour week is used up':/56 hour|90 hour|fortnight/i.test(t)?'your driving hours are used up':/48 hour/.test(t)?'your 48 hour average is used up':/night/i.test(t)?'night work limit':/rest|11 hour/i.test(t)?'you need your daily rest':'the rest rules'}
+/* What working a free day would cost you, from the warnings on the test shift (and knock-ons for your other shifts) */
+function plWarnWhy(fr){const t=(fr.R||[]).filter(x=>x.lv==='a').map(x=>x.t).join(' ');
+ return /reduced weekly rest/i.test(t)?'it cuts your weekly rest to under 45 hours':/reduced (9 hour )?daily rest|reduced daily rest/i.test(t)?'you would only get a reduced daily rest':/48 hours/.test(t)?'your 48 hour average would go over':/10 hour/.test(t)?'it uses one of your two 10 hour driving days':'tap to see why'}
 function plStat(d,C){const n=C.n,D1=nxd(d),past=D1<=n,td=d===sod(n),os=C.occ.filter(o=>sod(o.S)===d&&o.st!=='skip'&&!(o.st==='done'||o.E<=n)),o2=C.T[d],logged=o2?o2.d+o2.w:0,S={d,D1,past,td,os,logged,sub:[]};
  if(os.length){S.k='work';S.txt=os.map(o=>{const j=jobC(o.j),w=worst(C.I.get(o.oid));return `Working ${o.s.slice(0,5)}–${o.e.slice(0,5)}${multi()?' · '+esc(j.n):''}${w>=3?' <b class="bad">· breaks a rule</b>':w===2?' <b class="warn">· see details</b>':''}`}).join('<br>')}
  else if(past)S.k=logged?'did':'off',S.txt=logged?'Worked '+fmt(logged).replace(' 00m',''):'Not working';
@@ -150,15 +153,11 @@ function plStat(d,C){const n=C.n,D1=nxd(d),past=D1<=n,td=d===sod(n),os=C.occ.fil
  else{const fr=plFree(d,C.sp,C.I);S.fr=fr;
   if(!fr){S.k=logged?'did':'off';S.txt=logged?'Worked '+fmt(logged).replace(' 00m','')+' today':'Not working'}
   else if(fr.lv===3){S.k='rest';S.txt='Rest: '+plRestWhy(fr)}
-  else{const from=fr.ea>d+15*M?plHm(fr.ea):'',until=fr.la!==Infinity&&fr.la<=D1?plHm(fr.la):'';
-   S.k=fr.lv===2?'warn':'ok';S.txt='Available '+(from&&until?from+' to '+until:from?'from '+from:until?'until '+until:'all day')+(fr.lv===2?', with a short daily rest':'')}}
- C.OFF.filter(b=>b.s<D1&&b.e>d).forEach(b=>{const kind=b.full?'weekly rest':'reduced weekly rest',c=b.full?'ok':'warn';
-  if(b.s>=d)S.sub.push([c,b.open?`🛏 Off from ${plHm(b.s)}, nothing planned after that`:`🛏 Your ${kind} starts ${plHm(b.s)} (${plHrs(b.len)} off)`]);
-  else if(b.e<D1&&!b.open)S.sub.push([c,`🛏 Your ${kind} ends ${plHm(b.e)} (${plHrs(b.len)} off)`]);
-  else S.sub.push([c,`🛏 ${b.full?'Weekly rest day':'Reduced weekly rest day'}`])});
+  else{const from=fr.ea>d+15*M?plHm(fr.ea):'',ut=fr.cut?fr.e0:fr.la!==Infinity&&fr.la<=D1?fr.la:0,until=ut?hmx(ut,d):'';
+   S.k=fr.lv===2?'warn':'ok';S.txt='Available '+(from&&until?from+' to '+until:from?'from '+from:until?'until '+until:'all day')+(fr.lv===2?', but '+plWarnWhy(fr):'')}}
  if(C.NX&&C.NX.miss&&C.NX.due>n&&sod(C.NX.due)===d)S.sub.push(['bad',`⚠ Your weekly rest must start by ${plHm(C.NX.due)}`]);
  S.band=C.OFF.find(b=>b.s<=d&&b.e>=D1);return S}
-const plIco={work:'⚒',ok:'✓',warn:'✓',rest:'✕',did:'✔',off:'–'};
+const plIco={work:'⚒',ok:'✓',warn:'⚠',rest:'✕',did:'✔',off:'–'};
 function plRender(){const el=$('plc');if(!el)return;const n=Date.now(),v=PL.v||(PL.v=(()=>{try{return localStorage.getItem('tg.plv')||'list'}catch(e){return 'list'}})());
  const m0=plMonth(),md=new Date(m0),gs=v==='list'?sod(n):wkS(m0),me=new Date(md.getFullYear(),md.getMonth()+1,1).getTime(),ge=v==='list'?sod(n)+(PL.ln||14)*864e5:nwk(wkS(me-864e5));
  const sp=plSpans(),I=plCheck(sp),occ=plOcc(gs,Math.max(ge,gs+50*864e5)),OFF=plOffs(sp),NX=plNext(sp,OFF),T=typeof dayTot==='function'?dayTot():{},C={n,sp,I,occ,OFF,NX,T};
@@ -166,20 +165,20 @@ function plRender(){const el=$('plc');if(!el)return;const n=Date.now(),v=PL.v||(
  if(v==='list'){h+='<div class="pdl">';
   for(let d=sod(n);d<ge;d=nxd(d)){const S=plStat(d,C),dt=new Date(d),k=S.k;
    h+=`<button class="pdr${S.td?' pdt':''}${S.band?' pdo'+(S.band.full?'':' pdo2'):''}" data-pd="${d}"${S.os[0]?` style="border-left-color:${JCOL[jobI(jobC(S.os[0].j).id)]}"`:''}><span class="pdd"><b>${S.td?'Today':dt.toLocaleDateString('en-GB',{weekday:'short'})}</b><span>${dt.getDate()} ${dt.toLocaleDateString('en-GB',{month:'short'})}</span></span><span class="pdb"><span class="pds ${k}">${plIco[k]} ${S.txt}</span>${S.sub.map(x=>`<span class="pdx ${x[0]}">${x[1]}</span>`).join('')}</span><span class="pda" aria-hidden="true">›</span></button>`}
-  h+=`</div><button class="tg big" data-pl="1" style="margin-top:8px">Show 14 more days</button><p class="note" style="margin-top:6px">Tap a day to see the details, add a shift or check what you could work. Earlier days are in Month.</p>`}
+  h+=`</div><button class="tg big" data-pl="1" style="margin-top:8px">Show 14 more days</button><p class="note" style="margin-top:6px">Green days are part of a weekly rest in your plan (amber if it is a reduced one). Tap a day for its details, to add a shift or to see what you could work. Earlier days are in Month.</p>`}
  else{h+=`<div class="tr" style="margin:0 0 8px;gap:6px"><button class="tg" data-pm="-1" aria-label="Previous month">‹</button><b style="flex:1;text-align:center;font-size:17px">${md.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</b><button class="tg" data-pm="1" aria-label="Next month">›</button><button class="tg" data-pm="0">This month</button></div>`;
   h+='<div class="plg">'+['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(x=>`<div class="plh">${x}</div>`).join('');
   let shown=0;const wk0=wkS(n);
   for(let d=gs;d<ge||(shown<42&&ge>n);d=nxd(d)){if((new Date(d).getDay()+6)%7===0&&d<wk0){let any=false;for(let q=d,k=0;k<7;k++,q=nxd(q)){const t=T[q];if((t&&t.d+t.w)||occ.some(o=>sod(o.S)===q&&o.st!=='skip')){any=true;break}}if(!any){d=add7(d,1)-864e5;d=sod(d);continue}}shown++;
    const S=plStat(d,C),inM=new Date(d).getMonth()===md.getMonth(),k=S.k;
-   const chips=k==='work'&&S.os.length?S.os.map(o=>{const w=worst(I.get(o.oid));return `<div class="plk" style="border-left-color:${JCOL[jobI(jobC(o.j).id)]}">${ct(o.s)}–${ct(o.e)}${w>=2?`<i class="${w>=3?'bad':'warn'}">!</i>`:''}</div>`}).join(''):k==='did'?`<div class="plk pll">${fmt(S.logged).replace(' 00m','')}</div>`:k==='ok'||k==='warn'?`<div class="plr pst ${k}">Available</div>`:k==='rest'?`<div class="plr pst bad">Rest</div>`:k==='work'?`<div class="plr mut">Working</div>`:'';
-   const due=S.sub.find(x=>x[0]==='bad')?`<div class="plr bad">Rest due <span>${plHm(NX.due)}</span></div>`:'',rs=OFF.filter(b=>b.s>=d&&b.s<S.D1).map(b=>`<div class="pls2 ${b.full?'ok':'warn'}">🛏 ${plHm(b.s)}</div>`).join(''),re=OFF.filter(b=>b.s<d&&b.e>d&&b.e<S.D1&&!b.open).map(b=>`<div class="pls2 ${b.full?'ok':'warn'}">🛏 to ${plHm(b.e)}</div>`).join('');
+   const chips=k==='work'&&S.os.length?S.os.map(o=>{const w=worst(I.get(o.oid));return `<div class="plk" style="border-left-color:${JCOL[jobI(jobC(o.j).id)]}">${ct(o.s)}–${ct(o.e)}${w>=2?`<i class="${w>=3?'bad':'warn'}">!</i>`:''}</div>`}).join(''):k==='did'?`<div class="plk pll">${fmt(S.logged).replace(' 00m','')}</div>`:k==='ok'||k==='warn'?`<div class="plr pst ${k}">${k==='warn'?'Available ⚠':'Available'}</div>`:k==='rest'?`<div class="plr pst bad">Rest</div>`:k==='work'?`<div class="plr mut">Working</div>`:'';
+   const due=S.sub.find(x=>x[0]==='bad')?`<div class="plr bad">Rest due <span>${plHm(NX.due)}</span></div>`:'',rs='',re='';
    h+=`<button class="pld${inM||S.band?'':' plo'}${S.band?' ploff'+(S.band.full?'':' plred'):''}${S.td?' plt':''}${S.past?' plp':''}" data-pd="${d}"><span class="pln">${new Date(d).getDate()}</span>${re}${chips}${rs}${due}</button>`}
   h+='</div>'+(shown?'':'<p class="note" style="text-align:center;margin:12px 0">Nothing was logged or planned in this month.</p>')+'<div class="bx plkey" style="margin-top:10px"><div class="lbl" style="margin-bottom:4px">Key</div>'+
    '<div><span class="ki"><span style="display:inline-block;width:14px;height:10px;border-left:3px solid var(--mut);background:var(--bg)"></span></span>Working: a planned shift, in the job\'s colour. A red ! means it breaks a rule</div>'+
-   '<div><span class="ki"><span class="plr ok" style="margin:0">Available</span></span>Nothing planned and you could work. Tap the day to see from when and until when</div>'+
+   '<div><span class="ki"><span class="plr ok" style="margin:0">Available</span></span>Nothing planned and you could work. Tap the day to see from when and until when</div><div><span class="ki"><span class="plr warn" style="margin:0">Available ⚠</span></span>You could work, but it would mean a reduced daily or weekly rest. Tap the day to see which</div>'+
    '<div><span class="ki"><span class="plr bad" style="margin:0">Rest</span></span>You cannot work this day: the rules need you to rest. Tap the day to see why</div>'+
-   '<div><span class="ki"><span style="display:inline-block;width:14px;height:10px;border-radius:3px;background:rgba(52,211,153,.25);border:1px solid rgba(52,211,153,.6)"></span></span>Green days are your weekly rest (45 hours or more off). Amber is a reduced one (24 to 45 hours). 🛏 17:00 is when it starts, 🛏 to 09:00 when it ends</div>'+
+   '<div><span class="ki"><span style="display:inline-block;width:14px;height:10px;border-radius:3px;background:rgba(52,211,153,.25);border:1px solid rgba(52,211,153,.6)"></span></span>Green days are part of a weekly rest in your plan (45 hours or more off). Amber is a reduced one (24 to 45 hours). Tap the day to see when it starts and ends</div>'+
    '<div><span class="ki"><span class="plr bad" style="margin:0">Rest due</span></span>Your weekly rest has to start by this time, and your plan does not leave room for it</div><div class="note" style="margin-top:4px">Tap a day for details.</div></div>'}
  set(el,h)}
 
