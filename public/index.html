@@ -340,6 +340,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 #plu{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:21;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);width:max-content;padding:10px 10px 10px 16px;border-radius:14px;background:#1f2937;color:#fff;font-size:14.5px;box-shadow:0 8px 24px rgba(0,0,0,.4)}#plu .tg{flex:none;background:var(--acc);border-color:var(--acc);color:var(--onacc);font-weight:700}
 .bplan{grid-column:1/-1;display:block;margin:8px 2px 12px;padding:10px 12px;border:1px solid var(--bd);border-left:4px solid var(--acc);border-radius:12px;background:var(--card);font-size:14px}
 .pld.plb{visibility:hidden;pointer-events:none}
+.pkw .pkf{min-height:11px;line-height:11px}
 .pselbar{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);z-index:5;display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;background:var(--card);border:1.5px solid var(--acc);border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.18)}.pselbar span{flex:1;min-width:0;white-space:nowrap}.pselbar .tg{padding:8px 10px;flex:none}@media(max-width:360px){.pselbar{gap:5px;padding:8px}.pselbar .tg{padding:7px 8px;font-size:13px}}
 .fform{display:flex;flex-direction:column;gap:14px;margin:4px 0 12px}
 .fsec{display:flex;flex-direction:column;gap:8px}
@@ -499,7 +500,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-145';
+const APPV='tg-2026-10-23-146';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1389,7 +1390,7 @@ function liveRun(){
  if(onS&&isTc())h+=`<div class="g cd w${bOn?' on':' off'}"><div class="row"><span class="lbl">Break Taken${so(bOn,CNT)}</span><span class="num">${pm} <small>/ 45 min</small></span></div>${bkc?`<div class="row" style="margin-top:6px"><span class="lbl">${endd?'Resting for':'On break for'}</span><span class="num bkc">${bkc}</span></div>`:''}<div class="bar"><i style="width:${Math.round(prog/(45*M)*100)}%;background:var(--${pc})"></i></div><div class="note">${pm>=45?'Full break done.':false?'':(pm?'15 minute part counted. The next part only counts if it is 30 minutes or more.':'Nothing counted yet. A break under 15 minutes does not count.')+(!busy&&bgc>=M?' This break: '+Math.floor(bgc/M)+' min so far'+(bp?(bgc<30*M?', counts at 30.':'.'):(bgc<15*M?', counts at 15.':', full break at 45.')):'')}</div>${bu.length&&bu[bu.length-1].g===bsig()?`<button class="tg" data-ub="1" style="display:block;width:100%;margin-top:10px;padding:12px;font-size:16px;border-radius:10px;border-color:var(--bad)">Undo +${bu[bu.length-1].n} min</button>`:''}</div>`;
  /* break timing for the shift you planned: when to take it so it lasts to the planned finish */
  if(onS&&busy&&ss&&typeof plLive==='function'){try{const po=plOcc(ss-3*H,n+H).filter(o=>o.st!=='skip'&&o.E>n+15*M&&o.S<n+H&&Math.abs(o.S-ss)<4*H).sort((x,y)=>Math.abs(x.S-ss)-Math.abs(y.S-ss))[0];
-  if(po){const tk=(n-ss)-wc.d>=15*M,tx=plLive(n,po.E,tk?0:(po.br||0),wc.d,isTc()?b.d:0,isTc()?Math.max(0,(po.dr||0)*H-day):0);if(tx)h+=`<div class="note bplan">${tx}</div>`}}catch(e){}}
+  if(po){const tk=(n-ss)-wc.d>=15*M,fe=po.rv?ss+(po.E-po.S):po.E,tx=plLive(n,fe,po.rv&&fe!==po.E,tk?0:(po.br||0),wc.d,isTc()?b.d:0,isTc()?Math.max(0,(po.dr||0)*H-day):0);if(tx)h+=`<div class="note bplan">${tx}</div>`}}catch(e){}}
  set($('s1'),h);
  const dt=extLeft?'You can extend to 10h ('+(2-prev)+' left this week).':'No 10h extensions left this week.';
  const td=sod(n),poaD=sum(a0.filter(x=>x.t==='p'),td,n+1),poaW=sum(a0.filter(x=>x.t==='p'),w,n+1),paidD=sum(a0.filter(x=>x.t!=='r'),td,n+1);
