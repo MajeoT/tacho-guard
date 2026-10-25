@@ -116,6 +116,7 @@ a{color:var(--tx)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1220;--card:#131c2e;--tx:#e2e8f0;--mut:#94a3b8;--tx2:#aab6c6;--bd:rgba(148,163,184,.2);--bd2:rgba(148,163,184,.3);--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--okc:#34d399;--wnc:#fbbf24;--acc:#38bdf8;--onacc:#06202e;--okt:#04130a;--pan:rgba(30,41,59,.55);--panb:#131c2e;--glow:rgba(56,189,248,.2);--soft:rgba(56,189,248,.13);--sub:rgba(148,163,184,.08)}}
 :root[data-theme="dark"]{--bg:#0b1220;--card:#131c2e;--tx:#e2e8f0;--mut:#94a3b8;--tx2:#aab6c6;--bd:rgba(148,163,184,.2);--bd2:rgba(148,163,184,.3);--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--okc:#34d399;--wnc:#fbbf24;--acc:#38bdf8;--onacc:#06202e;--okt:#04130a;--pan:rgba(30,41,59,.55);--panb:#131c2e;--glow:rgba(56,189,248,.2);--soft:rgba(56,189,248,.13);--sub:rgba(148,163,184,.08)}
 html{background:var(--bg)}
+#updc{margin:0 0 12px;padding:14px;border:2px solid var(--warn);border-radius:16px;background:rgba(245,158,11,.13)}#updc .uh{display:flex;gap:12px;align-items:flex-start}#updc .ui{flex:none;width:44px;height:44px;border-radius:50%;background:var(--warn);color:var(--bg);display:flex;align-items:center;justify-content:center}#updc b{display:block;font:700 17px var(--display);color:var(--tx)}#updc p{margin:3px 0 0;font-size:14px;color:var(--tx)}#updc button{width:100%;margin-top:12px;padding:12px;font-size:16px;font-weight:700;border-radius:12px;background:var(--acc);color:var(--onacc);border:1px solid var(--acc);display:flex;gap:8px;align-items:center;justify-content:center}
 body{font-family:var(--body);font-size:16px;line-height:1.45;background:radial-gradient(900px 520px at 10% -8%,rgba(56,189,248,.16),transparent 62%),radial-gradient(700px 480px at 100% 0,rgba(16,185,129,.1),transparent 58%),var(--bg);background-attachment:fixed;-webkit-font-smoothing:antialiased}
 :root:not([data-theme="dark"]) body{background:radial-gradient(900px 520px at 10% -8%,rgba(3,105,161,.08),transparent 62%),var(--bg)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body{background:radial-gradient(900px 520px at 10% -8%,rgba(56,189,248,.16),transparent 62%),radial-gradient(700px 480px at 100% 0,rgba(16,185,129,.1),transparent 58%),var(--bg);background-attachment:fixed}}
@@ -315,9 +316,9 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 </head>
 <body>
 <main>
-<div class="hd"><div><div class="kick">Drivers' hours</div><h1>TachoGuard <button class="i" data-i="about" aria-label="More info">i</button></h1></div><div class="hr"><button class="tg hbtn" id="cpb" aria-pressed="false"></button><button class="tab gear" data-t="set" aria-label="Settings">Settings</button></div></div>
+<div class="hd"><div><h1>TachoGuard <button class="i" data-i="about" aria-label="More info">i</button></h1></div><div class="hr"><button class="tg hbtn" id="cpb" aria-pressed="false"></button><button class="tab gear" data-t="set" aria-label="Settings">Settings</button></div></div>
 <div class="tabs"><button class="tab on" data-t="today"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Today</span></button><button class="tab" data-t="plan"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Plan</span></button><button class="tab" data-g="rec"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h8l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 6 20V5A1.5 1.5 0 0 1 7 3.5z"/><path d="M9 12h7M9 16h7"/></svg><span>Records</span></button><button class="tab" data-t="signs"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg><span>Learn</span></button></div><div class="subtabs" id="subtabs" hidden></div>
-<div id="rmb" aria-live="assertive"></div><div id="sync" role="status"></div>
+<div id="updc" role="status" hidden></div><div id="rmb" aria-live="assertive"></div><div id="sync" role="status"></div>
 <section id="t-today">
 <div class="alert" id="alert" hidden></div>
 <div id="plb"></div><div id="iss"></div><div id="wkb"></div><div id="mx"></div><div id="owe"></div>
@@ -441,7 +442,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-123';
+const APPV='tg-2026-10-23-124';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -965,6 +966,13 @@ function longFind(){const n=Date.now(),A=st.sessions.filter(y=>(y.t||'d')!=='r')
  return null}
 /* asked once per app launch: closing it without an answer does not bring it back on every tab change */
 const longSeen=new Set();
+/* Tell an open app when a newer version has been published: a card at the top of every tab that cannot be put away, with an update
+   button. The live version is read from sw.js (always fetched fresh), so there is no separate version file to keep in step. */
+function updWatch(){if(!/^https?:$/.test(location.protocol))return;let shown=false;const RF='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M3 21v-5h5"/></svg>';
+ const show=()=>{if(shown)return;shown=true;const c=$('updc');set(c,`<div class="uh"><span class="ui">${RF}</span><span><b>This version of TachoGuard is out of date</b><p>A newer version is ready. Updating takes a moment and keeps everything you have logged.</p></span></div><button id="updb">${RF}<span>Update now</span></button>`);c.hidden=false;
+  $('updb').onclick=()=>{const b=$('updb');b.disabled=true;b.lastChild.textContent='Updating…';try{save()}catch(e){}setTimeout(()=>location.reload(),1200)}};
+ const chk=async()=>{if(shown||document.visibilityState!=='visible')return;try{const r=await fetch('sw.js',{cache:'no-store'});if(!r.ok)return;const m=(await r.text()).match(/VERSION='([^']+)'/);if(m&&m[1]!==APPV)show()}catch(e){}};
+ setTimeout(chk,5000);setInterval(chk,60000);document.addEventListener('visibilitychange',chk)}
 function chkLong(){if(!MO.hidden||!st||!st.sessions)return;const r=longFind();if(r&&!longSeen.has(sKey(r.x))){longSeen.add(sKey(r.x));longAsk(r)}}
 function longAsk(r){const x=r.x,dv=r.kind==='d',lo=r.rs,hi=x.e;let N=45;
  const f0=Math.max(lo,Math.min(r.c,hi-N*M));
@@ -2137,7 +2145,7 @@ try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}
  d.innerHTML='<b>Desktop site is switched on.</b> That makes TachoGuard look zoomed out and small. To fix it, open Chrome, tap the ⋮ menu and untick <b>Desktop site</b>, then reopen the app. <button class="tg" style="margin-top:8px;display:block">Hide this</button>';
  d.querySelector('button').onclick=()=>{try{sessionStorage.setItem('tgDsk','1')}catch(e){}d.remove()};document.body.prepend(d)}catch(e){}})();
 window.TG_OK=1;$('ver').textContent='TachoGuard v'+APPV.replace(/^tg-(\d+)-(\d+)-(\d+)-(\d+)$/,'$1.$2.$3.$4');
-addSrc();if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){const hadCtl=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!hadCtl||document.getElementById('upd'))return;const u=document.createElement('button');u.id='upd';u.className='tg';u.textContent='App updated. Tap to reload';u.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60;box-shadow:0 4px 16px rgba(0,0,0,.25)';u.onclick=()=>location.reload();document.body.appendChild(u)});window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+addSrc();updWatch();if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 </script>
 <script src="plan.js"></script>
 </body>
