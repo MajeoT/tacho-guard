@@ -262,7 +262,7 @@ function plWin(w0,d0,R,Dr){const dv=Dr>0&&d0+Dr>=270*M,r=R>0?Dr/R:0;
  if(dv&&r>0){const x=R-270*M/r,y=(270*M-d0)/r;if(x>lo){lo=x;lw='d'}if(y<hi){hi=y;hw='d'}}
  lo=Math.max(0,lo);return{lo,hi,lw,hw,ok:lo<=hi+6e4}}
 const plR5=(t,up)=>(up?Math.ceil:Math.floor)(t/(5*M))*5*M;
-const plWhy=k=>k==='d'?'4h 30m of driving':'6 hours of work';
+const plWhy=k=>k==='dn'?'4h 30m of driving if you keep driving':k==='d'?'4h 30m of driving':'6 hours of work';
 function plBrk(S,E,br,dr,tc){br=br||0;const w=E-S-br*M,dv=tc?(dr||0)*H:0,need=Math.max(w>9*H?45:w>6*H?30:0,dv>=270*M?45:0),X=plWin(0,0,w,dv);
  if(!X)return br?'No break is needed by law for this shift, so take yours when it suits you.':'No break is needed by law for up to 6 hours of work and under 4h 30m of driving.';
  const len=Math.max(br,need),pre=br<need?`This shift needs at least ${need} minutes of breaks, so add more. `:'';
@@ -278,15 +278,37 @@ function plBrk(S,E,br,dr,tc){br=br||0;const w=E-S-br*M,dv=tc?(dr||0)*H:0,need=Ma
  const b1=dv>=270*M?15:Math.max(15,Math.floor(len/2/5)*5),b2=len-b1;
  return pre+`One ${len} minute break cannot cover this shift: with ${fmt(w).replace(/ 00m$/,'')} of work${dv?' and '+fmt(dv).replace(/ 00m$/,'')+' of driving':''}, whenever you took it there would be too long a stretch before or after. Split it: about <b>${b1} minutes around ${plHm(S+plR5(t1))}</b>, then <b>${b2} minutes around ${plHm(S+plR5(t2)+b1*M)}</b>.${dv>=270*M?' The second part must be 30 minutes or more.':''}`}
 /* The same advice live, during a shift you planned: worked out again on every tick from the real start, the work and driving
-   since your last break, and the driving still planned, so it follows the day as it goes. */
-function plLive(n,E,mv,br,w0,d0,Dr){const R=E-n-br*M;if(R<15*M)return '';const X=plWin(w0,d0,R,Dr);
- /* mv: times vary, so the finish moves with your real start (the same length as planned) */
+   since your last break, the breaks already taken and the driving still planned, so it follows the day as it goes.
+   q: n now, E finish, mv (times vary: the finish moved with your real start), br planned break minutes, tk break time taken
+   so far (each part 15 minutes or more), tot work so far, w0 and d0 work and driving since the last break, Dr driving still to
+   do, half (the 15 minute part of a split driving break is done). */
+function plLive(q){const{n,E,mv,br,tk,tot,w0,d0,Dr,half,drv}=q,tkm=Math.round(tk/M);
  const f=mv?`a finish at about <b>${plHm(E)}</b> (your planned length from when you started)`:`your planned finish at <b>${plHm(E)}</b>`;
- if(!X)return w0>30*M||d0>0?`☕ You do not need another break before ${f}.`:'';
- if(!X.ok)return `☕ You will need more than one break before ${f}. Take one by <b>${plHm(n+Math.max(0,X.hi))}</b>.`;
- let a=n+plR5(X.lo,1),b=n+plR5(X.hi);if(b<a)b=a;
- if(X.lo<5*M)return `☕ For ${f}: take your break by <b>${plHm(b)}</b>. One break then lasts you to the end.`;
- return `☕ For ${f}: take your break between <b>${plHm(a)}</b> and <b>${plHm(b)}</b>. <b>Not before ${plHm(a)}</b>, or you would still have more than ${plWhy(X.lw)} left and need another one.${X.hw?` Not after ${plHm(b)}, when you reach ${plWhy(X.hw)}${X.hw==='w'?' in a row':' since your last break'}.`:''}`}
+ /* the working time total: 30 minutes for over 6 hours of work, 45 for over 9, counting every break of 15 minutes or more */
+ const R0=E-n-Math.max(0,br-tkm)*M,needW=tot+R0>9*H?45:tot+R0>6*H?30:0,dv=Dr>0&&d0+Dr>=270*M,needD=dv?(half?30:45):0,
+  rem=Math.max(0,needW-tkm,needD,Math.min(br-tkm,br)),R=E-n-rem*M;if(R<15*M&&!rem)return '';
+ const had=tkm?`You have had ${tkm} min of breaks. `:'',
+  more=rem?`You need <b>${rem} more minutes</b>${half&&dv?' in one go (the 30 minute part of your driving break)':''} before ${f}. `:'';
+ const X=plWin(w0,d0,Math.max(0,R),Dr);
+ /* driving right now: if you keep going, 4h 30m comes sooner than the plan's spread-out driving says */
+ if(X&&drv&&dv&&270*M-d0<X.hi){X.hi=Math.max(0,270*M-d0);X.hw='dn';X.ok=X.lo<=X.hi+6e4}
+ if(!X)return rem?`☕ ${had}${more}Take ${rem>=15?'it in one go of at least 15 minutes':'it'} by <b>${plHm(E-rem*M)}</b>.`:(tkm||w0>30*M||d0>0)?`☕ ${had}You do not need another break before ${f}.`:'';
+ if(!X.ok){const t1=n+plR5(Math.max(0,X.hi)),l1=rem||15,X2=plWin(0,0,Math.max(0,R-X.hi),Math.max(0,Dr-(270*M-d0)));
+  let t=`☕ ${had}${X.hw==='dn'?`If you keep driving you reach 4h 30m at <b>${plHm(t1)}</b>, so take your ${l1} minute break by then.`:`Take a ${l1} minute break by <b>${plHm(t1)}</b>.`}`;
+  if(X2&&X2.ok){const a2=t1+l1*M+plR5(X2.lo,1),b2=Math.max(a2,t1+l1*M+plR5(X2.hi));t+=` After it you will still have more than 6 hours of work before ${f}, so take one more break of at least 15 minutes between <b>${plHm(a2)}</b> and <b>${plHm(b2)}</b>.`}
+  else t+=` You will need more breaks after that before ${f}.`;return t}
+ let a=n+plR5(X.lo,1),b=n+plR5(X.hi);if(b<a)b=a;const len=rem||(tkm?15:br||30),lead=more?more+'T':tkm&&!rem?`Your breaks add up to enough, but you cannot work more than 6 hours in a row, so you need one more break of at least 15 minutes before ${f}. T`:`For ${f}: t`;
+ if(X.lo<5*M)return `☕ ${had}${lead}ake your ${len} minute break by <b>${plHm(b)}</b>${X.hw?`, when you reach ${plWhy(X.hw)}${X.hw==='w'?' in a row':X.hw==='d'?' since your last break':''}`:''}. One break then lasts you to the end.`;
+ return `☕ ${had}${lead}ake your ${len} minute break between <b>${plHm(a)}</b> and <b>${plHm(b)}</b>. <b>Not before ${plHm(a)}</b>, or you would still have more than ${plWhy(X.lw)} left and need another one.${X.hw?` Not after ${plHm(b)}, when you reach ${plWhy(X.hw)}${X.hw==='w'?' in a row':X.hw==='d'?' since your last break':''}.`:''}`}
+/* One line for the Today card before a planned shift starts: the shift and when its break goes. */
+function plHeroPlan(o){const j=jobC(o.j),tc=j.tc!==false,w=o.E-o.S-(o.br||0)*M,dv=tc?(o.dr||0)*H:0,X=plWin(0,0,w,dv);
+ let t=`<b>${o.rv?'About ':''}${o.s.slice(0,5)}–${o.e.slice(0,5)}</b> ${esc(j.n)}`;
+ if(!X)t+='. No break needed by law.';
+ else if(X.ok){const a=o.S+plR5(X.lo,1),b=Math.max(a,o.S+plR5(X.hi));t+=`. ☕ ${Math.max(o.br||0,30)} min break ${X.lo<5*M?'by <b>'+plHm(b)+'</b>':'between <b>'+plHm(a)+'</b> and <b>'+plHm(b)+'</b>'}${X.lo>=5*M?', not before '+plHm(a):''}.`}
+ else t+='. ☕ It needs two breaks: see the Plan for when.';
+ return t}
+/* Where the break goes when a planned shift is logged afterwards: in the middle of the advised window, so the log keeps the rules. */
+function plBrkAt(S,E,br,dr,tc){const w=E-S-br*M,X=plWin(0,0,w,tc?(dr||0)*H:0);if(X&&X.ok)return S+plR5((X.lo+X.hi)/2);return S+Math.max(0,w/2)}
 /* The shift form: chips you tap instead of dropdowns. The values live in the same inputs as before (hidden where a chip row
    sets them), so plRead and both forms keep working. plFsync marks the chosen chips and writes the length line. */
 function plPresets(){const C={};(st.plan||[]).concat(st.pat||[],st.rota||[]).forEach(x=>{if(x.s&&x.e){const k=x.s.slice(0,5)+'-'+x.e.slice(0,5);C[k]=(C[k]||0)+1}});
@@ -464,15 +486,24 @@ function plPending(){const n=Date.now(),out=[],L=all(),src=o=>o.pat?(st.rota||[]
  if(out.dirty){delete out.dirty;save()}return out}
 function plBanner(){const el=$('plb');if(!el)return;const P=plPending();
  set(el,P.slice(0,2).map(({o,k})=>{const j=jobC(o.j);return `<div class="wkb wn" style="cursor:default"><b>${k==='end'?'Planned shift: what happened?':'Planned shift not started'}</b><span>${esc(j.n)} ${dlong(o.S)} ${o.rv?'about ':''}${o.s.slice(0,5)}–${o.e.slice(0,5)}. ${k==='end'?'Nothing was logged for it.':'It was due to start at '+o.s.slice(0,5)+'.'}</span><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${k==='end'?`<button class="tg" data-pbk="as:${o.oid}" style="flex:1 1 0;white-space:normal">Worked as planned</button><button class="tg" data-pbk="df:${o.oid}" style="flex:1 1 0;white-space:normal">Different times</button>`:`<button class="tg" data-pbk="go:${o.oid}" style="flex:1 1 0;white-space:normal">Start this shift</button>`}<button class="tg" data-pbk="sk:${o.oid}" style="flex:1 1 0;white-space:normal">Didn't work</button></div></div>`}).join(''))}
-function plLog(o,s,e){const br=(o.br||0)*M,mid=s+Math.max(0,(e-s-br)/2),j=jobC(o.j),tc=j.tc!==false,mk=(a,b)=>{if(b>a){const x={s:a,e:b,t:'w'};if(jobsOn()){x.j=j.id;x.c=tc?1:0}clear(a,b,1);st.sessions.push(x)}};
- if(br>0&&e-s>br){mk(s,mid);mk(mid+br,e)}else mk(s,e);st.pls=Object.assign({},st.pls,{[o.oid]:'done'})}
+/* Log a planned shift afterwards, as Other work with its breaks cut out. bk is the breaks you took ({at, len}), else the
+   planned break goes in the middle of the advised window. */
+function plLog(o,s,e,bk){const j=jobC(o.j),tc=j.tc!==false,mk=(a,b)=>{if(b>a){const x={s:a,e:b,t:'w'};if(jobsOn()){x.j=j.id;x.c=tc?1:0}clear(a,b,1);st.sessions.push(x)}};
+ if(!bk){const br=(o.br||0)*M;bk=br>0&&e-s>br?[{at:plBrkAt(s,e,o.br||0,o.dr,tc),len:br}]:[]}
+ let c=s;bk.filter(x=>x.len>0&&x.at>=s&&x.at+x.len<=e).sort((x,y)=>x.at-y.at).forEach(x=>{if(x.at>=c){mk(c,x.at);c=x.at+x.len}});mk(c,e);
+ st.pls=Object.assign({},st.pls,{[o.oid]:'done'})}
 function plAct(k,oid){const o=plOcc(Date.now()-15*864e5,Date.now()+2*864e5).find(x=>x.oid===oid);if(!o)return;
  if(k==='sk'){st.pls=Object.assign({},st.pls,{[oid]:'skip'});save();render();return}
  if(k==='as'){plLog(o,o.S,o.E);save();render();flash='Logged '+esc(jobC(o.j).n)+' '+o.s.slice(0,5)+'–'+o.e.slice(0,5)+' as Other work. Edit it in the log to split out any driving.';setTimeout(()=>{flash='';live()},9000);return}
  if(k==='go'){if(jobsOn()){st.cj=o.j;st.tm=jobC(o.j).tc!==false;st.tmt=Date.now()}save();setAct('w');return}
- if(k==='df'){mo(`<h3>Work Done</h3><p>${esc(jobC(o.j).n)}, planned ${dlong(o.S)} ${o.s.slice(0,5)}–${o.e.slice(0,5)}.</p><div class="tr"><label>Started<input type="time" id="pas" value="${o.s.slice(0,5)}"></label><label>Finished<input type="time" id="pae" value="${o.e.slice(0,5)}"></label></div><label>Break (min)<input type="number" id="pab" min="0" max="180" value="${o.br||0}"></label><div class="note bad" id="paerr"></div><button class="tg big" data-k="ok">Log it</button><button class="tg big" data-k="no">Cancel</button>`);
-  mcb={no:moX,ok:()=>{const a=$('pas').value,b=$('pae').value;if(!a||!b){$('paerr').textContent='Enter both times.';return}const d=sod(o.S);const s=d+tmin(a)*M;let e=d+tmin(b)*M;if(e<=s)e=nxd(d)+tmin(b)*M;if(e>Date.now()){$('paerr').textContent='The finish is in the future.';return}
-   plLog(Object.assign({},o,{br:+$('pab').value||0}),s,e);save();moX();render()}}}}
+ if(k==='df'){const d0=sod(o.S),ba=plBrkAt(o.S,o.E,o.br||0,o.dr,jobC(o.j).tc!==false);
+  mo(`<h3>Work Done</h3><p>${esc(jobC(o.j).n)}, planned ${dlong(o.S)} ${o.s.slice(0,5)}–${o.e.slice(0,5)}.</p><div class="tr"><label>Started<input type="time" id="pas" value="${o.s.slice(0,5)}"></label><label>Finished<input type="time" id="pae" value="${o.e.slice(0,5)}"></label></div>
+  <div class="lbl" style="margin-top:6px">Breaks you took</div><div class="note" style="margin-bottom:4px">When each one started and how long it was. Leave the second one empty if you took one break.</div>
+  ${[0,1].map(i=>`<div class="tr"><label>Break ${i+1} started<input type="time" id="pba${i}" value="${i?'':hm(ba)}"></label><label>Minutes<input type="number" id="pbm${i}" min="0" max="180" value="${i?'':o.br||0}"></label></div>`).join('')}
+  <div class="note bad" id="paerr"></div><button class="tg big" data-k="ok">Log it</button><button class="tg big" data-k="no">Cancel</button>`);
+  mcb={no:moX,ok:()=>{const a=$('pas').value,b=$('pae').value;if(!a||!b){$('paerr').textContent='Enter both times.';return}const s=d0+tmin(a)*M;let e=d0+tmin(b)*M;if(e<=s)e=nxd(d0)+tmin(b)*M;if(e>Date.now()){$('paerr').textContent='The finish is in the future.';return}
+   const bk=[];for(const i of [0,1]){const t=$('pba'+i).value,m=+$('pbm'+i).value||0;if(!t||!m)continue;let at=d0+tmin(t)*M;if(at<s)at+=864e5;if(at<s||at+m*M>e){$('paerr').textContent='Break '+(i+1)+' is not inside the shift.';return}bk.push({at,len:m*M})}
+   plLog(o,s,e,bk);save();moX();render()}}}}
 
 /* A planned shift whose start time has passed, that has not ended, with nothing logged for it yet. */
 function plDue(){const n=Date.now(),L=all();
