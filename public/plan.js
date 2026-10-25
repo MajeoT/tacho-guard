@@ -120,6 +120,27 @@ function plOffs(sp){const n=Date.now(),L=sp.slice().sort((a,b)=>a.s-b.s),O=[];le
  if(cur!==null&&!st.active&&n-cur>=24*H)O.push({s:cur,e:n,len:n-cur,full:n-cur>=45*H,open:1});
  return O}
 const plHrs=t=>Math.round(t/H)+' hours';
+/* Reduced weekly rests and where your plan makes them up. Each reduced weekly rest (24 to 45 hours) owes the hours up to 45,
+   taken in one block attached to another rest of 9 hours or more, by the end of the third week after the week it was in.
+   The owed ones you have logged (wrInfo) and the reduced ones in your plan are matched, oldest first, to the first gap in the
+   plan long enough to carry them: a weekly rest that is that much longer than it needs to be, or a daily rest of 9 hours plus. */
+function plComp(sp,OFF){const n=Date.now(),I=typeof wrInfo==='function'?wrInfo():null,L=sp.slice().sort((a,b)=>a.s-b.s),G=[];let cur=null;
+ L.forEach(x=>{if(cur!==null&&x.s>cur)G.push({s:cur,e:x.s,len:x.s-cur});cur=cur===null?x.e:Math.max(cur,x.e)});
+ if(cur!==null)G.push({s:cur,e:Infinity,len:Infinity,open:1});
+ const O=[];((I&&I.C)||[]).forEach(c=>O.push({s:c.r.s,e:c.r.e,len:c.r.len,owed:c.owed,dl:c.dl,log:1}));
+ OFF.forEach(b=>{if(b.full||b.open||b.e<=n||O.some(o=>Math.abs(o.e-b.e)<H))return;O.push({s:b.s,e:b.e,len:b.len,owed:45*H-b.len,dl:add7(wkS(b.s),4)})});
+ O.sort((a,b)=>a.e-b.e);
+ /* a rest of 24 hours or more counts as a weekly rest, so it has to be a full 45 hours plus what is owed; a shorter one is a
+    daily rest of 9 hours plus what is owed. One long rest can carry more than one lot (g.x is what it already carries). */
+ const base=g=>g.len>=24*H||g.len===Infinity?45*H:9*H,room=g=>g.len===Infinity?Infinity:g.len-base(g)-(g.x||0);
+ O.forEach(o=>{const ok=g=>g.s>=o.e-6e4&&g.e>n&&g.s<o.dl,g=G.find(g=>ok(g)&&room(g)>=o.owed&&g.s+base(g)+(g.x||0)+o.owed<=o.dl+6e4);
+  if(g){o.pay=g;o.at=g.s+base(g)+(g.x||0);g.x=(g.x||0)+o.owed}
+  else{/* the rest that would need the fewest extra hours */const c=G.filter(g=>ok(g)&&g.len>=9*H).map(g=>({g,more:o.owed-room(g)})).sort((a,b)=>a.more-b.more)[0];o.near=c||null}});
+ return O}
+const plCompTxt=(o,short)=>{const f=fmt(o.owed).replace(/ 00m$/,''),by=new Date(o.dl-6e4).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+ if(o.pay)return short?`↺ ${f} owed: made up from ${dmy(o.pay.s)}`:`You owe ${f} for it. Your plan makes it up on your rest from ${dmy(o.pay.s)}${o.pay.e===Infinity?', with nothing planned after':' to '+dmy(o.pay.e)+' ('+plHrs(o.pay.len)+')'}, before the ${by} deadline.`;
+ return short?`↺ ${f} owed: not made up by ${by}`:`You owe ${f} for it, to be made up by the end of ${by}. Your plan does not have a rest long enough for it yet`+(o.near?`: the rest from ${dmy(o.near.g.s)} would need ${fmt(o.near.more).replace(/ 00m$/,'')} more.`:'.')};
+
 /* Your next weekly rest, from the calendar's time off: the 6 days count from the end of the rest you are on now (or your last
    weekly rest), and after a reduced one the next has to be a full 45 hours. f is the first time off in your plan that is long enough. */
 function plNext(sp,OFF){const n=Date.now(),I=typeof wrInfo==='function'?wrInfo():null;if(!I||I.anc===null)return null;
@@ -138,8 +159,9 @@ function plSummary(NX){if(!NX)return '';const n=Date.now(),now=NX.now,L=[];
   else L.push(`<div class="bad" style="${top}">⚠ <b>Weekly rest overdue:</b> it had to start by ${dmy(NX.due)}. Take your weekly rest now.</div>`)}
  return L.length?`<div class="bx note" style="margin:0 0 10px;color:var(--tx)">${L.join('')}</div>`:''}
 /* What a day's time off means, in the day pop-up */
-function plOffNote(d,OFF,NX){let t='';OFF.filter(b=>b.s<nxd(d)&&b.e>d).forEach(b=>{
-  t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--${b.full?'ok':'warn'})"><div class="lbl">${b.full?'Weekly Rest':'Reduced Weekly Rest'}</div><div class="note">`+(b.open?`Off since ${dmy(b.s)}, with nothing planned yet: ${plHrs(b.len)} so far.`:`Off from ${dmy(b.s)} until ${dmy(b.e)}: ${plHrs(b.len)}.`)+' '+(b.full?'That is long enough for a full weekly rest (45 hours or more).':'That is 24 to 45 hours, so it counts as a reduced weekly rest and you would owe the hours up to 45, made up in one go within 3 weeks.')+`</div></div>`});
+function plOffNote(d,OFF,NX,CP){let t='';CP=CP||[];OFF.filter(b=>b.s<nxd(d)&&b.e>d).forEach(b=>{const cp=CP.find(c=>Math.abs(c.e-b.e)<H);
+  t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--${b.full?'ok':'warn'})"><div class="lbl">${b.full?'Weekly Rest':'Reduced Weekly Rest'}</div><div class="note">`+(b.open?`Off since ${dmy(b.s)}, with nothing planned yet: ${plHrs(b.len)} so far.`:`Off from ${dmy(b.s)} until ${dmy(b.e)}: ${plHrs(b.len)}.`)+' '+(b.full?'That is long enough for a full weekly rest (45 hours or more).':'That is 24 to 45 hours, so it counts as a reduced weekly rest and you would owe the hours up to 45, made up in one go within 3 weeks.'+(cp?' '+plCompTxt(cp):''))+`</div></div>`});
+ CP.filter(c=>c.pay&&c.pay.s<nxd(d)&&c.pay.s>=d).forEach(c=>{t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--ok)"><div class="lbl">Making Up Owed Rest</div><div class="note">Your rest from ${dmy(c.pay.s)} carries the ${fmt(c.owed).replace(/ 00m$/,'')} you owe from the reduced weekly rest of ${dmy(c.s)}. Keep ${plHrs((c.at-c.pay.s)+c.owed)} clear from the end of your shift, in one block.</div></div>`});
  if(NX&&NX.miss&&NX.due>Date.now()&&sod(NX.due)===d)t+=`<div class="bx" style="margin-top:8px;border-left:4px solid var(--bad)"><div class="lbl">Weekly Rest Needed By ${plHm(NX.due)}</div><div class="note">That is six 24 hour periods after ${NX.now?'you go back to work':'your last weekly rest ended'}. Your plan does not leave ${NX.full45?'45':'24'} hours off before then, so move or remove a shift.</div></div>`;
  return t}
 function plMonth(){if(!PL.m){const t=new Date(sod(Date.now()));t.setDate(1);PL.m=t.getTime()}return PL.m}
@@ -164,6 +186,7 @@ function plStat(d,C){const n=C.n,D1=nxd(d),past=D1<=n,td=d===sod(n),os=C.occ.fil
    const fw=t=>t<=n+6e4?'now':sod(t)===d?plHm(t):new Date(t).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' '+plHm(t);
    if(ws<d||we>D1)S.sub.push(['mut','Free from '+fw(ws)+(we===Infinity?', with nothing planned after':' until '+fw(we))])}}
  if(C.NX&&C.NX.miss&&C.NX.due>n&&sod(C.NX.due)===d)S.sub.push(['bad',`⚠ Your weekly rest must start by ${plHm(C.NX.due)}`]);
+ (C.CP||[]).forEach(c=>{if(!c.log&&sod(c.s)===d)S.sub.push([c.pay?'warn':'bad','Reduced weekly rest. '+plCompTxt(c,1).slice(2)]);if(c.pay&&sod(c.pay.s)===d)S.sub.push(['ok',`↺ Making up ${fmt(c.owed).replace(/ 00m$/,'')} from your reduced rest of ${new Date(c.s).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}: keep ${plHrs(c.at-c.pay.s+c.owed)} clear from ${plHm(c.pay.s)}`])});
  S.band=C.OFF.find(b=>b.s<=d&&b.e>=D1);return S}
 const plIco={work:'⚒',ok:'✓',warn:'⚠',rest:'✕',did:'✔',off:'–'};
 /* what kind of planned shift this is, in words */
@@ -181,8 +204,8 @@ function plAddMenu(){const nR=(st.pat||[]).length+(st.rota||[]).length;
  mcb={no:moX,one:()=>plForm({d:ymd(Date.now())}),rep:()=>plPatForm(null),rota:()=>plRotaForm(null),list:()=>plPatList(),sel:()=>{moX();PL.v='list';PL.sel=new Set();plRender();const e=$('plc');if(e)e.scrollIntoView({block:'start'})}}}
 function plRender(){const el=$('plc');if(!el)return;const n=Date.now(),v=PL.v||(PL.v=(()=>{try{return localStorage.getItem('tg.plv')||'list'}catch(e){return 'list'}})());
  const m0=plMonth(),md=new Date(m0),gs=v==='list'?sod(n):wkS(m0),me=new Date(md.getFullYear(),md.getMonth()+1,1).getTime(),ge=v==='list'?sod(n)+(PL.ln||14)*864e5:nwk(wkS(me-864e5));
- const sp=plSpans(),I=plCheck(sp),occ=plOcc(gs,Math.max(ge,gs+50*864e5)),OFF=plOffs(sp),NX=plNext(sp,OFF),T=typeof dayTot==='function'?dayTot():{},C={n,sp,I,occ,OFF,NX,T};
- let h=`<div class="pls ptabs" role="tablist" aria-label="Plan view"><button class="pl${v==='list'?' on':''}" role="tab" data-pv="list" aria-selected="${v==='list'}">Days</button><button class="pl${v==='month'?' on':''}" role="tab" data-pv="month" aria-selected="${v==='month'}">Month</button></div>`+(typeof oweBanner==='function'?oweBanner(wrInfo()):'')+plSummary(NX)+(PL.sel?'':'<button class="pfab" data-pa="1" aria-label="Add shifts, repeats or rotas"><span aria-hidden="true">+</span> Add</button>');
+ const sp=plSpans(),I=plCheck(sp),occ=plOcc(gs,Math.max(ge,gs+50*864e5)),OFF=plOffs(sp),NX=plNext(sp,OFF),T=typeof dayTot==='function'?dayTot():{},C={n,sp,I,occ,OFF,NX,T,CP:plComp(sp,OFF)};
+ let h=`<div class="pls ptabs" role="tablist" aria-label="Plan view"><button class="pl${v==='list'?' on':''}" role="tab" data-pv="list" aria-selected="${v==='list'}">Days</button><button class="pl${v==='month'?' on':''}" role="tab" data-pv="month" aria-selected="${v==='month'}">Month</button></div>`+(typeof oweBanner==='function'?oweBanner(wrInfo()):'')+plSummary(NX)+C.CP.filter(c=>c.log).map(c=>`<div class="note bplan" style="margin:0 0 10px">↺ <b>Owed rest:</b> ${plCompTxt(c)}</div>`).join('')+(PL.sel?'':'<button class="pfab" data-pa="1" aria-label="Add shifts, repeats or rotas"><span aria-hidden="true">+</span> Add</button>');
  if(v==='list'){h+=(PL.sel?'<p class="note" style="margin:0 0 8px"><b>Tick the shifts you want to remove</b>, then tap Remove. Each shift says if it is a single shift, a repeat or a rota day.</p>':'')+'<div class="pdl">';
   for(let d=sod(n);d<ge;d=nxd(d)){const S=plStat(d,C),dt=new Date(d),k=S.k;
    const dd=`<span class="pdd"><b>${S.td?'Today':dt.toLocaleDateString('en-GB',{weekday:'short'})}</b><span>${dt.getDate()} ${dt.toLocaleDateString('en-GB',{month:'short'})}</span></span>`;
@@ -191,18 +214,19 @@ function plRender(){const el=$('plc');if(!el)return;const n=Date.now(),v=PL.v||(
   h+=`</div>${PL.sel?`<div class="pselbar"><span><b>${PL.sel.size}</b> ticked</span><button class="tg" data-psall="1">Tick all</button><button class="tg fdel" data-psdel="1"${PL.sel.size?'':' disabled'}>Remove</button><button class="tg" data-psel="1">Cancel</button></div>`:''}<button class="tg big" data-pl="1" style="margin-top:8px">Show 14 more days</button><p class="note" style="margin-top:6px">Green days are part of a weekly rest in your plan (amber if it is a reduced one). Tap a day for its details, to add a shift or to see what you could work. Earlier days are in Month.</p>`}
  else{h+=`<div class="tr" style="margin:0 0 8px;gap:6px"><button class="tg" data-pm="-1" aria-label="Previous month">‹</button><b style="flex:1;text-align:center;font-size:17px">${md.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</b><button class="tg" data-pm="1" aria-label="Next month">›</button></div>`;
   h+='<div class="plg">'+['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(x=>`<div class="plh">${x}</div>`).join('');
-  let shown=0;const wk0=wkS(n);
-  for(let d=gs;d<ge||(shown<42&&ge>n);d=nxd(d)){if((new Date(d).getDay()+6)%7===0&&d<wk0){let any=false;for(let q=d,k=0;k<7;k++,q=nxd(q)){const t=T[q];if((t&&t.d+t.w)||occ.some(o=>sod(o.S)===q&&o.st!=='skip')){any=true;break}}if(!any){d=add7(d,1)-864e5;d=sod(d);continue}}shown++;
+  for(let d=gs;d<ge;d=nxd(d)){if(d<m0){h+='<div class="pld plb" aria-hidden="true"></div>';continue}
    const S=plStat(d,C),inM=new Date(d).getMonth()===md.getMonth(),k=S.k;
    const chips=k==='work'&&S.os.length?S.os.map(o=>{const w=worst(I.get(o.oid));return `<div class="plk" style="border-left-color:${JCOL[jobI(jobC(o.j).id)]}">${o.rv?'≈':''}${ct(o.s)}–${ct(o.e)}${w>=2?`<i class="${w>=3?'bad':'warn'}">!</i>`:''}</div>`}).join(''):k==='did'?`<div class="plk pll">${fmt(S.logged).replace(' 00m','')}</div>`:k==='ok'||k==='warn'?`<div class="pkw"><b class="pki">${k==='ok'?'✓':'⚠'}</b><span class="pkl">Available</span>${S.fr&&S.fr.ea>d+15*M?`<span class="pkf">${S.td&&S.fr.ea<=n+6e4?'now':`<span class="pkl">from </span>${plHm(S.fr.ea)}`}</span>`:''}</div>`:k==='rest'?'<div class="pkw"><b class="pki">✕</b><span class="pkl">Rest</span></div>':k==='work'?'<div class="pkw"><b class="pki">⚒</b><span class="pkl">Working</span></div>':'';
-   const due=S.sub.find(x=>x[0]==='bad')?`<div class="plr bad">Rest due <span>${plHm(NX.due)}</span></div>`:'',rs='',re='';
+   const due=(S.sub.find(x=>x[0]==='bad'&&/must start/.test(x[1]))?`<div class="plr bad">Rest due <span>${plHm(NX.due)}</span></div>`:'')+C.CP.map(c=>!c.log&&sod(c.s)===d?`<div class="plr ${c.pay?'warn':'bad'}">↺ −${Math.round(c.owed/H)}h</div>`:c.pay&&sod(c.pay.s)===d?`<div class="plr ok">↺ +${Math.round(c.owed/H)}h</div>`:'').join(''),rs='',re='';
    h+=`<button class="pld pk-${k}${inM?'':' plo'}${S.td?' plt':''}${S.past?' plp':''}" data-pd="${d}"${k==='work'&&S.os[0]?` style="border-left:4px solid ${JCOL[jobI(jobC(S.os[0].j).id)]}"`:''} aria-label="${new Date(d).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}: ${S.txt.replace(/<[^>]+>/g,'')}"><span class="pln">${new Date(d).getDate()}</span>${re}${chips}${rs}${due}</button>`}
-  h+='</div>'+(shown?'':'<p class="note" style="text-align:center;margin:12px 0">Nothing was logged or planned in this month.</p>')+'<div class="bx plkey" style="margin-top:10px"><div class="lbl" style="margin-bottom:4px">Key</div>'+
+  h+='</div>'+'<div class="bx plkey" style="margin-top:10px"><div class="lbl" style="margin-bottom:4px">Key</div>'+
    '<div><span class="ki"><span class="pkey pk-work" style="border-left:4px solid #3b82f6">9–17</span></span>Working: your planned shift, in the job\'s colour. A red ! means it breaks a rule</div>'+
    '<div><span class="ki"><span class="pkey pk-ok">✓</span></span>Available: nothing planned and you could work. A time under it (04:00) is the earliest you can start, after the rest you need from your last shift</div>'+
    '<div><span class="ki"><span class="pkey pk-warn">⚠</span></span>Available, but working would mean a reduced daily or weekly rest</div>'+
    '<div><span class="ki"><span class="pkey pk-rest">✕</span></span>Rest: the rules mean you cannot work this day</div>'+
    '<div><span class="ki"><span class="pkey pk-did">7h</span></span>A past day, with the hours you worked</div>'+
+   '<div><span class="ki"><span class="plr warn" style="margin:0">↺ −9h</span></span>A reduced weekly rest starts: the hours you owe for it</div>'+
+   '<div><span class="ki"><span class="plr ok" style="margin:0">↺ +9h</span></span>The rest in your plan that makes those hours up. Tap the day to see how long to keep clear</div>'+
    '<div><span class="ki"><span class="plr bad" style="margin:0">Rest due</span></span>Your weekly rest has to start by this time, and your plan does not leave room for it</div><div class="note" style="margin-top:4px">Tap a day for details.</div></div>'}
  set(el,h)}
 
@@ -214,7 +238,7 @@ function plDay(d){const n=Date.now(),sp=plSpans(),I=plCheck(sp),OFF=plOffs(sp),N
  occ.forEach(o=>{const j=jobC(o.j),stx=o.st==='skip'?' · not worked':o.st==='done'||o.E<=n?' · past':'';
   h+=`<div class="bx" style="margin-top:8px;border-left:4px solid ${JCOL[jobI(j.id)]}"><div class="row"><span class="lbl">${esc(j.n)}${j.tc===false?' (no tacho)':''}${o.rot?' · rota week '+o.wk:o.pat?' · repeats '+ordW(((st.pat||[]).find(r=>r.id===o.pat)||{}).ev):''}${stx}</span><span class="lbl">${o.s.slice(0,5)}–${o.e.slice(0,5)}</span></div><div class="note">${o.br?o.br+' min break'+(o.bp?' (paid)':'')+'. ':''}${j.tc!==false&&o.dr?o.dr+'h driving expected. ':''}Working time about ${fmt(o.E-o.S-(o.br||0)*M)}.</div>${o.E>n&&o.st!=='skip'&&o.st!=='done'?'<div class="note" style="margin-top:4px">☕ '+plBrk(o.S,o.E,o.br||0,o.dr||0,j.tc!==false)+'</div>':''}${o.st==='skip'||o.st==='done'||o.E<=n?'':isz(I.get(o.oid))}<div class="tr" style="margin:8px 0 0;gap:6px;flex-wrap:wrap"><button class="tg" data-k="e:${o.oid}">Edit${o.pat?' this day':''}</button>${o.pat?`<button class="tg" data-k="es:${o.pat}">${o.rot?'Edit rota':'Edit repeat'}</button>`:''}<button class="tg" data-k="x:${o.oid}">Remove${o.pat?' this day':''}</button>${o.pat?`<button class="tg" data-k="xf:${o.oid}">Remove this and later</button>`:''}</div></div>`});
  if(fr){h+=`<div class="bx" style="margin-top:8px"><div class="lbl"><span class="pldot ${['','ok','warn','bad'][fr.lv]}"></span> ${fr.lv===3?'Rest: '+plRestWhy(fr):fr.lv===2?'Available, with a short daily rest':'Available'}</div>${fr.lv<3||fr.la>fr.ea?`<div class="note">Earliest start <b>${hm(fr.ea)}</b>, latest finish <b>${fr.la===Infinity?'no limit from other shifts':hmx(fr.la,d)}</b>, based on 11 hour rests around your other shifts${fr.ea<d+4*H?'. Starting before 04:00 counts as night work (10 hour limit)':''}.</div>`:''}${fr.txt?`<div class="note">${fr.txt}</div>`:''}${fr.lv<3&&!fr.cut?(fr.lv===1&&!fr.R.length?'<div class="note ok" style="margin-top:4px">✓ '+(/^(8|11|18)h/.test(fmt(fr.e0-fr.s0))?'An ':'A ')+fmt(fr.e0-fr.s0).replace(/ 00m$/,'')+' shift from '+hm(fr.s0)+' to '+hmx(fr.e0,d)+' breaks no rules.</div>':'<div class="note" style="margin-top:4px">'+(/^(8|11|18)h/.test(fmt(fr.e0-fr.s0))?'An ':'A ')+fmt(fr.e0-fr.s0).replace(/ 00m$/,'')+' shift from '+hm(fr.s0)+' to '+hmx(fr.e0,d)+':</div>'):''}${isz(fr.R)}</div>`}
- h+=plOffNote(d,OFF,NX);
+ h+=plOffNote(d,OFF,NX,plComp(sp,OFF));
  h+=`<button class="tg big" data-k="add" style="margin-top:12px">Add shift</button><button class="tg big" data-k="rp">Repeating shift starting this day</button><button class="tg big" data-k="cw">Copy this week to next week</button><button class="tg big" data-k="no">Close</button>`;
  mo(h);mcb={no:moX,add:()=>plForm({d:ymd(d)}),cw:()=>plCopyWeek(d),rp:()=>plPatForm(null,ymd(d))};
  occ.forEach(o=>{mcb['e:'+o.oid]=()=>plForm(o.pat?{d:o.d,j:o.j,s:o.s,e:o.e,br:o.br,bp:o.bp,dr:o.dr,rv:o.rv,fromPat:o.oid}:(st.plan||[]).find(p=>p.id===o.oid));
@@ -223,14 +247,41 @@ function plDay(d){const n=Date.now(),sp=plSpans(),I=plCheck(sp),OFF=plOffs(sp),N
   mcb['x:'+o.oid]=()=>{const sn=plSnap();plHide(o);save();plRender();plDay(d);plUndo(sn,'Removed '+esc(jobC(o.j).n)+' on '+dlong(o.S)+'.')}})}
 
 /* When the breaks in a planned shift have to be taken: never more than 6 hours of work in a row (RTWTR), and for tacho driving a 45 minute break by 4h 30m of driving (561/2006 art 7). */
-function plBrk(S,E,br,dr,tc){const w=E-S-(br||0)*M,need=w>9*H?45:w>6*H?30:0,L=[];
- if(need){const b=S+6*H,a=Math.max(S,E-(br||need)*M-6*H);
-  if(br>=need&&a<=b)L.push(`Take your ${br} minute break between <b>${plHm(a)}</b> and <b>${plHm(b)}</b>, so you never work more than 6 hours in a row.`);
-  else if(br>=need)L.push(`One break is not enough: you can only work 6 hours in a row, so split your ${br} minutes into breaks of at least 15 minutes, the first by <b>${plHm(b)}</b>.`);
-  else L.push(`This shift needs at least ${need} minutes of breaks, the first by <b>${plHm(b)}</b> so you never work more than 6 hours in a row.`)}
- else L.push('No break is needed by law for up to 6 hours of work.');
- if(tc&&dr>=4.5)L.push(`Driving: a 45 minute break (or 15 then 30) by 4h 30m of driving${E-S>270*M?`, so by <b>${plHm(S+270*M)}</b> if you drive from the start`:''}. One break can count for both rules.`);
- return L.join(' ')}
+/* When to take a break so that one break covers the rest of the shift, and taking it too early does not leave a second one
+   due. From a point in a shift: w0 work and d0 driving since the last full break, R work and Dr driving still to do (driving
+   taken as spread evenly through the work). t is the work done before the break: no more than 6 hours of work either side of it
+   (Working Time Regulations) and no more than 4h 30m of driving either side (561/2006 art 7). lw and hw say which rule sets
+   the earliest (lo) and latest (hi) time. null means no break is needed. */
+function plWin(w0,d0,R,Dr){const dv=Dr>0&&d0+Dr>=270*M,r=R>0?Dr/R:0;
+ if(w0+R<=6*H&&!dv)return null;
+ let lo=0,hi=R,lw='',hw='';
+ if(R-6*H>lo){lo=R-6*H;lw='w'}if(6*H-w0<hi){hi=6*H-w0;hw='w'}
+ if(dv&&r>0){const x=R-270*M/r,y=(270*M-d0)/r;if(x>lo){lo=x;lw='d'}if(y<hi){hi=y;hw='d'}}
+ lo=Math.max(0,lo);return{lo,hi,lw,hw,ok:lo<=hi+6e4}}
+const plR5=(t,up)=>(up?Math.ceil:Math.floor)(t/(5*M))*5*M;
+const plWhy=k=>k==='d'?'4h 30m of driving':'6 hours of work';
+function plBrk(S,E,br,dr,tc){br=br||0;const w=E-S-br*M,dv=tc?(dr||0)*H:0,need=Math.max(w>9*H?45:w>6*H?30:0,dv>=270*M?45:0),X=plWin(0,0,w,dv);
+ if(!X)return br?'No break is needed by law for this shift, so take yours when it suits you.':'No break is needed by law for up to 6 hours of work and under 4h 30m of driving.';
+ const len=Math.max(br,need),pre=br<need?`This shift needs at least ${need} minutes of breaks, so add more. `:'';
+ if(X.ok){let a=S+plR5(X.lo,1),b=S+plR5(X.hi);if(b<a)b=a;const any=X.lo<5*M,mid=S+Math.round((X.lo+X.hi)/2/(15*M))*15*M;
+  let t=pre+(any?`Take your ${len} minute break by <b>${plHm(b)}</b>`:`Take your ${len} minute break between <b>${plHm(a)}</b> and <b>${plHm(b)}</b>`)+(b-a>=60*M?`, ideally around <b>${plHm(mid)}</b>`:'')+'.';
+  if(!any)t+=` <b>Not before ${plHm(a)}</b>: you would still have more than ${plWhy(X.lw)} left after it, and need a second break.`;
+  if(X.hw)t+=` Not after ${plHm(b)}, which is ${plWhy(X.hw)}${X.hw==='w'?' in a row':''}.`;
+  if(dv>=270*M&&len>=45)t+=` To split it, take 15 minutes first and then the 30 (or more) by ${plHm(b)}. Only the 30 starts your driving time again.`;
+  return t}
+ /* one break cannot cover it: two breaks, the second set by the driving rule if there is one */
+ const dX=dv>=270*M?plWin(0,0,w,dv):null,lo2=Math.max(w-6*H,dX&&dX.lw==='d'?dX.lo:0),hi2=Math.min(w,dX&&dX.hw==='d'?dX.hi:w),t2=Math.min(hi2,Math.max(lo2,w*2/3)),t1=Math.min(6*H,Math.max(t2-6*H,t2/2));
+ if(lo2>hi2||t2-t1>6*H+6e4||len<30)return pre+'One break cannot cover this shift, and its breaks do not fit the rules. Add more break time or shorten it.';
+ const b1=dv>=270*M?15:Math.max(15,Math.floor(len/2/5)*5),b2=len-b1;
+ return pre+`One ${len} minute break cannot cover this shift: with ${fmt(w).replace(/ 00m$/,'')} of work${dv?' and '+fmt(dv).replace(/ 00m$/,'')+' of driving':''}, whenever you took it there would be too long a stretch before or after. Split it: about <b>${b1} minutes around ${plHm(S+plR5(t1))}</b>, then <b>${b2} minutes around ${plHm(S+plR5(t2)+b1*M)}</b>.${dv>=270*M?' The second part must be 30 minutes or more.':''}`}
+/* The same advice live, during a shift you planned: when to take your break so it lasts you to the planned finish. */
+function plLive(n,E,br,w0,d0,Dr){const R=E-n-br*M;if(R<15*M)return '';const X=plWin(w0,d0,R,Dr);
+ const f=`your planned finish at <b>${plHm(E)}</b>`;
+ if(!X)return w0>30*M||d0>0?`☕ You do not need another break before ${f}.`:'';
+ if(!X.ok)return `☕ You will need more than one break before ${f}. Take one by <b>${plHm(n+Math.max(0,X.hi))}</b>.`;
+ let a=n+plR5(X.lo,1),b=n+plR5(X.hi);if(b<a)b=a;
+ if(X.lo<5*M)return `☕ For ${f}: take your break by <b>${plHm(b)}</b>. One break then lasts you to the end.`;
+ return `☕ For ${f}: take your break between <b>${plHm(a)}</b> and <b>${plHm(b)}</b>. <b>Not before ${plHm(a)}</b>, or you would still have more than ${plWhy(X.lw)} left and need another one.`}
 /* The shift form: chips you tap instead of dropdowns. The values live in the same inputs as before (hidden where a chip row
    sets them), so plRead and both forms keep working. plFsync marks the chosen chips and writes the length line. */
 function plPresets(){const C={};(st.plan||[]).concat(st.pat||[],st.rota||[]).forEach(x=>{if(x.s&&x.e){const k=x.s.slice(0,5)+'-'+x.e.slice(0,5);C[k]=(C[k]||0)+1}});
