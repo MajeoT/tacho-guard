@@ -218,7 +218,8 @@ function plPresets(){const C={};(st.plan||[]).concat(st.pat||[]).forEach(x=>{if(
 function plFields(p){const J=jobs(),jj=p.j||st.cj||J[0].id,br=p.br===undefined?30:p.br;
  return `<div class="fsec"><div class="flb">Job</div><div class="fchips">${J.map(x=>`<button type="button" class="fchip fjob" data-fk="j:${x.id}" style="--jc:${JCOL[jobI(x.id)]}"><i></i>${esc(x.n)}${x.tc===false?'<small>no tacho</small>':''}</button>`).join('')}</div><input type="hidden" id="pfj" value="${jj}"></div>
  <div class="fsec"><div class="flb">Time</div><div class="ftimes"><label class="ftime"><span>Start</span><input type="time" id="pfs" value="${p.s||'09:00'}"></label><span class="farr" aria-hidden="true">→</span><label class="ftime"><span>Finish</span><input type="time" id="pfe" value="${p.e||'17:00'}"></label></div>
- <div class="fchips fsm">${plPresets().map(t=>`<button type="button" class="fchip" data-fk="t:${t}">${t.replace('-','–')}</button>`).join('')}</div><div class="fsum" id="pfsum"></div></div>
+ <div class="fsub">Your usual times</div><div class="fchips fsm">${plPresets().map(t=>`<button type="button" class="fchip" data-fk="t:${t}">${t.replace('-','–')}</button>`).join('')}</div>
+ <div class="fsub">Or set the length from the start time</div><div class="fchips fsm">${[4,6,8,9,10,12].map(h=>`<button type="button" class="fchip" data-fk="L:${h}">+${h}h</button>`).join('')}</div><div class="fsum" id="pfsum"></div></div>
  <div class="fsec"><div class="flb">Break</div><div class="fchips">${[0,15,30,45,60,90].map(v=>`<button type="button" class="fchip" data-fk="b:${v}">${v?v+' min':'None'}</button>`).join('')}</div><input type="hidden" id="pfb" value="${br}"><div class="note warn" id="pfbn" hidden>4h 30m or more of driving needs at least 45 minutes of breaks (one 45, or 15 then 30).</div>
  <label class="fsw"><span>Paid break<small>For your own records. Paid or not, a break never counts as work.</small></span><span class="swt"><input type="checkbox" id="pfbp"${p.bp?' checked':''}><i></i></span></label></div>
  <div class="fsec" id="pfdw"><div class="flb">Driving expected</div><div class="fstep"><button type="button" data-fk="d:-0.5" aria-label="Less driving">−</button><input type="number" id="pfd" min="0" max="15" step="0.5" value="${p.dr===undefined?'':p.dr}" placeholder="0" aria-label="Driving expected, in hours"><span>hours</span><button type="button" data-fk="d:0.5" aria-label="More driving">+</button></div><div class="note">Counts towards your tacho driving limits.</div></div>`}
@@ -235,10 +236,11 @@ function plFsync(){const w=$('mo');if(!w||!$('pfs'))return;const on=(k,v)=>w.que
  {const tc=jobC($('pfj').value).tc!==false,dv=tc?parseFloat(($('pfd')||{}).value)||0:0,need=dv>=4.5?45:0;if(need&&+$('pfb').value<need)$('pfb').value=need;
   w.querySelectorAll('[data-fk^="b:"]').forEach(b=>{const v=+b.dataset.fk.slice(2);b.disabled=v<need;b.classList.toggle('foff',v<need)});if($('pfbn'))$('pfbn').hidden=!need}
  on('j',$('pfj').value);on('b',$('pfb').value);on('t',$('pfs').value+'-'+$('pfe').value);if($('pfr'))on('r',$('pfr').value);if($('pfdt'))on('dt',$('pfdt').value);
- const s=tmin($('pfs').value),e=tmin($('pfe').value),sm=$('pfsum');if(sm){if(isNaN(s)||isNaN(e)||s===e){sm.textContent='';return}let L=e-s;if(L<=0)L+=1440;const wk=Math.max(0,L-(+$('pfb').value||0));
+ const s=tmin($('pfs').value),e=tmin($('pfe').value),sm=$('pfsum');if(!isNaN(s)&&!isNaN(e)){let L0=e-s;if(L0<=0)L0+=1440;on('L',L0%60?'x':String(L0/60))}if(sm){if(isNaN(s)||isNaN(e)||s===e){sm.textContent='';return}let L=e-s;if(L<=0)L+=1440;const wk=Math.max(0,L-(+$('pfb').value||0));
   sm.innerHTML=`<b>${fmt(L*M).replace(/ 00m$/,'')}</b> shift · <b>${fmt(wk*M).replace(/ 00m$/,'')}</b> of work${e<=s?' · <span class="warn">finishes the next day</span>':''}`}}
 document.addEventListener('click',e=>{const b=e.target.closest('#mo [data-fk]');if(!b)return;const[k,v]=b.dataset.fk.split(/:(.*)/s);
  if(k==='j'){$('pfj').value=v;plDrv()}else if(k==='t'){const[a,c]=v.split('-');$('pfs').value=a;$('pfe').value=c}else if(k==='b')$('pfb').value=v;else if(k==='r')$('pfr').value=v;else if(k==='dt')$('pfdt').value=v;
+ else if(k==='L'){const s=tmin($('pfs').value);if(!isNaN(s)){const e=(s+ +v*60)%1440;$('pfe').value=String(Math.floor(e/60)).padStart(2,'0')+':'+String(e%60).padStart(2,'0')}}
  else if(k==='d'){const x=$('pfd');x.value=Math.max(0,Math.min(15,(parseFloat(x.value)||0)+ +v))}
  plFsync();b.dispatchEvent(new Event('input',{bubbles:true}))});
 document.addEventListener('input',e=>{if(e.target.closest&&e.target.closest('#mo')&&$('pfs'))plFsync()});

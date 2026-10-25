@@ -170,7 +170,7 @@ h2{font-size:19px;font-weight:700;letter-spacing:-.01em;color:var(--tx);margin:2
 .go.on{background:var(--bad);color:#fff}
 button:focus-visible,input:focus-visible,select:focus-visible,.go:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 input,select{background:var(--sub);border:1px solid var(--bd2);border-radius:10px;color:var(--tx);font-family:var(--body)}
-input:focus,select:focus{border-color:var(--acc)}
+input:focus,select:focus{border-color:var(--acc)}select{background-color:var(--card)}option,optgroup{background-color:var(--card);color:var(--tx)}.fsub{font-size:12px;color:var(--mut);margin:2px 0 -2px}
 label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .i{border-color:var(--bd2);background:transparent;color:var(--mut)}
 .swt,.swt i,.swt i::after{border-radius:99px}.swt i{background:var(--bd2)}.swt input:checked+i{background:var(--ok)}
@@ -342,7 +342,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .fdays{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.fdays .fday{min-width:0;justify-content:center}
 .fday{flex-direction:column;gap:0;border-radius:14px;padding:6px 10px;min-width:56px;line-height:1.2}.fday b{font-size:13px}.fday span{font-size:12px;opacity:.85}
 .fother{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut);margin:0}.fother input{flex:1;min-width:0;margin:0}
-.fsm .fchip{font-size:13px;padding:6px 12px;min-height:34px}
+.fsm .fchip{font-size:13px;padding:6px 10px;min-height:34px}
 .ftimes{display:flex;align-items:center;gap:8px}
 .ftime{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;margin:0;font-size:12px;color:var(--mut);background:var(--sub);border:1.5px solid var(--bd2);border-radius:14px;padding:8px 12px}
 .ftime input{border:0;background:transparent;padding:0;margin:0;font:700 17px var(--body);color:var(--tx);width:100%;min-width:0}
@@ -488,7 +488,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-138';
+const APPV='tg-2026-10-23-139';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
