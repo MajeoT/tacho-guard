@@ -313,6 +313,17 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .tabs .tab{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 2px 7px!important;font-size:12px!important}.tabs .tab svg{width:21px;height:21px;flex:none}.tabs .tab.dot::after{position:absolute;top:5px;right:calc(50% - 20px);margin:0}
 .wkb.slim{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;border-left-width:3px}.wkb.slim b{font-size:14px;margin:0}.wkb.slim span{font-size:12.5px;color:var(--mut);margin:0;text-align:right}.wkb.slim.ok{border-left-color:var(--ok)}.cp .wkb.slim span{display:inline}
 .pld.plwin{background:rgba(56,189,248,.10)!important;border-color:rgba(56,189,248,.55)!important}.ploff{background:rgba(52,211,153,.12)!important;border-color:rgba(52,211,153,.45)!important}.ploff.plred{background:rgba(251,191,36,.12)!important;border-color:rgba(251,191,36,.5)!important}.plkey .ki .plw{font-size:10px;white-space:nowrap}.pld.plt{border-color:var(--acc)!important;border-width:2px}
+.seg{display:inline-flex;border:1px solid var(--bd2);border-radius:999px;overflow:hidden;flex:none}.seg .tg{border:0!important;border-radius:0!important;margin:0;padding:8px 14px;background:transparent;box-shadow:none}.seg .tg.on{background:var(--acc)!important;color:var(--onacc)!important}
+.pdl{display:flex;flex-direction:column;gap:6px}
+.pdr{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-left:4px solid var(--bd);border-radius:12px;padding:10px 10px 10px 12px;cursor:pointer}
+.pdr.pdt{border-color:var(--acc);border-left-width:4px}
+.pdr.pdo{background:rgba(52,211,153,.08)}.pdr.pdo2{background:rgba(251,191,36,.08)}
+.pdd{flex:none;width:52px;display:flex;flex-direction:column;line-height:1.2}.pdd b{font-size:15px}.pdd span{font-size:12px;color:var(--mut)}
+.pdb{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.pds{font-weight:700;font-size:15px}.pds.ok{color:var(--okc,var(--ok))}.pds.warn{color:var(--wnc,var(--warn))}.pds.rest{color:var(--bad)}.pds.did,.pds.off{color:var(--mut);font-weight:600}
+.pdx{font-size:13px;color:var(--tx2,var(--mut))}.pdx.bad{color:var(--bad);font-weight:600}
+.pda{flex:none;color:var(--mut);font-size:20px}
+.plr.pst{font-size:9px;font-weight:600;letter-spacing:-.3px;padding:1px 2px;text-align:center}.pls2{font-size:10px;font-weight:700;line-height:1.2;margin-top:2px;overflow:hidden}.pls2.ok{color:var(--okc,var(--ok))}.pls2.warn{color:var(--wnc,var(--warn))}
 </style>
 </head>
 <body>
@@ -444,7 +455,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-131';
+const APPV='tg-2026-10-23-132';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
