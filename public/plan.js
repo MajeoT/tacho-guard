@@ -139,7 +139,9 @@ function plComp(sp,OFF){const n=Date.now(),I=typeof wrInfo==='function'?wrInfo()
  let le=I&&I.anc!==null?I.lastEnd:null;const lastE=L.length?Math.max(...L.map(x=>x.e)):0,B=OFF.filter(b=>le===null||b.s>=le-6e4).concat(lastE>n&&!OFF.some(b=>b.open)?[{s:lastE,e:Infinity,len:Infinity,full:true,open:1}]:[]),WR=[];/* after your last planned shift you are taken to be off, as the rule check does */
  B.forEach((b,i)=>{if(le!==null&&b.s<le-6e4)return;const by=(le===null?b.s:le)+144*H;
   if(!b.full&&!b.open&&B.slice(i+1).some(h=>(h.full||h.open)&&h.s<=by))return;le=b.e;WR.push(b);
-  if(b.full||b.open||b.e<=n||O.some(o=>Math.abs(o.e-b.e)<H))return;O.push({s:b.s,e:b.e,len:b.len,owed:45*H-b.len,dl:add7(wkS(b.s),4)})});
+  /* a rest that ended with a logged shift is the log's to judge (wrInfo, already in O); one that ended with a planned shift is the plan's */
+  const endLog=b.e<=n&&L.some(x=>x.log&&Math.abs(x.s-b.e)<6e4);
+  if(b.full||b.open||endLog||O.some(o=>Math.abs(o.e-b.e)<H))return;O.push({s:b.s,e:b.e,len:b.len,owed:45*H-b.len,dl:add7(wkS(b.s),4)})});
  O.sort((a,b)=>a.e-b.e);
  /* a rest of 24 hours or more counts as a weekly rest, so it has to be a full 45 hours plus what is owed; a shorter one is a
     daily rest of 9 hours plus what is owed. One long rest can carry more than one lot (g.x is what it already carries). */
