@@ -501,7 +501,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-149';
+const APPV='tg-2026-10-23-150';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1187,7 +1187,7 @@ function wrInfo(){const W=st.wr;if(!W)return null;const n=Date.now(),A=all();let
  const split=g=>{let k=S.findIndex(y=>y.e===g.s);if(k<0)return false;for(;k>0;k--){const q=S[k].s-S[k-1].e;if(q>=9*H)return false;if(q>=3*H)return true}return false},
   redD=G.filter(g=>g.s>=lastEnd&&g.len>=9*H&&g.len<11*H&&!split(g)).length;
  const reds=[];if(!W.fresh&&W.red)reds.push({s:W.e-(W.len||24*H),e:W.e,len:W.len||24*H});R.forEach(r=>{if(r.red)reds.push(r)});
- const allG=G.concat(ong?[{s:last.e,e:n,len:ong,ong:1}]:[]),C=reds.map(r=>{const owed=45*H-r.len,isP=pair&&(r.e===l1.e||r.e===l2.e),dl=isP?lastEnd+144*H:add7(wkS(r.s),4),paid=(st.wrp||[]).includes(r.e)||allG.some(g=>g.s>=r.e&&!g.ong&&g.e<=dl&&(R.includes(g)?g.len-(g.red?24*H:45*H)>=owed:g.len>=9*H+owed));return{r,owed,dl,paid,pair:isP,left:dl-n}}).filter(c=>!c.paid&&c.owed>0);
+ const allG=G.concat(ong?[{s:last.e,e:n,len:ong,ong:1}]:[]),C=reds.map(r=>{const owed=45*H-r.len,isP=pair&&(r.e===l1.e||r.e===l2.e),dl=isP?lastEnd+144*H:add7(wkS(r.s),4),paid=(st.wrp||[]).includes(r.e)||allG.some(g=>g.s>=r.e&&!g.ong&&g.e<=dl&&(R.includes(g)?!g.red&&g.len-45*H>=owed:g.len>=9*H+owed));return{r,owed,dl,paid,pair:isP,left:dl-n}}).filter(c=>!c.paid&&c.owed>0);
  const mis=!W.fresh?A.find(x=>x.e>W.e-(W.len||45*H)&&x.s<W.e):null;
  const rc=!!last&&ong>0&&ong<24*H&&!st.active&&!!st.se&&st.se>=last.e&&last.e<=lastEnd+144*H&&(lastEnd+144*H-n<24*H||n>lastEnd+144*H);/* resting since End Shift, and the rest began before the deadline */
  return{W,anc,lastEnd,rc,due:lastEnd+144*H,prevRed,redD,C,ong,R,inWr:ong>=24*H,S,mis,RH,intlOk,pair,pairBad,full45,w4,wk4,owedTot:C.reduce((q,x)=>q+x.owed,0),owedDl:C.reduce((m,x)=>Math.min(m,x.dl),Infinity)}}
@@ -1374,6 +1374,7 @@ function liveRun(){
      so it lasts to the finish, counting the breaks you have had */
   let hpl='';if(typeof plOcc==='function'){try{if(st.active&&busy&&ss){const pc=plOcc(ss-3*H,n+H).filter(o=>o.st!=='skip'&&o.E>n+15*M&&o.S<n+H&&Math.abs(o.S-ss)<4*H).sort((x,y)=>Math.abs(x.S-ss)-Math.abs(y.S-ss)),po=(jobsOn()&&pc.find(o=>o.j===st.cj))||(!jobsOn()&&pc[0])||null;
     if(po){const fe=po.rv?ss+(po.E-po.S):po.E,tc=isTc(),tx=plLive({n,E:fe,mv:po.rv&&fe!==po.E,br:po.br||0,tk:WT.brk,tot:WT.tot,w0:wc.d,d0:tc?b.d:0,Dr:tc?Math.max(0,(po.dr||0)*H-day):0,half:tc&&!!b.q,drv:act==='d'});if(tx)hpl=`<div class="h-pl">${tx}</div>`}}
+   else if(!st.active&&typeof plPending==='function'&&(()=>{const u=plPending().filter(x=>x.k==='end'&&x.o.E>n-24*H).pop();if(u)hpl=`<div class="h-pl"><span class="h-plk">Not logged yet</span>Your planned shift <b>${u.o.s.slice(0,5)}–${u.o.e.slice(0,5)}</b> ${esc(jobC(u.o.j).n)} (${dlong(u.o.S)}) is not in your log, so the times above leave it out. The Plan counts it as worked. Log it with <b>What happened?</b> below.</div>`;return !!u})()){}
    else if(!st.active){const L0=a0.filter(x=>x.t!=='r'),po=plOcc(n-2*H,n+20*H).filter(o=>!o.st&&o.E>n&&!L0.some(x=>x.e>o.S-H&&x.s<o.E))[0];
     if(po)hpl=`<div class="h-pl"><span class="h-plk">${sod(po.S)===sod(n)?'Planned today':sod(po.S)===nxd(sod(n))?'Planned tomorrow':'Planned '+new Date(po.S).toLocaleDateString('en-GB',{weekday:'long'})}</span>${plHeroPlan(po)}</div>`}}catch(e){}}
   set($('hero'),`<div class="h-top">${c1}${jobsOn()?`<span class="h-chip hj" data-job="1" role="button" tabindex="0" style="cursor:pointer"><i style="background:${JCOL[jobI(st.cj)]}"></i><span class="hjn">${esc(jobC(st.cj).n)}</span>${isTc()?tcIco(1,'#6ee7b7'):tcIco(0,'#9fb0c3','#fbbf24','#16243d')}▾</span>`:''}</div>${big==='Resting'||big==='Ready'?`<div class="h-rw"><div class="h-state ${big==='Ready'?'rd':'rs'}">${big}</div><div class="h-capi">${cap}</div></div>${sub?`<div class="h-cap sb${!act0&&big!=='Ready'?' rs':''}${big==='Ready'&&WRI&&WRI.rc?' wr':''}">${sub}</div>`:''}`:`<div class="h-big">${big}</div><div class="h-cap${!act0&&big!=='Ready'?' rs':''}">${cap}${sub?'<span> '+sub+'</span>':''}</div>`}${isTc()?`<div class="h-bar">${multi()&&JS.brk&&JS.brk.length?JS.brk.map(q=>`<i style="float:left;width:${Math.min(100,q[1]/(270*M)*100).toFixed(1)}%;background:${q[0]}"></i>`).join(''):`<i style="width:${pr}%;background:${pc2}"></i>`}</div><div class="h-bl"><span>Driving since last break</span><span>${fmt(b.d)} / 4h 30m</span></div>`:`<div class="h-bar">${multi()&&JS.wrk&&JS.wrk.length?JS.wrk.map(q=>`<i style="float:left;width:${Math.min(100,q[1]/(6*H)*100).toFixed(1)}%;background:${q[0]}"></i>`).join(''):`<i style="width:${pw}%;background:${pc3}"></i>`}</div><div class="h-bl"><span>Work since last break</span><span>${fmt(wc.d)} / 6h</span></div>`}${tl1||tl2?`<div class="h-ts${tl1&&tl2?'':' one'}">${tl1}${tl2}</div>`:''}${hpl}${lsH}`)}
