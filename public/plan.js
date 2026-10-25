@@ -153,8 +153,12 @@ function plStat(d,C){const n=C.n,D1=nxd(d),past=D1<=n,td=d===sod(n),os=C.occ.fil
  else{const fr=plFree(d,C.sp,C.I);S.fr=fr;
   if(!fr){S.k=logged?'did':'off';S.txt=logged?'Worked '+fmt(logged).replace(' 00m','')+' today':'Not working'}
   else if(fr.lv===3){S.k='rest';S.txt='Rest: '+plRestWhy(fr)}
-  else{const from=fr.ea>d+15*M?plHm(fr.ea):'',ut=fr.cut?fr.e0:fr.la!==Infinity&&fr.la<=D1?fr.la:0,until=ut?hmx(ut,d):'';
-   S.k=fr.lv===2?'warn':'ok';S.txt='Available '+(from&&until?from+' to '+until:from?'from '+from:until?'until '+until:'all day')+(fr.lv===2?', but '+plWarnWhy(fr):'')}}
+  else{const from=td&&fr.ea<=n+6e4?'now':fr.ea>d+15*M?plHm(fr.ea):'',ut=fr.cut?fr.e0:fr.la!==Infinity&&fr.la<=D1?fr.la:0,until=ut?hmx(ut,d):'';
+   S.k=fr.lv===2?'warn':'ok';S.txt='Available '+(from==='now'?(until?'now until '+until:'now'):from&&until?from+' to '+until:from?'from '+from:until?'until '+until:'all day')+(fr.lv===2?', but '+plWarnWhy(fr):'');
+   /* the whole stretch you are free in, not just this day: from 11 hours after your last shift (or now) to 11 hours before the next */
+   const D0=Math.max(d,n),pe=C.sp.filter(x=>x.e<=D0).reduce((m,x)=>Math.max(m,x.e),0),nx=C.sp.filter(x=>x.s>=D0).reduce((m,x)=>Math.min(m,x.s),Infinity),ws=Math.max(n,pe?pe+11*H:n),we=nx===Infinity?Infinity:nx-11*H;
+   const fw=t=>t<=n+6e4?'now':sod(t)===d?plHm(t):new Date(t).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' '+plHm(t);
+   if(ws<d||we>D1)S.sub.push(['mut','Free from '+fw(ws)+(we===Infinity?', with nothing planned after':' until '+fw(we))])}}
  if(C.NX&&C.NX.miss&&C.NX.due>n&&sod(C.NX.due)===d)S.sub.push(['bad',`⚠ Your weekly rest must start by ${plHm(C.NX.due)}`]);
  S.band=C.OFF.find(b=>b.s<=d&&b.e>=D1);return S}
 const plIco={work:'⚒',ok:'✓',warn:'⚠',rest:'✕',did:'✔',off:'–'};
@@ -215,10 +219,12 @@ function plFields(p){const J=jobs(),jj=p.j||st.cj||J[0].id,br=p.br===undefined?3
  return `<div class="fsec"><div class="flb">Job</div><div class="fchips">${J.map(x=>`<button type="button" class="fchip fjob" data-fk="j:${x.id}" style="--jc:${JCOL[jobI(x.id)]}"><i></i>${esc(x.n)}${x.tc===false?'<small>no tacho</small>':''}</button>`).join('')}</div><input type="hidden" id="pfj" value="${jj}"></div>
  <div class="fsec"><div class="flb">Time</div><div class="ftimes"><label class="ftime"><span>Start</span><input type="time" id="pfs" value="${p.s||'09:00'}"></label><span class="farr" aria-hidden="true">→</span><label class="ftime"><span>Finish</span><input type="time" id="pfe" value="${p.e||'17:00'}"></label></div>
  <div class="fchips fsm">${plPresets().map(t=>`<button type="button" class="fchip" data-fk="t:${t}">${t.replace('-','–')}</button>`).join('')}</div><div class="fsum" id="pfsum"></div></div>
- <div class="fsec"><div class="flb">Break</div><div class="fchips">${[0,15,30,45,60,90].map(v=>`<button type="button" class="fchip" data-fk="b:${v}">${v?v+' min':'None'}</button>`).join('')}</div><input type="hidden" id="pfb" value="${br}">
+ <div class="fsec"><div class="flb">Break</div><div class="fchips">${[0,15,30,45,60,90].map(v=>`<button type="button" class="fchip" data-fk="b:${v}">${v?v+' min':'None'}</button>`).join('')}</div><input type="hidden" id="pfb" value="${br}"><div class="note warn" id="pfbn" hidden>Over 4h 30m of driving needs at least 45 minutes of breaks (one 45, or 15 then 30).</div>
  <label class="fsw"><span>Paid break<small>For your own records. Paid or not, a break never counts as work.</small></span><span class="swt"><input type="checkbox" id="pfbp"${p.bp?' checked':''}><i></i></span></label></div>
  <div class="fsec" id="pfdw"><div class="flb">Driving expected</div><div class="fstep"><button type="button" data-fk="d:-0.5" aria-label="Less driving">−</button><input type="number" id="pfd" min="0" max="15" step="0.5" value="${p.dr===undefined?'':p.dr}" placeholder="0" aria-label="Driving expected, in hours"><span>hours</span><button type="button" data-fk="d:0.5" aria-label="More driving">+</button></div><div class="note">Counts towards your tacho driving limits.</div></div>`}
 function plFsync(){const w=$('mo');if(!w||!$('pfs'))return;const on=(k,v)=>w.querySelectorAll(`[data-fk^="${k}:"]`).forEach(b=>b.classList.toggle('on',b.dataset.fk===k+':'+v));
+ {const tc=jobC($('pfj').value).tc!==false,dv=tc?parseFloat(($('pfd')||{}).value)||0:0,need=dv>4.5?45:0;if(need&&+$('pfb').value<need)$('pfb').value=need;
+  w.querySelectorAll('[data-fk^="b:"]').forEach(b=>{const v=+b.dataset.fk.slice(2);b.disabled=v<need;b.classList.toggle('foff',v<need)});if($('pfbn'))$('pfbn').hidden=!need}
  on('j',$('pfj').value);on('b',$('pfb').value);on('t',$('pfs').value+'-'+$('pfe').value);if($('pfr'))on('r',$('pfr').value);if($('pfdt'))on('dt',$('pfdt').value);
  const s=tmin($('pfs').value),e=tmin($('pfe').value),sm=$('pfsum');if(sm){if(isNaN(s)||isNaN(e)||s===e){sm.textContent='';return}let L=e-s;if(L<=0)L+=1440;const wk=Math.max(0,L-(+$('pfb').value||0));
   sm.innerHTML=`<b>${fmt(L*M).replace(/ 00m$/,'')}</b> shift · <b>${fmt(wk*M).replace(/ 00m$/,'')}</b> of work${e<=s?' · <span class="warn">finishes the next day</span>':''}`}}
@@ -247,9 +253,22 @@ function plForm(p){p=p||{};const isNew=!p.id&&!p.fromPat;const t0=sod(Date.now()
   if(+$('pfr').value){const wd=(new Date(pdt(q.d)).getDay()+6)%7;st.pat=(st.pat||[]).concat({id:plId(),j:q.j,days:[wd],s:q.s,e:q.e,br:q.br,bp:q.bp,dr:q.dr,from:q.d,ev:+$('pfr').value});if(!isNew)st.plan=(st.plan||[]).filter(x=>x.id!==p.id);if(p.fromPat){st.plx=(st.plx||[]).concat(p.fromPat);/* the new repeat replaces the old one from this day on, so the two do not both appear */const pid=p.fromPat.split('|')[0];st.pat=(st.pat||[]).map(r=>r.id===pid&&!(r.to&&pdt(r.to)<pdt(q.d))?Object.assign({},r,{to:ymd(pdt(q.d)-864e5)}):r)}}
   else{if(p.fromPat)st.plx=(st.plx||[]).concat(p.fromPat);st.plan=(st.plan||[]).filter(x=>x.id!==q.id).concat(q)}
   save();plRender();plDay(pdt(q.d))}}}
-function plPatList(){const R=st.pat||[],D=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
- mo(`<h3>Repeating shifts</h3><p class="note">Shifts that repeat every week, every other week or less often, for example St Peter's every Tue, Wed and Thu 09:00 to 17:00. You can still change or remove a single day from the calendar.</p>${R.length?R.map(r=>{const j=jobC(r.j);return `<div class="bx" style="margin-top:8px;border-left:4px solid ${JCOL[jobI(j.id)]}"><div class="lbl">${esc(j.n)} · ${r.days.map(i=>D[i]).join(', ')} · ${ordW(r.ev)}</div><div class="note">${r.s}–${r.e}${r.br?', '+r.br+' min break'+(r.bp?' (paid)':''):''}. From ${dlong(pdt(r.from))}${r.to?' until '+dlong(pdt(r.to)):''}.</div><div class="tr" style="margin:8px 0 0"><button class="tg" data-k="ed:${r.id}">Edit</button></div></div>`}).join(''):'<p class="note">None yet.</p>'}<button class="tg big" data-k="new" style="margin-top:12px">Add repeating shift</button><button class="tg big" data-k="no">Close</button>`);
- mcb={no:moX,new:()=>plPatForm(null)};R.forEach(r=>mcb['ed:'+r.id]=()=>plPatForm(r))}
+/* Repeating shifts as a calendar: the days your repeats fall on are filled in each job's colour. Tap a day to edit its repeat
+   (or start a new one from that day), or tap a repeat underneath. */
+function plPatList(m){const R=st.pat||[],D=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],t0=sod(Date.now());if(m==null){const t=new Date(t0);t.setDate(1);m=t.getTime()}
+ const md=new Date(m),gs=wkS(m),me=new Date(md.getFullYear(),md.getMonth()+1,1).getTime(),ge=nwk(wkS(me-864e5)),occ=plOcc(gs,ge).filter(o=>o.pat),byD={};
+ occ.forEach(o=>{const k=sod(o.S);(byD[k]=byD[k]||[]).push(o)});let g='';
+ for(let d=gs;d<ge;d=nxd(d)){const L=byD[d]||[],c=L[0]?JCOL[jobI(jobC(L[0].j).id)]:'',inM=new Date(d).getMonth()===md.getMonth();
+  g+=`<button type="button" class="prc${inM?'':' plo'}${d===t0?' plt':''}${L.length?' on':''}" data-k="pd:${d}"${c?` style="--jc:${c}"`:''}><span class="pln">${new Date(d).getDate()}</span>${L.map(o=>`<span class="prt">${ct(o.s)}–${ct(o.e)}</span>`).join('')}</button>`}
+ mo(`<h3>Repeating Shifts</h3><p class="note" style="margin-top:-4px">Coloured days are your repeating shifts. Tap one to change it, or tap an empty day to start a new repeat from there.</p>
+ <div class="tr" style="margin:6px 0 8px;gap:6px"><button class="tg" data-k="pm:-1" aria-label="Previous month">‹</button><b style="flex:1;text-align:center;font-size:16px">${md.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</b><button class="tg" data-k="pm:1" aria-label="Next month">›</button></div>
+ <div class="plg">${D.map(x=>`<div class="plh">${x}</div>`).join('')}${g}</div>
+ ${R.length?`<div class="flb" style="margin:14px 0 6px">Your repeats</div><div class="fchips">${R.map(r=>{const j=jobC(r.j),old=r.to&&pdt(r.to)<t0;return `<button type="button" class="fchip fjob frep${old?' foff':''}" data-k="ed:${r.id}" style="--jc:${JCOL[jobI(j.id)]}"><i></i><span><b>${esc(j.n)}</b><small>${r.days.map(i=>D[i]).join(', ')} · ${r.s}–${r.e} · ${ordW(r.ev)}${r.to?' · until '+new Date(pdt(r.to)).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):''}</small></span></button>`}).join('')}</div>`:'<p class="note" style="margin-top:10px">No repeating shifts yet.</p>'}
+ <button class="tg big fpri" data-k="new" style="margin-top:14px">Add repeating shift</button><button class="tg big" data-k="no">Close</button>`);
+ mcb={no:moX,new:()=>plPatForm(null),'pm:-1':()=>{const x=new Date(m);x.setMonth(x.getMonth()-1);plPatList(x.getTime())},'pm:1':()=>{const x=new Date(m);x.setMonth(x.getMonth()+1);plPatList(x.getTime())}};
+ R.forEach(r=>mcb['ed:'+r.id]=()=>plPatForm(r));
+ for(let d=gs;d<ge;d=nxd(d)){const L=byD[d]||[];mcb['pd:'+d]=()=>{const ids=[...new Set(L.map(o=>o.pat))];if(!ids.length)return plPatForm(null,ymd(d));if(ids.length===1)return plPatForm(R.find(r=>r.id===ids[0]));
+  mo(`<h3>Which Repeat?</h3>${ids.map(id=>{const r=R.find(x=>x.id===id),j=jobC(r.j);return `<button class="tg big" data-k="w:${id}">${esc(j.n)} ${r.s}–${r.e}</button>`}).join('')}<button class="tg big" data-k="no">Back</button>`);mcb={no:()=>plPatList(m)};ids.forEach(id=>mcb['w:'+id]=()=>plPatForm(R.find(r=>r.id===id)))}}}
 /* removing a repeat keeps the shifts that have already passed, unless you say how far back to remove them */
 function plPatDel(r){const t0=sod(Date.now());
  const drop=()=>{st.pat=(st.pat||[]).filter(x=>x.id!==r.id);st.plx=(st.plx||[]).filter(x=>!x.startsWith(r.id+'|'));save();plRender();plPatList()};

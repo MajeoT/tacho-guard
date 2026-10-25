@@ -325,6 +325,11 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .pda{flex:none;color:var(--mut);font-size:20px}
 .pld.pk-ok{background:rgba(52,211,153,.16)!important;border-color:rgba(52,211,153,.5)!important}.pld.pk-warn{background:rgba(251,191,36,.2)!important;border-color:rgba(251,191,36,.6)!important}.pld.pk-rest{background:rgba(248,113,113,.16)!important;border-color:rgba(248,113,113,.55)!important}
 .pkw{font-size:9.5px;font-weight:700;line-height:1.15;text-align:center;margin-top:auto;letter-spacing:-.2px}.pk-ok .pkw{color:var(--okc,var(--ok))}.pk-warn .pkw{color:var(--wnc,var(--warn))}.pk-rest .pkw{color:var(--bad)}.pk-work .pkw{color:var(--mut)}
+.frep{width:100%;border-radius:12px;justify-content:flex-start;text-align:left;padding:10px 12px}.frep span{display:flex;flex-direction:column;gap:2px}.frep small{font-size:12px;opacity:.8}.fchip.foff{opacity:.4}.fchip:disabled{cursor:not-allowed}
+.prc{position:relative;min-height:54px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;padding:3px;text-align:left;font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:2px;overflow:hidden;min-width:0}
+.prc.on{background:var(--soft);background:color-mix(in srgb,var(--jc) 22%,var(--card));border-color:var(--jc);border-width:1.5px}
+.prt{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden}
+.pdx.mut{color:var(--mut)}
 .fform{display:flex;flex-direction:column;gap:14px;margin:4px 0 12px}
 .fsec{display:flex;flex-direction:column;gap:8px}
 .flb{font:700 13px var(--body);color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
@@ -483,7 +488,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-136';
+const APPV='tg-2026-10-23-137';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
