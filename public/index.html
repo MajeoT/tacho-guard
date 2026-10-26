@@ -501,7 +501,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-152';
+const APPV='tg-2026-10-23-153';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -683,6 +683,8 @@ let allC=null,allOn=0;
 const all=()=>{if(allOn&&allC)return allC;const a=st.sessions.map(x=>Object.assign({t:'d'},x)).filter(x=>x.t!=='r');if(st.active&&st.act!=='r')a.push({s:st.active,e:Date.now(),t:st.act,live:1,j:st.cj});const r=lay(a);if(allOn)allC=r;return r};
 const sum=(a,f,t)=>a.reduce((n,x)=>n+Math.max(0,Math.min(x.e,t)-Math.max(x.s,f)),0);
 const sod=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x.getTime()};
+/* 04:00 on a day (the end of the night work window), right on the days the clocks change */
+const at4=d=>{const x=new Date(d);x.setHours(4,0,0,0);return x.getTime()};
 const mon=()=>{const x=new Date(sod(Date.now()));x.setDate(x.getDate()-((x.getDay()+6)%7));return x.getTime()};
 const wkS=ts=>{const d=new Date(ts);d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getTime()};
 const nwk=w=>{const d=new Date(w);d.setDate(d.getDate()+7);return d.getTime()};
@@ -769,7 +771,7 @@ function legalStart(t){t=t||'d';
  if(wkd>=56*H||fn>=90*H)R.push([nwk(w),wkd>=56*H?'You have driven '+fmt(wkd)+' this week, the 56 hour weekly limit':'You have driven '+fmt(fn)+' over two weeks, the 90 hour fortnight limit',1,'weekly driving limit']);
  {const wkW=sum(a0.filter(x=>x.t!=='p'),w,n+1);if(wkW>=60*H)R.push([nwk(w),'You have worked '+fmt(wkW)+' this week. No week can go over 60 hours of working time',2,'60 hour week'])}
  /* night work: any work between 00:00 and 04:00 in the shift limits work to 10 hours */
- if(ss&&sw>=10*H&&a.some(x=>x.s>=ss&&x.t!=='p'&&(()=>{for(let d=sod(x.s);d<x.e;d=nxd(d)){if(x.s<d+4*H&&x.e>d)return true}return false})()))R.push([e+dr9*H,'Part of this shift was between 00:00 and 04:00, so working time is limited to 10 hours. You have worked '+fmt(sw),2,'night work limit']);
+ if(ss&&sw>=10*H&&a.some(x=>x.s>=ss&&x.t!=='p'&&(()=>{for(let d=sod(x.s);d<x.e;d=nxd(d)){if(x.s<at4(d)&&x.e>d)return true}return false})()))R.push([e+dr9*H,'Part of this shift was between 00:00 and 04:00, so working time is limited to 10 hours. You have worked '+fmt(sw),2,'night work limit']);
  /* weekly rest */
  if(wOk&&gap>0&&!busy){
   if(I.inWr&&I.full45&&gap<45*H)R.push([l.e+45*H,'Your last weekly rest was reduced, so this one has to be a full 45 hours',0,'45 hour weekly rest']);
@@ -813,7 +815,7 @@ function audRules(S){const out=[];if(!S.length)return out;
   if(mx>6*H)out.push(['Worked '+fmt(mx)+' in a row without a break',WTL]);else if(need&&brk<need*M)out.push(['Only '+Math.round(brk/M)+' minutes of breaks in '+fmt(wk)+' of work (needs '+need+')',WTL])}
  if(dr>10*H)out.push(['Over 10 hours of driving ('+fmt(dr)+')','Above the 10 hour daily maximum. DVSA can issue a fixed penalty of up to £300 for each offence, depending on how serious it is.']);
  if(sp>15*H)out.push(['Shift spread over '+fmt(sp),'A 9 hour daily rest cannot fit within 24 hours of the start. A missing daily rest is a drivers hours infringement.']);
- const night=S.some(x=>x.t!=='p'&&(()=>{for(let d=sod(x.s);d<x.e;d=nxd(d)){if(x.s<d+4*H&&x.e>d)return true}return false})());
+ const night=S.some(x=>x.t!=='p'&&(()=>{for(let d=sod(x.s);d<x.e;d=nxd(d)){if(x.s<at4(d)&&x.e>d)return true}return false})());
  if(night&&wk>10*H)out.push(['Night work over 10 hours ('+fmt(wk)+')','Work between 00:00 and 04:00 limits working time to 10 hours in 24, unless a workforce or collective agreement allows more. This breaks the working time rules.']);
  /* weekly checks use the week of the shift being checked */
  const n=Date.now(),A=all(),w0=wkS(S[0].s),w1=nwk(w0),wt=sum(A.filter(x=>x.t!=='p'),w0,Math.min(w1,n+1)),wd=sum(A.filter(x=>x.t==='d'),w0,Math.min(w1,n+1));
@@ -1344,7 +1346,7 @@ function liveRun(){
  L.push(flash);
  set($('live'),L.filter(Boolean).join('<br>'));
  let nx,hc=null,nsv=null;
- if(act==='d'){const wkW=sum(a0.filter(x=>x.t!=='p'),w,n+1),night=ss&&a.some(x=>x.s>=ss&&x.t!=='p'&&(()=>{for(let d=sod(x.s);d<x.e;d=nxd(d)){if(x.s<d+4*H&&x.e>d)return true}return false})());
+ if(act==='d'){const wkW=sum(a0.filter(x=>x.t!=='p'),w,n+1),night=ss&&a.some(x=>x.s>=ss&&x.t!=='p'&&(()=>{for(let d=sod(x.s);d<x.e;d=nxd(d)){if(x.s<at4(d)&&x.e>d)return true}return false})());
   const C0=[[270*M-b.d,'4h 30m break'],[WT.left,'working time break'],[(extLeft?10:9)*H-day,extLeft?'daily driving limit (10h, using one of your 2 extensions; 9h without)':'9 hour daily limit'],[56*H-wkd,'weekly limit'],[90*H-fn,'fortnight limit'],[60*H-wkW,'60 hour working week']];
   if(ss)C0.push([ss+24*H-rd9*H-n,rd9+' hour daily rest, which must finish within 24 hours of your shift start']);
   if(night)C0.push([10*H-sw,'night work limit of 10 hours']);
@@ -2054,7 +2056,19 @@ const sKey=x=>x.s+'|'+x.e+'|'+(x.t||'d')+'|'+(x.j||'');
 function merge3(baseJ,loc,rem){let b=null;try{b=baseJ?JSON.parse(baseJ):null}catch(e){}
  const bs=new Set(((b&&b.sessions)||[]).map(sKey)),ls=new Set((loc.sessions||[]).map(sKey)),rs=new Set((rem.sessions||[]).map(sKey)),out=Object.assign({},rem);
  out.sessions=(rem.sessions||[]).filter(x=>!(b&&bs.has(sKey(x))&&!ls.has(sKey(x)))).concat((loc.sessions||[]).filter(x=>!rs.has(sKey(x))&&!(b&&bs.has(sKey(x)))));
- if(b)Object.keys(loc).forEach(k=>{if(k==='sessions'||k==='walks'||k==='u')return;const lj=JSON.stringify(loc[k]),bj=JSON.stringify(b[k]);if(lj!==bj&&JSON.stringify(rem[k])===bj)out[k]=loc[k]});
+ /* the plan is combined item by item, so a shift added on one phone and another added on the other phone both stay */
+ const J=JSON.stringify,PI=['plan','pat','rota'],PS=['plx'],PO=['pls','plxc'];
+ const byId=(B0,L0,R0)=>{const mb=new Map((B0||[]).map(x=>[x.id,x])),ml=new Map((L0||[]).map(x=>[x.id,x])),mr=new Map((R0||[]).map(x=>[x.id,x])),ids=[...new Set([...mr.keys(),...ml.keys()])],res=[];
+  ids.forEach(id=>{const B=mb.get(id),Lx=ml.get(id),Rx=mr.get(id);
+   if(Lx&&Rx){res.push(B&&J(Rx)===J(B)?Lx:Rx);return}
+   if(Lx){if(!B||J(Lx)!==J(B))res.push(Lx);return}/* added here, or changed here while the other phone removed it */
+   if(Rx){if(!B||J(Rx)!==J(B))res.push(Rx)}});return res};
+ const bySet=(B0,L0,R0)=>{const B=new Set(B0||[]),Lz=new Set(L0||[]),Rz=new Set(R0||[]);return[...new Set([...Rz,...Lz])].filter(x=>!(B.has(x)&&(!Lz.has(x)||!Rz.has(x))))};
+ const byKey=(B0,L0,R0)=>{B0=B0||{};L0=L0||{};R0=R0||{};const o={};new Set([...Object.keys(R0),...Object.keys(L0)]).forEach(k=>{const inL=k in L0,inR=k in R0,inB=k in B0;
+   if(inL&&inR){o[k]=inB&&J(R0[k])===J(B0[k])?L0[k]:R0[k];return}if(inL){if(!inB||J(L0[k])!==J(B0[k]))o[k]=L0[k];return}if(!inB||J(R0[k])!==J(B0[k]))o[k]=R0[k]});return o};
+ if(b)Object.keys(loc).concat(Object.keys(rem)).filter((k,i,A)=>A.indexOf(k)===i).forEach(k=>{if(k==='sessions'||k==='walks'||k==='u')return;const lj=J(loc[k]),bj=J(b[k]),rj=J(rem[k]);if(lj===rj||lj===bj)return;
+  if(rj===bj){if(k in loc)out[k]=loc[k];return}
+  if(PI.includes(k))out[k]=byId(b[k],loc[k],rem[k]);else if(PS.includes(k))out[k]=bySet(b[k],loc[k],rem[k]);else if(PO.includes(k))out[k]=byKey(b[k],loc[k],rem[k])});
  return out}
 const recJ=r=>{const o=Object.assign({},r);delete o.walks;delete o.u;return JSON.stringify(o)};
 function adopt(r,ru,lost){if(!MO.hidden){pend=[r,ru,lost];return}
