@@ -28,7 +28,7 @@ async function keys() {
     await db.from("tg_push_keys").update({ public_key: k.publicKey, private_key: k.privateKey }).eq("id", 1).is("public_key", null);
     data = (await db.from("tg_push_keys").select("*").eq("id", 1).single()).data;
   }
-  webpush.setVapidDetails("https://tacho-guard.slynch85.workers.dev", data.public_key, data.private_key);
+  webpush.setVapidDetails("https://tacho-guard.toejahm.workers.dev", data.public_key, data.private_key);
   return data;
 }
 
@@ -57,7 +57,7 @@ async function sendTo(userId: string, msg: { title: string; body: string; tag: s
 }
 
 // The live version is the VERSION line in sw.js, which changes with every release.
-const APP = "https://tacho-guard.slynch85.workers.dev/";
+const APP = "https://tacho-guard.toejahm.workers.dev/";
 async function liveVersion() {
   try {
     const r = await fetch(APP + "sw.js?t=" + Date.now(), { cache: "no-store" });
