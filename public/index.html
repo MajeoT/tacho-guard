@@ -501,7 +501,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-154';
+const APPV='tg-2026-10-23-155';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -538,7 +538,8 @@ const $=id=>document.getElementById(id);
 const set=(el,h)=>{if(el._h!==h){el.innerHTML=h;el._h=h}};
 const NM={d:'Driving',x:'Driving (no tacho)',w:'Other work',p:'POA',r:'Break'},IC={d:'🚛',x:'🚚',w:'⚒',p:'◪',r:'🛏'};
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
-const JCOL=['#3b82f6','#f59e0b','#a855f7','#94a3b8'],JS={};
+/* job colours stay clear of the green, amber and red that mean available, warning and rest */
+const JCOL=['#3b82f6','#a855f7','#d946ef','#94a3b8'],JS={};
 const jobs=()=>st.jobs&&st.jobs.length?st.jobs:[{id:'j1',n:'Main job',tc:true}];
 /* removed jobs stay in st.jobx so old entries keep their name (shown in grey) */
 const jobI=id=>{const i=jobs().findIndex(j=>j.id===id);return i>=0?i:(st.jobx||[]).some(j=>j.id===id)?3:0},jobC=id=>jobs().find(j=>j.id===id)||(st.jobx||[]).find(j=>j.id===id)||jobs()[0],multi=()=>jobs().length>1,jobsOn=()=>!!(st.jobs&&st.jobs.length);
@@ -1200,7 +1201,7 @@ function wrInfo(){const W=st.wr;if(!W)return null;const n=Date.now(),A=all();let
  if(anc===null)return{W,anc:null};
  const S=A.filter(x=>x.e>anc),G=[];for(let i=1;i<S.length;i++){const g=S[i].s-S[i-1].e;if(g>0)G.push({s:S[i-1].e,e:S[i].s,len:g})}
  const last=S[S.length-1],busy=!!st.active&&st.act!=='r',ong=last&&!last.live&&!busy?n-last.e:0;
- const R=[];{let le=anc;const GG=G.concat(last&&!busy?[{s:last.e,e:n,len:Math.max(0,n-last.e),tail:1}]:[]);/* the rest you are on now counts at its real length, so an earlier reduced rest is not skipped while you are resting */GG.forEach((g,i)=>{if(g.tail||g.len<24*H)return;if(g.len<45*H&&GG.slice(i+1).some(h=>h.len>=45*H&&h.s<=le+144*H))return;R.push(Object.assign(g,{red:g.len<45*H}));le=g.e})}
+ const R=[];{let le=anc;const GG=G.concat(last&&!busy?[{s:last.e,e:n,len:Math.max(0,n-last.e),tail:1}]:[]);/* the rest you are on now counts at its real length, so an earlier reduced rest is not skipped while you are resting */GG.forEach((g,i)=>{if(g.tail||g.len<24*H)return;if(g.len<45*H&&GG.slice(i+1).some(h=>h.len>=24*H&&h.s<=le+144*H))return;/* a later rest of 24h or more that starts in time can be the weekly rest instead */R.push(Object.assign(g,{red:g.len<45*H}));le=g.e})}
  const lw=R[R.length-1],lastEnd=lw?lw.e:anc,prevRed=lw?lw.red:(!W.fresh&&!!W.red);
  /* every weekly rest known, oldest first: the one you entered, then the ones found in your log. intl = taken abroad on an international trip */
  const WI=st.wri||[],RH=[];if(!W.fresh){const wl=W.len||(W.red?24*H:45*H);RH.push({s:W.e-wl,e:W.e,len:wl,red:!!W.red,intl:!!W.intl,anchor:1})}
