@@ -88,7 +88,7 @@ a{color:var(--tx)}
 #ck .gl{display:grid;grid-template-columns:1fr 1fr;gap:8px}#ck .gl .cs{grid-column:1/-1;margin:12px 0 0;display:flex;justify-content:space-between;align-items:center}#ck .cs .pl{font-size:12px;padding:4px 10px;white-space:nowrap;flex:none;margin-left:8px}#ck .ci{border:1px solid var(--bd);border-radius:10px;padding:8px;display:flex;flex-direction:column;justify-content:space-between;gap:6px}#ck .ci.bd{grid-column:1/-1}#ck .ci .lbl{font-size:14px;line-height:1.2}#ck .cb{margin-top:0;gap:4px}#ck .cb button{padding:6px 2px;font-size:12px;border-radius:7px}#ck .pl{padding:6px 10px;font-size:13px}#ck .g2{margin-top:10px}
 .th{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--bd);cursor:pointer;background:var(--bd)}.ph{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}.ci .lbl .i{vertical-align:middle}.cs{font:700 20px "Barlow Condensed","Roboto Condensed","sans-serif-condensed","Arial Narrow",Arial,sans-serif;margin:16px 0 2px}.ci{padding:10px 0;border-top:1px solid var(--bd)}.ci .h{font-size:13px;color:var(--mut)}.cb{display:flex;gap:6px;margin-top:6px}.cb button{flex:1;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font:600 14px system-ui,sans-serif;cursor:pointer}.cb .ok.on{background:var(--ok);color:var(--okt,#fff);border-color:var(--ok)}.cb .bad.on{background:var(--bad);color:var(--okt,#fff);border-color:var(--bad)}.cb .na.on{background:var(--mut);color:var(--bg);border-color:var(--mut)}
 .dn{margin-top:8px}.dl{display:flex;gap:8px;align-items:center;margin-top:6px;font-size:14px;color:var(--tx)}.dl input{width:auto}.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-.wkb{display:block;width:100%;box-sizing:border-box;text-align:left;border:1px solid var(--bd);border-left:6px solid var(--mut);border-radius:12px;background:var(--card);color:var(--tx);padding:10px 12px;margin-bottom:10px;font:inherit;cursor:pointer}.wkb b{display:block}.wkb span{display:block;font-size:13px;color:var(--mut)}.wkb.nb{border-left-color:var(--bad)}.wkb.dn2{border-left-color:var(--ok)}.wkb.wn{border-left-color:var(--warn)}
+.wkb{display:block;width:100%;box-sizing:border-box;text-align:left;border:1px solid var(--bd);border-left:6px solid var(--mut);border-radius:12px;background:var(--card);color:var(--tx);padding:10px 12px;margin-bottom:10px;font:inherit;cursor:pointer}.wkb b{display:block}.wkb b.pbw{font-size:16px;margin:2px 0 1px;color:var(--tx)}.ntpm{color:var(--bad)!important;margin-top:4px}.wkb span{display:block;font-size:13px;color:var(--mut)}.wkb.nb{border-left-color:var(--bad)}.wkb.dn2{border-left-color:var(--ok)}.wkb.wn{border-left-color:var(--warn)}
 .tab.dot::after{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--bad);margin-left:5px}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--okt:#04130a}}:root[data-theme="dark"]{--okt:#04130a}
 .pl:disabled{opacity:.45;cursor:not-allowed}
@@ -379,7 +379,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="updc" role="status" hidden></div><div id="rmb" aria-live="assertive"></div><div id="sync" role="status"></div>
 <section id="t-today">
 <div class="alert" id="alert" hidden></div>
-<div id="plb"></div><div id="iss"></div><div id="wkb"></div><div id="mx"></div><div id="owe"></div>
+<div id="ntp"></div><div id="plb"></div><div id="iss"></div><div id="wkb"></div><div id="mx"></div><div id="owe"></div>
 <div id="herow"><div id="hero"></div>
 <div class="acts-l" id="actl"></div><div class="acts"><button class="act" data-a="d"><b>🚛</b>Driving<small class="as">drive</small></button><button class="act" data-a="w"><b>⚒</b>Work<small class="as">other work</small></button><button class="act" data-a="p"><b>◪</b>POA<small class="as">waiting</small></button><button class="act" data-a="r"><b>🛏</b>Break<small class="as">take a break</small></button></div><div class="tr" id="es" hidden><label for="est" id="esl">Started At</label><input type="time" id="est"><button class="tg" id="esb">Change</button></div></div><div id="tcsw"></div>
 <div class="live" id="live"></div>
@@ -501,7 +501,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-153';
+const APPV='tg-2026-10-23-154';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1092,6 +1092,26 @@ $('nt').onclick=async()=>{if(!pushOk())return;if(!sess){showAuth();return}const 
  try{if(Notification.permission!=='granted'){const q=await Notification.requestPermission();if(q!=='granted'){ntUi();return}}await pushEnable();n.textContent='On.'}catch(e){n.textContent='Could not turn on: '+aErr(e)}
  ntUi()};
 $('nto').onclick=async()=>{await pushDisable();ntUi()};
+/* A prompt on Today to turn on phone notifications, until they are on or put off (Not now: a week, x: a month). It says what to do
+   on an iPhone (add to the Home Screen first) or when they are blocked, and sends a test as soon as they are on. */
+let ntpT=0;function ntpUi(){try{ntpDraw()}catch(e){}}
+function ntpDraw(){const NTPK='tachoguard.ntp.v1',el=$('ntp');if(!el)return;let snooze=0;try{snooze=+localStorage.getItem(NTPK)||0}catch(e){}
+ const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),home=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+ if((pushOk()&&Notification.permission==='granted'&&pushOn())||Date.now()<snooze){set(el,'');return}
+ let t,btn='';
+ if(!pushOk()){if(!(ios&&!home)){set(el,'');return}t='To get break and shift reminders on an iPhone, add TachoGuard to your Home Screen first: tap the Share button, then Add to Home Screen. Open it from there and turn notifications on.'}
+ else if(Notification.permission==='denied')t='Notifications are blocked for TachoGuard, so reminders cannot reach you with the app closed. To allow them on Android: hold the TachoGuard icon, tap App info, then Notifications, and allow them (in Chrome, tap the lock by the web address, then Permissions). Then come back here.';
+ else if(!sess){t='Turn on phone notifications to get break and planned shift reminders with the app closed. You need to sign in first, so the server knows which phone to send them to.';btn='<button class="tg" data-ntp="in">Sign in</button>'}
+ else{t='Get break and planned shift reminders as phone notifications, even with the app closed and the phone locked.';btn='<button class="tg" data-ntp="on" style="background:var(--acc);border-color:var(--acc);color:var(--onacc);font-weight:700">Turn on</button>'}
+ set(el,`<div class="wkb" style="cursor:default;border-left-color:var(--acc)"><b>🔔 Phone notifications are off</b><span>${t}</span><span id="ntpm" class="ntpm"></span><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${btn}<button class="tg" data-ntp="later">Not now</button><button class="tg" data-ntp="x" aria-label="Hide for a month">✕</button></div></div>`)}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-ntp]');if(!b)return;const k=b.dataset.ntp,m=$('ntpm');
+ if(k==='later'||k==='x'){try{localStorage.setItem('tachoguard.ntp.v1',String(Date.now()+(k==='x'?30:7)*864e5))}catch(x){}ntpUi();return}
+ if(k==='in'){showAuth();return}if(k==='done'){ntpUi();return}
+ if(k==='on'){b.disabled=true;b.textContent='Turning on...';
+  try{if(Notification.permission!=='granted'){const q=await Notification.requestPermission();if(q!=='granted'){ntpUi();ntUi();return}}await pushEnable();
+   let r=null;try{r=await fnCall('',{method:'POST',body:JSON.stringify({test:true})})}catch(x){}ntUi();
+   set($('ntp'),`<div class="wkb" style="cursor:default;border-left-color:var(--ok)"><b>🔔 Phone notifications are on</b><span>${r&&r.ok?'A test notification is on its way. You will see it when the app is not open on screen, so lock the phone or switch apps to check. You can turn them off in Settings.':'They are on, but the test could not be delivered yet. Try Send Test in Settings in a minute.'}</span><button class="tg" data-ntp="done" style="margin-top:8px">OK</button></div>`)}
+  catch(x){b.disabled=false;b.textContent='Turn on';if(m)m.textContent='Could not turn on: '+aErr(x)}}});
 /* What the server should remind you of, worked out from the screen figures. Sent whenever things change, so the times stay right. */
 let RLD=null,prT=0,prSig='';
 function remList(n){const L=[];if(!st.alerts||!RLD)return L;const{act,busy,b,wc,day}=RLD,RL=st.rml===undefined?15:st.rml,RS=st.rms===undefined?10:st.rms,Lm=RL*M;
@@ -1294,6 +1314,7 @@ function wrSetup(){const W=st.wr||{};let mode=W.fresh?'f':'k',red=!!W.red,intl=!
     mcb.logx=()=>{force=1;mcb.ok();openDay(sod(cx.s),'today')};return}
    st.wr={e,red:red?1:0,len,t:Date.now()};if(intl)st.wr.intl=1}
   save();moX();render()}}}
+let hplK='',hplP=[];/* the planned shifts waiting for an answer, worked out at most every 30 seconds for the Today card */
 function live(){allOn++;allC=null;try{liveRun()}finally{if(!--allOn)allC=null}}
 function liveRun(){
  if(pend&&MO.hidden){const[r,ru,lo]=pend;pend=null;if(ru>baseU)adopt(r,ru,lo||mainJ()!==lastMain)}
@@ -1381,7 +1402,7 @@ function liveRun(){
      so it lasts to the finish, counting the breaks you have had */
   let hpl='';if(typeof plOcc==='function'){try{if(st.active&&busy&&ss){const pc=plOcc(ss-3*H,n+H).filter(o=>o.st!=='skip'&&o.E>n+15*M&&o.S<n+H&&Math.abs(o.S-ss)<4*H).sort((x,y)=>Math.abs(x.S-ss)-Math.abs(y.S-ss)),po=(jobsOn()&&pc.find(o=>o.j===st.cj))||(!jobsOn()&&pc[0])||null;
     if(po){const fe=po.rv?ss+(po.E-po.S):po.E,tc=isTc(),tx=plLive({n,E:fe,mv:po.rv&&fe!==po.E,br:po.br||0,tk:WT.brk,tot:WT.tot,w0:wc.d,d0:tc?b.d:0,Dr:tc?Math.max(0,(po.dr||0)*H-day):0,half:tc&&!!b.q,drv:act==='d'});if(tx)hpl=`<div class="h-pl">${tx}</div>`}}
-   else if(!st.active&&typeof plPending==='function'&&(()=>{const u=plPending().filter(x=>x.k==='end'&&x.o.E>n-24*H).pop();if(u)hpl=`<div class="h-pl"><span class="h-plk">Not logged yet</span>Your planned shift <b>${u.o.s.slice(0,5)}–${u.o.e.slice(0,5)}</b> ${esc(jobC(u.o.j).n)} (${dlong(u.o.S)}) is not in your log, so the times above leave it out. The Plan counts it as worked. Log it with <b>What happened?</b> below.</div>`;return !!u})()){}
+   else if(!st.active&&typeof plPending==='function'&&(()=>{const pk=Math.floor(n/3e4)+'|'+st.sessions.length+'|'+JSON.stringify(st.pls||{}).length+'|'+(st.u||0);if(pk!==hplK){hplK=pk;hplP=plPending()}const u=hplP.filter(x=>x.k==='end'&&x.o.E>n-24*H).pop();if(u)hpl=`<div class="h-pl"><span class="h-plk">Not logged yet</span>Your planned shift <b>${u.o.s.slice(0,5)}–${u.o.e.slice(0,5)}</b> ${esc(jobC(u.o.j).n)} (${typeof plDayW==='function'?plDayW(u.o.S):dlong(u.o.S)}) is not in your log, so the times above leave it out. The Plan counts it as worked. Log it with <b>What happened?</b> below.</div>`;return !!u})()){}
    else if(!st.active){const L0=a0.filter(x=>x.t!=='r'),po=plOcc(n-2*H,n+20*H).filter(o=>!o.st&&o.E>n&&!L0.some(x=>x.e>o.S-H&&x.s<o.E))[0];
     if(po)hpl=`<div class="h-pl"><span class="h-plk">${sod(po.S)===sod(n)?'Planned today':sod(po.S)===nxd(sod(n))?'Planned tomorrow':'Planned '+new Date(po.S).toLocaleDateString('en-GB',{weekday:'long'})}</span>${plHeroPlan(po)}</div>`}}catch(e){}}
   set($('hero'),`<div class="h-top">${c1}${jobsOn()?`<span class="h-chip hj" data-job="1" role="button" tabindex="0" style="cursor:pointer"><i style="background:${JCOL[jobI(st.cj)]}"></i><span class="hjn">${esc(jobC(st.cj).n)}</span>${isTc()?tcIco(1,'#6ee7b7'):tcIco(0,'#9fb0c3','#fbbf24','#16243d')}▾</span>`:''}</div>${big==='Resting'||big==='Ready'?`<div class="h-rw"><div class="h-state ${big==='Ready'?'rd':'rs'}">${big}</div><div class="h-capi">${cap}</div></div>${sub?`<div class="h-cap sb${!act0&&big!=='Ready'?' rs':''}${big==='Ready'&&WRI&&WRI.rc?' wr':''}">${sub}</div>`:''}`:`<div class="h-big">${big}</div><div class="h-cap${!act0&&big!=='Ready'?' rs':''}">${cap}${sub?'<span> '+sub+'</span>':''}</div>`}${isTc()?`<div class="h-bar">${multi()&&JS.brk&&JS.brk.length?JS.brk.map(q=>`<i style="float:left;width:${Math.min(100,q[1]/(270*M)*100).toFixed(1)}%;background:${q[0]}"></i>`).join(''):`<i style="width:${pr}%;background:${pc2}"></i>`}</div><div class="h-bl"><span>Driving since last break</span><span>${fmt(b.d)} / 4h 30m</span></div>`:`<div class="h-bar">${multi()&&JS.wrk&&JS.wrk.length?JS.wrk.map(q=>`<i style="float:left;width:${Math.min(100,q[1]/(6*H)*100).toFixed(1)}%;background:${q[0]}"></i>`).join(''):`<i style="width:${pw}%;background:${pc3}"></i>`}</div><div class="h-bl"><span>Work since last break</span><span>${fmt(wc.d)} / 6h</span></div>`}${tl1||tl2?`<div class="h-ts${tl1&&tl2?'':' one'}">${tl1}${tl2}</div>`:''}${hpl}${lsH}`)}
@@ -1956,7 +1977,7 @@ function wkUpdate(){
  else if(act==='d'||dd==='y'){dot=true;h=`<div class="wkb nb"><b>Walkaround not done</b><span>${act==='d'?'You are driving and no walkaround is recorded for this shift.':'Do it before you drive. The DVSA expects it before the first drive of the day.'}</span><div style="display:flex;gap:8px;margin-top:8px">${bt('data-wgo="1"','Do it now')}${bt('data-dd="e"','Done elsewhere')}${bt('data-dd="n"','Not needed')}</div></div>`}
  else if(dd==='n')h=`<div class="wkb slim dn2"><b>Walkaround not needed</b><span>Not driving this shift. <u data-dd="" style="cursor:pointer">Change</u></span></div>`;
  else h=`<div class="wkb"><b>Walkaround check</b><span>The DVSA expects one before the first drive of the day. Will you do your own, or has it been done elsewhere?</span><div style="display:flex;gap:8px;margin-top:8px">${bt('data-dd="y"','I will do my own')}${bt('data-dd="e"','Done elsewhere')}${bt('data-dd="n"','Not driving')}</div></div>`;
- set($('wkb'),h);cDot=!!dot;subUi(tab);mxUpdate();issUpdate();if(typeof plBanner==='function')plBanner()}
+ set($('wkb'),h);cDot=!!dot;subUi(tab);mxUpdate();issUpdate();if(typeof plBanner==='function')plBanner();if(Date.now()-ntpT>1e4){ntpT=Date.now();ntpUi()}}
 function issUpdate(){const I=st.iss||[],el=$('iss');if(!el)return;
  set(el,I.map((x,i)=>`<div class="wkb nb" style="cursor:default"><b>Needs checking: ${NM[x.a]||'Activity'} started ${tt(x.t)}</b><span>${x.r.map(esc).join('. ')}. If a time was logged wrong, fix it in the log. If the times are right, this may be an infringement, so keep a note of why.</span><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="tg" data-isf="${i}" style="flex:1 1 0;min-width:0;white-space:normal;padding-left:6px;padding-right:6px">Fix entries</button><button class="tg" data-isd="${i}" style="flex:1 1 0;min-width:0;white-space:normal;padding-left:6px;padding-right:6px">Fixed</button><button class="tg" data-isk="${i}" style="flex:1 1 0;min-width:0;white-space:normal;padding-left:6px;padding-right:6px">Times are right</button></div></div>`).join(''))}
 $('iss').onclick=e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
