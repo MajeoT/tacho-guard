@@ -503,7 +503,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-157';
+const APPV='tg-2026-10-23-158';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1072,7 +1072,7 @@ function fire(m,k){if(!st.alerts)return;k=k||'t'+Date.now();
  const brk=/^(b15|b0|w15|w0)$/.test(k),ps=k.startsWith('ps:');
  rmq.set(k,{ti:brk?'Break':ps?'Planned shift':'Reminder',m,b:brk?[['brk','Take a break now'],['snz','Snooze 5 min']]:ps?[['start','Start shift'],['snz','Snooze 5 min']]:[]});rmDraw();
  try{navigator.vibrate&&navigator.vibrate([400,200,400])}catch(e){}beep();notify(m)}
-function notify(m){try{if(!('Notification' in window)||Notification.permission!=='granted')return;const o={body:m,tag:'tg-alert',renotify:true,vibrate:[400,200,400],icon:'icons/icon-192.png',badge:'icons/icon-192.png'};
+function notify(m){try{if(!('Notification' in window)||Notification.permission!=='granted')return;const o={body:m,tag:'tg-alert',renotify:true,vibrate:[400,200,400],icon:'icons/icon-192.png',badge:'icons/badge-96.png'};
  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(r=>{if(r)r.showNotification('TachoGuard',o);else new Notification('TachoGuard',o)}).catch(()=>{try{new Notification('TachoGuard',o)}catch(e){}});else new Notification('TachoGuard',o)}catch(e){}}
 /* Phone notifications: the server (a Supabase function on a one minute timer) sends them, so they arrive with the app closed and the phone locked. */
 const PKEY='tachoguard.push.v1',pushOn=()=>{try{return localStorage.getItem(PKEY)==='1'}catch(e){return false}};
