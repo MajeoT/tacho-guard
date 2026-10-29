@@ -476,7 +476,8 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div class="g"><div class="tr"><span><span class="lbl">Distance Tracking</span><br><span class="note">Off by default. When on, it uses your location only while Driving is on, and the screen stays awake.</span></span><button class="tg" id="gp"></button></div><div class="row" style="margin-top:14px"><span class="lbl">Distance This Drive</span><span class="num" id="gd"></span></div><div class="note" id="gs"></div></div>
 <p class="note">Distance only updates while this page is open, so keep your phone unlocked. If location is blocked, allow it for this site in Chrome.</p>
 <h2>Reminders</h2>
-<div class="g"><div class="tr"><span><span class="lbl">Reminders</span><br><span class="note">A box at the top of the screen, with a sound and vibration, when it is time to start a planned shift or take a break.</span></span><button class="tg" id="al"></button></div>
+<div class="g"><div class="tr"><span><span class="lbl">Reminders</span><br><span class="note">A box at the top of the screen, with vibration (and a sound if Sound is on), when it is time to start a planned shift or take a break.</span></span><button class="tg" id="al"></button></div>
+<label class="tr" style="margin-top:14px;cursor:pointer"><span><span class="lbl">Sound</span><br><span class="note">A beep when a reminder shows while the app is open. Turn it off to keep it quiet: the box and vibration still work, and phone notifications follow your phone's own sound settings.</span></span><span class="swt"><input type="checkbox" id="snd" aria-label="Reminder sound"><i></i></span></label>
 <div style="margin-top:14px"><label for="rml">Warn me before a break is due</label><select id="rml"></select><div class="note">For the 4h 30m driving break, the 6 hour working time break and your 9 hour driving limit.</div></div>
 <div style="margin-top:14px"><label for="rms">Remind me to start a planned shift</label><select id="rms"></select><div class="note">Uses the shifts in your Plan tab. It stops when you start the shift.</div></div>
 <div style="margin-top:14px"><label for="da">Driving Alarm</label><select id="da"><option value="0">Off</option></select><div class="note">Alerts you when your driving since your last break reaches this time.</div></div>
@@ -503,7 +504,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-158';
+const APPV='tg-2026-10-23-159';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -724,7 +725,7 @@ function brkInfo(a,ss){let p=false,k=0,d=0,last=0;if(!ss)return{k,last};const n=
 function card(k,label,val,lim,t,over,soft,xtra,on,jk){const SJ=JS[jk||k];const c=val>=(soft||lim)?'bad':val/lim>=.8?'warn':'ok';
  return `<div class="g cd${on===true?' on':on===false?' off':''}"><div class="row"><span class="lbl">${label.replace(/\s(\S+)$/,' <span class="nw">$1 ')}${/\s\S+$/.test(label)?ib(k)+'</span>':' '+ib(k)}${on===true?CNT:''}</span><span class="num ${c}">${fmt(val)} <small>/ ${lim/H}h</small></span></div><div class="bar">${SJ&&multi()&&SJ.length?SJ.map(q=>`<i style="float:left;width:${Math.min(100,q[1]/lim*100).toFixed(1)}%;background:${q[0]};border-radius:0!important"></i>`).join(''):`<i style="width:${Math.round(Math.min(100,val/lim*100))}%;background:var(--${c})"></i>`}</div><div class="note">${val>=lim?over:fmt(lim-val)+' left. '+t}</div>${xtra||''}${ex(k)}</div>`}
 let lock=false;let dArm=null,dT=0,lim=14,tab='today',esFor=0,ed=null,wid=null,last=null,gmsg='',wl=null,flash='',prog=0,ac=null,fired={};
-const beep=()=>{try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume();const o=ac.createOscillator();o.frequency.value=880;o.connect(ac.destination);o.start();o.stop(ac.currentTime+.4)}catch(e){}};
+const beep=()=>{if(st.snd===false)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume();const o=ac.createOscillator();o.frequency.value=880;o.connect(ac.destination);o.start();o.stop(ac.currentTime+.4)}catch(e){}};
 async function wake(){if(!st.gps)return;try{if(navigator.wakeLock)wl=await navigator.wakeLock.request('screen')}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(st.act==='d'&&document.visibilityState==='visible')wake()});
 function gpsOn(){
@@ -1346,7 +1347,7 @@ function liveRun(){
  {const nt=!isTc();let nv=0;document.querySelectorAll('.act').forEach(x=>{const o=x.dataset.a===(act==='x'?'d':act),hd=nt&&(x.dataset.a==='d'||x.dataset.a==='p')&&!o;x.hidden=hd;if(!hd)nv++;x.classList.toggle('on',o);x.setAttribute('aria-pressed',o);x.classList.toggle('lk',false)});
   $('actl').textContent=!act?(l&&!fresh&&!endd?'Carry On With':'Start Your Shift With'):act==='r'?'Back To':'Change To';const ae=document.querySelector('.acts');if(ae)ae.style.gridTemplateColumns='repeat('+nv+',1fr)'}
  const nd=sw>9*H?45:30;
- $('al').textContent=st.alerts?'Alerts On':'Alerts Off';
+ $('al').textContent=st.alerts?'Alerts On':'Alerts Off';if($('snd')&&document.activeElement!==$('snd'))$('snd').checked=st.snd!==false;
  const RL=st.rml===undefined?15:st.rml,RS=st.rms===undefined?10:st.rms,Lm=RL*M;
  RLD={act,busy,b:b.d,wc:wc.d,day};
  const al=[['b15',act==='d'&&isTc()&&b.d>=270*M-Lm&&b.d<270*M,RL+' minutes until you need a 45 minute break.'],['b0',act==='d'&&isTc()&&b.d>=270*M,'4h 30m of driving reached. Take a break now.'],
@@ -1564,6 +1565,7 @@ const endAsk=same=>{const n=Date.now(),a=all(),z=a[a.length-1],fresh0=!z||(!z.li
  mcb={no:moX,clr:()=>clearShift(ss,a),ed:()=>{moX();usnap=null;if(st.act&&st.active){const e=touched?T:Date.now(),a0=st.act;commit(e);save();render();flash=NM[a0]+' stopped at '+hm(e)+' so you can edit it. When you are done, tap End Shift.';setTimeout(()=>{flash='';live()},10000);live()}openDay(sod(ss),'today')},ok:()=>{moX();usnap=null;const e=touched?T:Date.now();commit(e);st.se=e;save();flash='Shift ended at '+hm(e)+'. Daily rest is counting.';setTimeout(()=>{flash='';live()},8000);render()}}};
 $('esh').onclick=()=>endAsk();
 $('gp').onclick=()=>{st.gps=!st.gps;if(st.gps){if(st.act==='d'){gpsOn();wake()}}else gpsOff();save();live()};
+$('snd').onchange=e=>{st.snd=e.target.checked;save();if(st.snd)beep()};
 $('al').onclick=()=>{st.alerts=!st.alerts;if(st.alerts){try{'Notification' in window&&Notification.permission==='default'&&Notification.requestPermission().then(ntUi)}catch(e){}beep();try{navigator.vibrate&&navigator.vibrate(200)}catch(e){}}save();live()};
 $('tc').value=st.tc.c;$('tu').value=st.tc.u;
 $('tc').onchange=()=>{st.tc.c=$('tc').value;save();live()};$('tu').onchange=()=>{st.tc.u=$('tu').value;save();live()};
@@ -2123,7 +2125,7 @@ function fromAcc(s){try{if(!s||!s.exists)return;const d=s.data(),ru=d.u||0;if(ru
   if(d.j===lastMain){baseU=ru;return}
   {const r=JSON.parse(d.j);if(r&&Array.isArray(r.sessions))adopt(r,ru,mainJ()!==lastMain)}}catch(e){}}
 function queuePush(now){if(!cloudReady)return;clearTimeout(pushT);pushT=setTimeout(doPush,now?0:Math.max(1200,15000-(Date.now()-lastPush)))}
-const KEEP=['wr','wrp','wri','jobs','rp','rpb','na','cj','rml','rms','tce'];
+const KEEP=['wr','wrp','wri','jobs','rp','rpb','na','cj','rml','rms','tce','snd'];
 function keepKeys(r){let ch=0;if(r)KEEP.forEach(k=>{if(r[k]!==undefined&&r[k]!==null&&st[k]===undefined){st[k]=r[k];ch=1}});if(ch){try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}}return ch}
 function doPush(){if(!cloudReady)return;if(pushing){pushAgain=true;return}
  pushing=(async()=>{try{lastPush=Date.now();
