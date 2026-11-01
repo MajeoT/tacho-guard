@@ -40,14 +40,14 @@ function plSpans(extra,skipId){const n=Date.now(),sp=[];
  return sp.sort((a,b)=>a.s-b.s)}
 
 /* Rule check over the whole timeline. Returns {issues: Map spanKey -> [{lv,t}]} for planned spans. */
-function plCheck(sp){const I=new Map(),add=(x,lv,t)=>{if(x.log)return;const k=x.id||'x';if(!I.has(k))I.set(k,[]);const L=I.get(k);if(!L.some(y=>y.t===t))L.push({lv,t})};
+function plCheck(sp){const I=new Map(),RI=new Map(),add=(x,lv,t)=>{if(x.log)return;const k=x.id||'x';if(!I.has(k))I.set(k,[]);const L=I.get(k);if(!L.some(y=>y.t===t))L.push({lv,t})};
  if(!sp.length)return I;
  /* group into shifts: a gap of 9h or more ends a shift */
  const SH=[];sp.forEach((x,i)=>{if(!i||x.s-sp[i-1].e>=9*H)SH.push({s:x.s,e:x.e,w:0,dv:0,sp:[],gap:i?x.s-sp[i-1].e:Infinity});const c=SH[SH.length-1];c.e=Math.max(c.e,x.e);c.w+=x.w;c.dv+=x.dv;c.sp.push(x)});
  /* weekly rest anchor */
  const WI=typeof wrInfo==='function'?wrInfo():null;let lastWE=WI&&WI.anc!==null&&WI.lastEnd?WI.lastEnd:null,prevRed=WI&&WI.anc!==null?!!WI.full45:false,redD=0;
  if(lastWE===null)lastWE=SH[0].s;
- SH.forEach((c,ci)=>{const pl=c.sp.filter(x=>!x.log),first=c.sp[0];
+ SH.forEach((c,ci)=>{const pl=c.sp.filter(x=>!x.log),first=c.sp[0],ri={red0:redD,wk:false};
   /* rest before this shift */
   /* a 24 to 45 hour rest only has to be the weekly rest when no other rest of 24 hours or more starts in time after it: the later one can be counted instead (and a full one always wins) */
   const regAhead=dl=>{for(let k=ci+1;k<SH.length;k++){const gs2=SH[k].s-SH[k].gap;if(gs2>dl)return false;if(SH[k].gap>=24*H)return true}return SH[SH.length-1].e<=dl};
@@ -56,8 +56,10 @@ function plCheck(sp){const I=new Map(),add=(x,lv,t)=>{if(x.log)return;const k=x.
    if(len<45*H){if(prevRed)add(first,'r','The rest before this shift is only '+fmt(len)+'. After a reduced weekly rest, the next one must be a full 45 hours.');
     else add(first,'a','The rest before this shift ('+fmt(len)+') is a reduced weekly rest. You must pay back '+fmt(45*H-len)+' by the end of '+dlong(add7(wkS(gs),4)-6e4)+'.');
     prevRed=true}else prevRed=false;
-   lastWE=c.s;redD=0}
+   lastWE=c.s;redD=0;ri.wk=true;ri.red0=0}
   else if(ci&&c.gap<11*H){redD++;add(first,redD>3?'r':'a',redD>3?'This is your '+redD+'th reduced daily rest ('+fmt(c.gap)+') since your weekly rest. Only 3 are allowed.':'Only '+fmt(c.gap)+' rest before this shift: a reduced daily rest ('+redD+' of 3 since your weekly rest).')}
+  /* how many reduced daily rests are used before and after this shift, for the Rest before line in the Plan */
+  if(ci&&first.id&&!first.log)RI.set(first.id,Object.assign(ri,{red:redD}));
   /* 6 day rule: work running past the weekly rest deadline */
   if(c.e>lastWE+144*H)c.sp.forEach(x=>{if(x.e>lastWE+144*H)add(x,'r','Your weekly rest must start by '+dlong(lastWE+144*H)+' '+hm(lastWE+144*H)+' (6 days after your last one). This shift runs past it.')});
   /* daily rest inside 24h of shift start */
@@ -87,7 +89,7 @@ function plCheck(sp){const I=new Map(),add=(x,lv,t)=>{if(x.log)return;const k=x.
  Object.values(per).forEach(({P,sp:ps})=>{let tot=0;sp.forEach(x=>{tot+=x.w*Math.max(0,Math.min(x.e,P.e)-Math.max(x.s,P.s))/((x.e-x.s)||1)});
   const b=st.rpb&&st.rpb.p===P.s?st.rpb:null;if(b){const span=Math.max(0,(b.to-P.s)/(7*864e5)),lw=Math.min(span,(b.lv||0)/5);tot+=(b.avg||0)*H*Math.max(0,span-lw)+lvH(b.lv||0)}tot+=lvIn(b?Math.max(P.s,b.to):P.s,P.e);
   const C=Math.max(1,Math.round((P.e-P.s)/(7*864e5)));if(tot>48*H*C)ps.forEach(x=>add(x,'a','With your planned shifts, the average for the period '+dlong(P.s)+' to '+dlong(P.e-864e5)+who+' would be '+fmt(tot/C)+' a week, over 48 hours.'))})});
- return I}
+ I.rest=RI;return I}
 
 const LVO={r:3,a:2,i:1},worst=L=>(L||[]).reduce((m,x)=>Math.max(m,LVO[x.lv]||0),0);
 
@@ -195,7 +197,8 @@ function plRestWhy(fr){const t=(fr.txt||'')+' '+(fr.R||[]).filter(x=>x.lv==='r')
 function plWarnWhy(fr){const t=(fr.R||[]).filter(x=>x.lv==='a').map(x=>x.t).join(' ');
  return /reduced weekly rest/i.test(t)?'it cuts your weekly rest to under 45 hours':/reduced (9 hour )?daily rest|reduced daily rest/i.test(t)?'you would only get a reduced daily rest':/48 hours/.test(t)?'your 48 hour average would go over':/10 hour/.test(t)?'it uses one of your two 10 hour driving days':'tap to see why'}
 function plStat(d,C){const n=C.n,D1=nxd(d),past=D1<=n,td=d===sod(n),os=C.occ.filter(o=>sod(o.S)===d&&o.st!=='skip'&&!(o.st==='done'||o.E<=n)),o2=C.T[d],logged=o2?o2.d+o2.w:0,S={d,D1,past,td,os,logged,sub:[]};
- if(os.length){S.k='work';S.txt=os.map(o=>{const j=jobC(o.j),w=worst(C.I.get(o.oid));return `Working ${o.rv?'about ':''}${o.s.slice(0,5)}–${o.e.slice(0,5)}${multi()?' · '+esc(j.n):''}${w>=3?' <b class="bad">⚠ breaks a rule</b>':w===2?' <b class="warn">⚠ see details</b>':''}`}).join('<br>')}
+ if(os.length){/* the rest before the day's first planned shift */const rb=plRestBefore(os[0],C);if(rb)S.sub.push([rb.lv==='ok'?'mut':rb.lv,rb.t]);
+  S.k='work';S.txt=os.map(o=>{const j=jobC(o.j),w=worst(C.I.get(o.oid));return `Working ${o.rv?'about ':''}${o.s.slice(0,5)}–${o.e.slice(0,5)}${multi()?' · '+esc(j.n):''}${w>=3?' <b class="bad">⚠ breaks a rule</b>':w===2?' <b class="warn">⚠ see details</b>':''}`}).join('<br>')}
  else if(td&&!logged&&(()=>{const f=C.occ.filter(o=>sod(o.S)===d&&!o.st&&o.E<=n);if(f.length)S.os=f;return f.length})()){/* today's planned shift is over but not logged yet: show it, not the rest after it */
   S.k='work';S.txt=S.os.map(o=>`Planned ${o.s.slice(0,5)}–${o.e.slice(0,5)}${multi()?' · '+esc(jobC(o.j).n):''} · not logged yet`).join('<br>')}
  else if(past)S.k=logged?'did':'off',S.txt=logged?'Worked '+fmt(logged).replace(' 00m',''):'Not working';
@@ -213,6 +216,15 @@ function plStat(d,C){const n=C.n,D1=nxd(d),past=D1<=n,td=d===sod(n),os=C.occ.fil
  (C.CP||[]).forEach(c=>{if(!c.log&&sod(c.s)===d)S.sub.push([c.pay?'warn':'bad','⚠ Reduced weekly rest. '+plCompTxt(c,1).slice(2)]);if(c.pay&&sod(c.pay.s)===d)S.sub.push(['ok',`↺ Making up ${fmt(c.owed).replace(/ 00m$/,'')} from your reduced rest of ${new Date(c.s).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}: keep ${plHrs(c.at-c.pay.s+c.owed)} clear from ${plHm(c.pay.s)}`])});
  S.band=C.OFF.find(b=>b.s<=d&&b.e>=D1);/* a long rest that does not have to be a weekly rest is not marked as one */if(S.band&&!S.band.full&&!S.band.open&&S.band.e>n&&C.CP&&C.CP.wr&&!C.CP.wr.includes(S.band)&&!C.CP.some(c=>Math.abs(c.e-S.band.e)<H))S.band=null;return S}
 const plIco={work:'⚒',ok:'✓',warn:'⚠',rest:'✕',did:'✔',off:'–'};
+/* The rest before a planned shift, from the end of whatever comes before it (logged or planned): how long, the earliest start
+   after a full 11 hour rest, and after a reduced 9 hour one while any of the 3 are left. lv: ok, warn (a reduced rest) or bad. */
+function plRestBefore(o,C){const pe=C.sp.filter(x=>x.id!==o.oid&&x.e<=o.S+6e4&&x.s<o.S).reduce((m,x)=>Math.max(m,x.e),0);if(!pe)return null;
+ const g=o.S-pe,ri=C.I.rest&&C.I.rest.get(o.oid),red0=ri?ri.red0:0,left=Math.max(0,3-red0),at=t=>(sod(t)===sod(o.S)?'':new Date(t).toLocaleDateString('en-GB',{weekday:'short'})+' ')+plHm(t),since=`since ${new Date(pe).toLocaleDateString('en-GB',o.S-pe>=24*H?{weekday:'short',day:'numeric',month:'short'}:{weekday:'short'})} ${plHm(pe)}`;
+ if(g>=24*H)return{lv:'ok',t:`↤ ${plHrs(g)} off before it (${since})${ri&&ri.wk?', your weekly rest':''}`};
+ const e11=pe+11*H,e9=pe+9*H,opt=left?` or ${at(e9)} with a reduced 9h rest (${left} of 3 left since your weekly rest)`:' (no reduced 9h rests left since your weekly rest)';
+ if(g>=11*H)return{lv:'ok',t:`↤ Rest before: ${fmt(g).replace(/ 00m$/,'')} ${since}. Earliest start ${at(e11)} (11h rest)${opt}`};
+ if(g>=9*H)return{lv:left?'warn':'bad',t:`⚠ Only ${fmt(g).replace(/ 00m$/,'')} rest ${since}: a reduced daily rest${left?` (${3-left+1} of 3)`:', and you have no reduced rests left'}. Start at ${at(e11)} or later for a full 11h rest`};
+ return{lv:'bad',t:`⚠ Only ${fmt(g).replace(/ 00m$/,'')} ${since}: not a daily rest. The earliest is ${at(e11)} (11h rest)${left?`, or ${at(e9)} with a reduced 9h rest`:''}`}}
 /* Rotas made before they had a start date (25 October 2026, the day rotas came in) start on that day, not on the Monday
    of their week 1, which could be in the past. */
 const PL_ROTA0='2026-10-25';
@@ -264,7 +276,7 @@ function plDay(d){const n=Date.now(),sp=plSpans(),I=plCheck(sp),OFF=plOffs(sp),N
  let h=`<h3>${new Date(d).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3>`;
  if(o2&&o2.d+o2.w)h+=`<div class="item"><div class="lbl">Logged</div><div class="lbl">${fmt(o2.d)} driving, ${fmt(o2.w)} work</div></div>`;
  occ.forEach(o=>{const j=jobC(o.j),stx=o.st==='skip'?' · not worked':o.st==='done'||o.E<=n?' · past':'';
-  h+=`<div class="bx" style="margin-top:8px;border-left:4px solid ${jobCol(j.id)}"><div class="row"><span class="lbl">${esc(j.n)}${j.tc===false?' (no tacho)':''}${o.rot?' · rota week '+o.wk:o.pat?' · repeats '+ordW(((st.pat||[]).find(r=>r.id===o.pat)||{}).ev):''}${stx}</span><span class="lbl">${o.s.slice(0,5)}–${o.e.slice(0,5)}</span></div><div class="note">${o.br?o.br+' min break'+(o.bp?' (paid)':'')+'. ':''}${j.tc!==false&&o.dr?o.dr+'h driving expected. ':''}Working time about ${fmt(o.E-o.S-(o.br||0)*M)}.</div>${o.E>n&&o.st!=='skip'&&o.st!=='done'?'<div class="note" style="margin-top:4px">☕ '+plBrk(o.S,o.E,o.br||0,o.dr||0,j.tc!==false)+'</div>':''}${o.st==='skip'||o.st==='done'||o.E<=n?'':isz(I.get(o.oid))}<div class="tr" style="margin:8px 0 0;gap:6px;flex-wrap:wrap"><button class="tg" data-k="e:${o.oid}">Edit${o.pat?' this day':''}</button>${o.pat?`<button class="tg" data-k="es:${o.pat}">${o.rot?'Edit rota':'Edit repeat'}</button>`:''}<button class="tg" data-k="x:${o.oid}">Remove${o.pat?' this day':''}</button>${o.pat?`<button class="tg" data-k="xf:${o.oid}">Remove this and later</button>`:''}</div></div>`});
+  h+=`<div class="bx" style="margin-top:8px;border-left:4px solid ${jobCol(j.id)}"><div class="row"><span class="lbl">${esc(j.n)}${j.tc===false?' (no tacho)':''}${o.rot?' · rota week '+o.wk:o.pat?' · repeats '+ordW(((st.pat||[]).find(r=>r.id===o.pat)||{}).ev):''}${stx}</span><span class="lbl">${o.s.slice(0,5)}–${o.e.slice(0,5)}</span></div><div class="note">${o.br?o.br+' min break'+(o.bp?' (paid)':'')+'. ':''}${j.tc!==false&&o.dr?o.dr+'h driving expected. ':''}Working time about ${fmt(o.E-o.S-(o.br||0)*M)}.</div>${(()=>{const rb=o.E>n&&o.st!=='skip'?plRestBefore(o,{sp,I}):null;return rb?`<div class="note ${rb.lv==='ok'?'':rb.lv}" style="margin-top:4px">${rb.t}</div>`:''})()}${o.E>n&&o.st!=='skip'&&o.st!=='done'?'<div class="note" style="margin-top:4px">☕ '+plBrk(o.S,o.E,o.br||0,o.dr||0,j.tc!==false)+'</div>':''}${o.st==='skip'||o.st==='done'||o.E<=n?'':isz(I.get(o.oid))}<div class="tr" style="margin:8px 0 0;gap:6px;flex-wrap:wrap"><button class="tg" data-k="e:${o.oid}">Edit${o.pat?' this day':''}</button>${o.pat?`<button class="tg" data-k="es:${o.pat}">${o.rot?'Edit rota':'Edit repeat'}</button>`:''}<button class="tg" data-k="x:${o.oid}">Remove${o.pat?' this day':''}</button>${o.pat?`<button class="tg" data-k="xf:${o.oid}">Remove this and later</button>`:''}</div></div>`});
  if(fr){h+=`<div class="bx" style="margin-top:8px"><div class="lbl"><span class="pldot ${['','ok','warn','bad'][fr.lv]}"></span> ${fr.lv===3?'Rest: '+plRestWhy(fr):fr.lv===2?'Available, with a short daily rest':'Available'}</div>${fr.lv<3||fr.la>fr.ea?`<div class="note">Earliest start <b>${hm(fr.ea)}</b>, latest finish <b>${fr.la===Infinity?'no limit from other shifts':hmx(fr.la,d)}</b>, based on 11 hour rests around your other shifts${fr.ea<plAt(d,'04:00')?'. Starting before 04:00 counts as night work (10 hour limit)':''}.</div>`:''}${fr.txt?`<div class="note">${fr.txt}</div>`:''}${fr.lv<3&&!fr.cut?(fr.lv===1&&!fr.R.length?'<div class="note ok" style="margin-top:4px">✓ '+(/^(8|11|18)h/.test(fmt(fr.e0-fr.s0))?'An ':'A ')+fmt(fr.e0-fr.s0).replace(/ 00m$/,'')+' shift from '+hm(fr.s0)+' to '+hmx(fr.e0,d)+' breaks no rules.</div>':'<div class="note" style="margin-top:4px">'+(/^(8|11|18)h/.test(fmt(fr.e0-fr.s0))?'An ':'A ')+fmt(fr.e0-fr.s0).replace(/ 00m$/,'')+' shift from '+hm(fr.s0)+' to '+hmx(fr.e0,d)+':</div>'):''}${isz(fr.R)}</div>`}
  h+=plOffNote(d,OFF,NX,plComp(sp,OFF));
  h+=`<button class="tg big" data-k="add" style="margin-top:12px">Add shift</button><button class="tg big" data-k="rp">Repeating shift starting this day</button><button class="tg big" data-k="cw">Copy this week to next week</button><button class="tg big" data-k="no">Close</button>`;
