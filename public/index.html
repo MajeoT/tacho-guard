@@ -504,7 +504,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-159';
+const APPV='tg-2026-10-23-160';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1514,11 +1514,26 @@ $('jobs').onclick=e=>{const c=e.target.closest('[data-jcol]');if(c){const[i,col]
  else{jobDel(st.jobs[+d.jr]);return}
  save();jobsUi();render()};
 /* Removing a job keeps its logged hours and name. Planned shifts for it from today on are removed (after asking); past ones stay as history. */
-function jobDel(j){const td=ymd(Date.now()),yd=ymd(Date.now()-864e5),P=(st.pat||[]).filter(p=>p.j===j.id&&(!p.to||p.to>=td)),O=(st.plan||[]).filter(p=>p.j===j.id&&p.d>=td);
- const go=()=>{st.jobs=st.jobs.filter(x=>x.id!==j.id);st.jobx=(st.jobx||[]).filter(x=>x.id!==j.id).concat([{id:j.id,n:j.n,tc:j.tc}]);if(st.cj===j.id){st.cj=st.jobs[0]?st.jobs[0].id:null;delete st.tm}
-  st.pat=(st.pat||[]).filter(p=>!(P.includes(p)&&p.from>yd));P.forEach(p=>{if(st.pat.includes(p))p.to=yd});st.plan=(st.plan||[]).filter(p=>!O.includes(p));save();moX();jobsUi();render();live()};
- const n=P.length+O.length;
- mo(`<h3>Remove ${esc(j.n)}?</h3><p>Hours you logged for ${esc(j.n)} are kept, still count towards your limits, and keep the name ${esc(j.n)} in your log.</p>${n?`<p>It has ${P.length?P.length+' repeating shift'+(P.length>1?'s':''):''}${P.length&&O.length?' and ':''}${O.length?O.length+' planned shift'+(O.length>1?'s':''):''} from today on. ${n>1?'These':'This'} will be removed from your plan.</p>`:''}<button class="tg big bad" data-k="ok">Remove ${esc(j.n)}</button><button class="tg big" data-k="no">Cancel</button>`);
+/* Remove a job. Logged hours are kept (the job's name and colour stay with them in st.jobx) and still count. Its repeats and
+   rotas stop from today (ones that had not started yet are deleted), its single shifts from today on are deleted, days they had
+   pushed out in a clash come back, and Undo puts everything back for 15 seconds. Not while a shift for that job is running. */
+function jobDel(j){const td=ymd(Date.now()),yd=ymd(Date.now()-864e5),live1=!!st.active&&st.cj===j.id&&st.act!=='r',
+  P=(st.pat||[]).filter(p=>p.j===j.id&&(!p.to||p.to>=td)),R=(st.rota||[]).filter(r=>r.j===j.id&&(!r.to||r.to>=td)),O=(st.plan||[]).filter(p=>p.j===j.id&&p.d>=td);
+ if(live1){mo(`<h3>End Your Shift First</h3><p>You are on a shift for ${esc(j.n)} now. End it on the Today tab, then remove the job.</p><button class="tg big" data-k="no">OK</button>`);mcb={no:moX};return}
+ const go=()=>{const keys=['jobs','jobx','cj','tm','pat','plan','rota','plx','plxc'],snap=JSON.stringify(keys.reduce((o,k)=>(o[k]=st[k]===undefined?null:st[k],o),{}));
+  st.jobs=st.jobs.filter(x=>x.id!==j.id);st.jobx=(st.jobx||[]).filter(x=>x.id!==j.id).concat([Object.assign({id:j.id,n:j.n,tc:j.tc},j.col?{col:j.col}:{})]);if(st.cj===j.id){st.cj=st.jobs[0]?st.jobs[0].id:null;delete st.tm}
+  /* a repeat or rota that started before today ends yesterday; one that had not started yet goes */
+  const cut=(L,x)=>(x.on||x.from)>yd?null:Object.assign(x,{to:x.to&&x.to<yd?x.to:yd});
+  st.pat=(st.pat||[]).map(x=>P.includes(x)?cut(P,x):x).filter(Boolean);st.rota=(st.rota||[]).map(x=>R.includes(x)?cut(R,x):x).filter(Boolean);
+  st.plan=(st.plan||[]).filter(p=>!O.includes(p));
+  if(typeof plUnhide==='function'){P.concat(R).forEach(x=>plUnhide(x.id,td));O.forEach(x=>plUnhide(x.id))}
+  save();moX();jobsUi();render();live();
+  if(typeof plUndo==='function')plUndo(snap,`${esc(j.n)} removed.`,s=>{keys.forEach(k=>{if(s[k]===null)delete st[k];else st[k]=s[k]});save();jobsUi();render();live()})};
+ /* the actual shifts that will go, so the box says exactly what changes */
+ const n0=Date.now(),ids=new Set(P.concat(R).map(x=>x.id)),U=typeof plOcc==='function'?plOcc(sod(n0),n0+400*864e5).filter(o=>o.j===j.id&&o.st!=='skip'&&(o.pat?ids.has(o.pat):O.includes((st.plan||[]).find(x=>x.id===o.oid)))):[],open=P.concat(R).some(x=>!x.to),
+  dl=o=>new Date(o.S).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' '+o.s.slice(0,5)+'–'+o.e.slice(0,5);
+ const what=U.length?`<p>This also removes ${U.length===1&&!open?'1 upcoming shift':'its upcoming shifts'} from your plan:</p><ul style="margin:0 0 10px;padding-left:20px">${U.slice(0,4).map(o=>`<li>${dl(o)}${o.rot?' (rota)':o.pat?' (repeat)':''}</li>`).join('')}${U.length>4||open?`<li>${open?'and every later one':'and '+(U.length-4)+' more'}</li>`:''}</ul><p class="note">Past days stay as they were.</p>`:'<p>It has no shifts planned from today on, so your plan does not change.</p>';
+ mo(`<h3>Remove ${esc(j.n)}?</h3><p>Hours you logged for ${esc(j.n)} are kept, still count towards your limits, and keep the name ${esc(j.n)} in your log.</p>${what}<button class="tg big bad" data-k="ok">Remove ${esc(j.n)}</button><button class="tg big" data-k="no">Cancel</button>`);
  mcb={no:moX,ok:go}}
 $('jobs').onchange=e=>{const d=e.target.dataset;if(d.jrp!==undefined){const j=st.jobs[+d.jrp],v=e.target.value;if(!v)delete j.rp;else{const w=v.startsWith('26')?26:17;j.rp={w};if(v.endsWith('c'))j.rp.s=ymd(refP(Date.now(),{w}).s)}save();jobsUi();render();live()}
  else if(d.jrd!==undefined){if(e.target.value){st.jobs[+d.jrd].rp.s=e.target.value;save();jobsUi();render();live()}}

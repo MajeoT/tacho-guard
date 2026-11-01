@@ -398,9 +398,9 @@ function plHide(o,win){if(o.pat){if(!(st.plx||[]).includes(o.oid))st.plx=(st.plx
 function plUnhide(wid,from){const C=st.plxc||{},back=Object.keys(C).filter(k=>C[k]===wid&&(!from||k.split('|')[1]>=from));if(!back.length)return;
  const B=new Set(back);st.plx=(st.plx||[]).filter(k=>!B.has(k));st.plxc=Object.assign({},C);back.forEach(k=>delete st.plxc[k])}
 /* After anything is removed: a bar with Undo for 15 seconds */
-let plUT=0;function plUndo(snap,msg){let el=$('plu');if(!el){el=document.createElement('div');el.id='plu';el.setAttribute('role','status');document.body.appendChild(el)}
+let plUT=0;function plUndo(snap,msg,restore){let el=$('plu');if(!el){el=document.createElement('div');el.id='plu';el.setAttribute('role','status');document.body.appendChild(el)}
  el.innerHTML=`<span>${msg}</span><button class="tg" type="button">Undo</button>`;el.hidden=false;clearTimeout(plUT);plUT=setTimeout(()=>{el.hidden=true},15000);
- el.querySelector('button').onclick=()=>{plRest(snap);save();plRender();el.hidden=true;if(!$('mo').hidden)moX()}}
+ el.querySelector('button').onclick=()=>{if(restore)restore(JSON.parse(snap));else{plRest(snap);save();plRender()}el.hidden=true;if(!$('mo').hidden)moX()}}
 function plFsync(){const w=$('mo');if(!w||!$('pfs'))return;const on=(k,v)=>w.querySelectorAll(`[data-fk^="${k}:"]`).forEach(b=>b.classList.toggle('on',b.dataset.fk===k+':'+v));
  {const tc=jobC($('pfj').value).tc!==false,dv=tc?parseFloat(($('pfd')||{}).value)||0:0,need=dv>=4.5?45:0;if(need&&+$('pfb').value<need)$('pfb').value=need;
   w.querySelectorAll('[data-fk^="b:"]').forEach(b=>{const v=+b.dataset.fk.slice(2);b.disabled=v<need;b.classList.toggle('foff',v<need)});if($('pfbn'))$('pfbn').hidden=!need}
