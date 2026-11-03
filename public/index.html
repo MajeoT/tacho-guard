@@ -476,7 +476,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <h2>GPS</h2>
 <div class="g"><div class="tr"><span><span class="lbl">Distance Tracking</span><br><span class="note">Off by default. When on, it uses your location only while Driving is on, and the screen stays awake.</span></span><button class="tg" id="gp"></button></div><div class="row" style="margin-top:14px"><span class="lbl">Distance This Drive</span><span class="num" id="gd"></span></div><div class="note" id="gs"></div></div>
 <p class="note">Distance only updates while this page is open, so keep your phone unlocked. If location is blocked, allow it for this site in Chrome.</p>
-<div class="g" style="margin-top:12px"><div class="tr"><span><span class="lbl">Location Check-ins</span><br><span class="note">Off by default. When on, TachoGuard notes roughly where you are when you open it, kept on this phone only for 3 days. When it asks what you did, it can then say how far you have moved and suggest how much driving. It never tracks you in the background.</span></span><button class="tg" id="gl"></button></div><div class="note bad" id="gle"></div>
+<div class="g" style="margin-top:12px"><div class="tr"><span><span class="lbl">Location Check-ins</span><br><span class="note">Off by default. When on, TachoGuard notes roughly where you are each time you open it, and every 10 minutes while it is open, kept on this phone only for 3 days. If you have moved a fair way during a shift while it has you on other work, POA or a break, it asks if you drove. It never tracks you while the app is closed.</span></span><button class="tg" id="gl"></button></div><div class="note bad" id="gle"></div>
 <div class="lbl" style="margin-top:14px">Saved Places</div><div class="note">Tap one when you start a shift to say where you started, for example your depot.</div><div id="gpl" style="margin-top:8px"></div><button class="tg" id="gla" style="margin-top:8px">⭐ Save where I am now</button></div>
 <h2>Reminders</h2>
 <div class="g"><div class="tr"><span><span class="lbl">Reminders</span><br><span class="note">A box at the top of the screen, with vibration (and a sound if Sound is on), when it is time to start a planned shift or take a break.</span></span><button class="tg" id="al"></button></div>
@@ -509,7 +509,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-163';
+const APPV='tg-2026-10-23-164';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -2152,7 +2152,7 @@ function fromAcc(s){try{if(!s||!s.exists)return;const d=s.data(),ru=d.u||0;if(ru
   if(d.j===lastMain){baseU=ru;return}
   {const r=JSON.parse(d.j);if(r&&Array.isArray(r.sessions))adopt(r,ru,mainJ()!==lastMain)}}catch(e){}}
 function queuePush(now){if(!cloudReady)return;clearTimeout(pushT);pushT=setTimeout(doPush,now?0:Math.max(1200,15000-(Date.now()-lastPush)))}
-const KEEP=['wr','wrp','wri','jobs','rp','rpb','na','cj','rml','rms','tce','snd','rsl','awy','places','gloc'];
+const KEEP=['wr','wrp','wri','jobs','rp','rpb','na','cj','rml','rms','tce','snd','rsl','awy','places','gloc','glq'];
 function keepKeys(r){let ch=0;if(r)KEEP.forEach(k=>{if(r[k]!==undefined&&r[k]!==null&&st[k]===undefined){st[k]=r[k];ch=1}});if(ch){try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}}return ch}
 function doPush(){if(!cloudReady)return;if(pushing){pushAgain=true;return}
  pushing=(async()=>{try{lastPush=Date.now();
