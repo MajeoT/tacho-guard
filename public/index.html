@@ -344,6 +344,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .pkw .pkf{min-height:11px;line-height:11px}.pkw .pkr{display:block;font-size:8.5px;font-weight:700;letter-spacing:-.2px;line-height:10px}
 .jcols{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}.jcol{width:34px;height:34px;border-radius:50%;border:3px solid transparent;background:var(--c);cursor:pointer;box-shadow:0 0 0 1px var(--bd)}.jcol.on{border-color:var(--tx);box-shadow:0 0 0 2px var(--c)}.jcc{position:relative;display:inline-flex;align-items:center;justify-content:center;color:#fff;font:700 18px var(--body);text-shadow:0 1px 2px #000}.jcc input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:0;padding:0}
 .lh2{font-weight:800;font-size:15px;margin:14px 0 4px;color:var(--acc)}.lh2:first-child{margin-top:0}.lh{font-weight:700;margin:8px 0 1px}.lp{margin:0 0 4px}
+.acq{display:flex;flex-direction:column;gap:8px;margin:8px 0}.acr{border:1px solid var(--bd);border-radius:12px;padding:10px 12px;background:var(--card)}.acr.on{border-color:var(--acc)}.acr .fstep{margin-top:6px}
 .pselbar{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);z-index:5;display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;background:var(--card);border:1.5px solid var(--acc);border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.18)}.pselbar span{flex:1;min-width:0;white-space:nowrap}.pselbar .tg{padding:8px 10px;flex:none}@media(max-width:360px){.pselbar{gap:5px;padding:8px}.pselbar .tg{padding:7px 8px;font-size:13px}}
 .fform{display:flex;flex-direction:column;gap:14px;margin:4px 0 12px}
 .fsec{display:flex;flex-direction:column;gap:8px}
@@ -385,7 +386,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="herow"><div id="hero"></div>
 <div class="acts-l" id="actl"></div><div class="acts"><button class="act" data-a="d"><b>🚛</b>Driving<small class="as">drive</small></button><button class="act" data-a="w"><b>⚒</b>Work<small class="as">other work</small></button><button class="act" data-a="p"><b>◪</b>POA<small class="as">waiting</small></button><button class="act" data-a="r"><b>🛏</b>Break<small class="as">take a break</small></button></div><div class="tr" id="es" hidden><label for="est" id="esl">Started At</label><input type="time" id="est"><button class="tg" id="esb">Change</button></div></div><div id="tcsw"></div>
 <div class="live" id="live"></div>
-<div id="s1"></div><div id="s2"></div><button class="tg" id="esh" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">End Shift</button><button class="tg" id="tlog" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">Today's Log</button><p class="note" style="text-align:center;margin:6px 0 0">See and edit today's driving, work, POA and breaks.</p><button class="tg" id="rd2" style="display:block;width:100%;margin-top:30px;padding:14px;font-size:16px;border-radius:12px;color:#fff;background:#c2352b;border-color:#c2352b">Reset Day</button><p class="note" style="text-align:center;margin:6px 0 0">Starts breaks, shift and working time again from now. Asks twice and can be undone for 20 seconds.</p></section><section id="t-plan" hidden><h2>Shift Planner</h2><p class="note" style="margin-top:-6px">Plan shifts for all your jobs. Each day is checked against the rest, working time and driving rules, using what you have logged so far.</p><div id="plc"></div></section><section id="t-tacho" hidden><h2>Tacho</h2><div class="pls" id="tpn"><button class="pl on" data-tp="dl">Downloads</button><button class="pl" data-tp="use">Using a tacho</button><button class="pl" data-tp="ent">Manual Entries</button><button class="pl" data-tp="pap">Paper Rolls</button></div><div id="tp-dl"><h3 class="h3p">Downloads <button class="i" data-i="tac" aria-label="More info">i</button></h3><div id="tcx"></div><div class="g"><div class="tr"><label for="tc">Driver Card Downloaded</label><input type="date" id="tc"></div><div class="note" id="tcn"></div><div class="tr" style="margin-top:12px"><label for="tu">Vehicle Unit Downloaded</label><input type="date" id="tu"></div><div class="note" id="tun"></div></div>
+<div id="s1"></div><div id="s2"></div><button class="tg" id="esh" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">End Shift</button><button class="tg" id="tlog" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">Today's Log</button><p class="note" style="text-align:center;margin:6px 0 0">See and edit today's driving, work, POA and breaks.</p><button class="tg" id="tql" style="display:block;width:100%;margin-top:14px;padding:14px;font-size:16px;border-radius:12px">⚡ Log a shift quickly</button><p class="note" style="text-align:center;margin:6px 0 0">For a shift you did not log as you went: when it started and finished, and what you did.</p><button class="tg" id="rd2" style="display:block;width:100%;margin-top:30px;padding:14px;font-size:16px;border-radius:12px;color:#fff;background:#c2352b;border-color:#c2352b">Reset Day</button><p class="note" style="text-align:center;margin:6px 0 0">Starts breaks, shift and working time again from now. Asks twice and can be undone for 20 seconds.</p></section><section id="t-plan" hidden><h2>Shift Planner</h2><p class="note" style="margin-top:-6px">Plan shifts for all your jobs. Each day is checked against the rest, working time and driving rules, using what you have logged so far.</p><div id="plc"></div></section><section id="t-tacho" hidden><h2>Tacho</h2><div class="pls" id="tpn"><button class="pl on" data-tp="dl">Downloads</button><button class="pl" data-tp="use">Using a tacho</button><button class="pl" data-tp="ent">Manual Entries</button><button class="pl" data-tp="pap">Paper Rolls</button></div><div id="tp-dl"><h3 class="h3p">Downloads <button class="i" data-i="tac" aria-label="More info">i</button></h3><div id="tcx"></div><div class="g"><div class="tr"><label for="tc">Driver Card Downloaded</label><input type="date" id="tc"></div><div class="note" id="tcn"></div><div class="tr" style="margin-top:12px"><label for="tu">Vehicle Unit Downloaded</label><input type="date" id="tu"></div><div class="note" id="tun"></div></div>
 
 <div id="tacwhy">
 <details class="bx"><summary>If You Have Not Downloaded</summary><div class="dbody">The card only holds about 28 days, so anything older than that can be overwritten and lost for good. If you are overdue, tell your transport manager or operator now and get the card downloaded at the next chance. Do not delete, alter or swap anything to cover the gap. If days are already lost, keep any printouts and make a written note of the missing days and why, and give it to your operator. Gaps in your records are what DVSA looks for at a check.</div></details>
@@ -480,6 +481,8 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <label class="tr" style="margin-top:14px;cursor:pointer"><span><span class="lbl">Sound</span><br><span class="note">A beep when a reminder shows while the app is open. Turn it off to keep it quiet: the box and vibration still work, and phone notifications follow your phone's own sound settings.</span></span><span class="swt"><input type="checkbox" id="snd" aria-label="Reminder sound"><i></i></span></label>
 <div style="margin-top:14px"><label for="rml">Warn me before a break is due</label><select id="rml"></select><div class="note">For the 4h 30m driving break, the 6 hour working time break and your 9 hour driving limit.</div></div>
 <div style="margin-top:14px"><label for="rms">Remind me to start a planned shift</label><select id="rms"></select><div class="note">Uses the shifts in your Plan tab. It stops when you start the shift.</div></div>
+<div style="margin-top:14px"><label for="rsl">Ask if I have started a planned shift</label><select id="rsl"></select><div class="note">A phone notification, and a card on Today, if nothing is logged this long after a planned shift was due to start.</div></div>
+<div style="margin-top:14px"><label for="awy">Check what I did after time away</label><select id="awy"></select><div class="note">During a shift, if you come back to the app after this long it asks whether you were doing the same thing all that time, and lets you fill in driving, other work, POA and breaks.</div></div>
 <div style="margin-top:14px"><label for="da">Driving Alarm</label><select id="da"><option value="0">Off</option></select><div class="note">Alerts you when your driving since your last break reaches this time.</div></div>
 <div class="tr" style="margin-top:14px"><span><span class="lbl">Phone Notifications</span><br><span class="note" id="nn"></span></span><button class="tg" id="nt"></button></div><div class="tr" style="margin-top:8px"><button class="tg" id="nto" hidden>Turn off phone notifications</button></div>
 <div class="note" style="margin-top:10px">With phone notifications on, the server sends reminders to your phone even when TachoGuard is closed. Without them, reminders only appear while the app is open or running in the background.</div>
@@ -504,7 +507,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-161';
+const APPV='tg-2026-10-23-162';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -760,7 +763,7 @@ function commit(n){if(st.active){if(n-st.active>=20000)st.sessions.push(rec(st.a
 let bd=0,usnap=null;
 function begin(t,pl){
  /* a new shift started after its planned start time: ask if it really started on time (pl: already asked) */
- if(!pl&&!bd&&t!=='r'&&typeof plDue==='function'){const o=plDue();if(o){plStartAsk(o,t);return}}
+ if(!pl&&!bd&&t!=='r'&&typeof tkStartAsk==='function'){const A0=all(),l0=A0[A0.length-1],o=typeof plDue==='function'?plDue():null;if(o||!l0||Date.now()-l0.e>=9*H){tkStartAsk(t,o);return}}
  moX();const us=snap;if(us){const msg=NM[t]+' started at '+hm(bd||Date.now())+'. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';flash=msg;usnap=us;setTimeout(()=>{if(flash===msg){flash='';usnap=null;live()}},12000)}st.active=Date.now();st.act=t;if(bd){const x=bd;bd=0;st.sessions=st.sessions.filter(y=>!(y.e>x&&y.s>=x));st.sessions.forEach(y=>{if(y.e>x)y.e=x});st.active=x;if(st.rs&&x<st.rs)st.rs=x}if(t==='d'){gpsOn();wake()}save();render();setTimeout(tcAsk,50)}
 function undo(){moX();if(snap){const au=st.aud;st=JSON.parse(snap);snap=null;if(au>(st.aud||0))st.aud=au}if(st.act==='d'){gpsOn();wake()}save();render()}
 /* Every rule that can stop you starting (or carrying on). Each entry: [time it allows you, why, 1 = driving only / 2 = work not POA, short name].
@@ -1129,6 +1132,7 @@ function remList(n){const L=[];if(!st.alerts||!RLD)return L;const{act,busy,b,wc,
  if(busy&&act!=='p'){if(wc<6*H-Lm)add('w15',n+6*H-Lm-wc,'Break',RL+' minutes until your 6 hour working limit, then you need a break.');if(wc<6*H)add('w0',n+6*H-wc,'Break','6 hours of work reached. Take a break now.')}
  if(act==='d'&&day<9*H-Lm)add('d15',n+9*H-Lm-day,'Driving limit',RL+' minutes until 9 hours driving this shift.');
  if(RS>=0&&!st.active&&typeof plOcc==='function'){const a0=all();plOcc(n,n+3*864e5).filter(o=>!o.st&&o.E>n&&!a0.some(x=>x.e>o.S-H&&x.s<o.E)).forEach(o=>add('ps:'+o.oid,o.S-RS*M,'Planned shift',jobC(o.j).n+' '+o.s.slice(0,5)+' to '+o.e.slice(0,5)+(RS?', starts in '+RS+' min.':', starts now.')+' Start your shift?'))}
+ {const RL2=st.rsl===undefined?30:+st.rsl||0;if(RL2&&!st.active&&typeof plOcc==='function'){const a0=all();plOcc(n-2*H,n+3*864e5).filter(o=>!o.st&&o.E>n&&!a0.some(x=>x.e>o.S-H&&x.s<o.E)).forEach(o=>add('pl2:'+o.oid,o.S+RL2*M,'Did you start your shift?',jobC(o.j).n+' was planned from '+(o.rv?'about ':'')+o.s.slice(0,5)+' and nothing is logged yet. Open TachoGuard to log it.'))}}
  return L}
 function pushRemQ(){clearTimeout(prT);prT=setTimeout(()=>pushRem(),4000)}
 async function pushRem(force){if(!sess||!cloudReady||!pushOk()||!pushOn()||Notification.permission!=='granted')return;
@@ -1141,6 +1145,10 @@ $('rmb').onclick=e=>{const b=e.target.closest('[data-rm]');if(!b)return;const a=
 $('rml').innerHTML=[5,10,15,20,30,45].map(m=>`<option value="${m}">${m} minutes before</option>`).join('');
 $('rms').innerHTML=[[-1,'Off'],[0,'At the start time'],[5,'5 minutes before'],[10,'10 minutes before'],[15,'15 minutes before'],[30,'30 minutes before']].map(([m,t])=>`<option value="${m}">${t}</option>`).join('');
 $('rml').onchange=()=>{st.rml=+$('rml').value;save();live()};$('rms').onchange=()=>{st.rms=+$('rms').value;save();live()};
+$('rsl').innerHTML=[[0,'Off'],[15,'15 minutes after the start'],[30,'30 minutes after the start'],[45,'45 minutes after the start'],[60,'1 hour after the start'],[90,'1 hour 30 after the start']].map(([m,t])=>`<option value="${m}">${t}</option>`).join('');
+$('awy').innerHTML=[[0,'Off'],[30,'After 30 minutes away'],[45,'After 45 minutes away'],[60,'After 1 hour away'],[90,'After 1 hour 30 away'],[120,'After 2 hours away']].map(([m,t])=>`<option value="${m}">${t}</option>`).join('');
+$('rsl').onchange=()=>{st.rsl=+$('rsl').value;save();live()};$('awy').onchange=()=>{st.awy=+$('awy').value;save();live()};
+$('tql').onclick=()=>{if(typeof tkQuick==='function')tkQuick()};
 const DA=[0,30,60,90,120,150,180,210,240,255,270];$('da').innerHTML=DA.map(m=>`<option value="${m}">${m?fmt(m*M):'Off'}</option>`).join('');
 $('da').onchange=()=>{st.da=+$('da').value;fired.da=false;save();live()};
 function tcs(v,days,el){const e=$(el);if(!v){e.textContent='Enter the date to track it.';e.className='note';return}
@@ -1354,7 +1362,7 @@ function liveRun(){
   ['w15',busy&&act!=='p'&&wc.d>=6*H-Lm&&wc.d<6*H,RL+' minutes until your 6 hour working limit, then you need a break.'],['w0',busy&&act!=='p'&&wc.d>=6*H,'6 hours of work reached. Take a break now.'],
   ['d15',act==='d'&&day>=9*H-Lm&&day<9*H,RL+' minutes until 9 hours driving this shift.'],['d0',act==='d'&&day>=9*H,extLeft?'9 hours reached. You can extend to 10 hours.':'9 hours reached. Stop driving.'],['e0',act==='d'&&extLeft&&day>=10*H,'10 hours reached. Stop driving.']];
  if(document.activeElement!==$('da'))$('da').value=String(st.da||0);
- if(document.activeElement!==$('rml'))$('rml').value=String(RL);if(document.activeElement!==$('rms'))$('rms').value=String(RS);
+ if(document.activeElement!==$('rml'))$('rml').value=String(RL);if($('rsl')&&document.activeElement!==$('rsl'))$('rsl').value=String(st.rsl===undefined?30:st.rsl);if($('awy')&&document.activeElement!==$('awy'))$('awy').value=String(st.awy===undefined?60:st.awy);if(document.activeElement!==$('rms'))$('rms').value=String(RS);
  const lb=[...a].reverse().find(x=>x.t!=='r'&&!x.live),be=!busy&&lb?n-lb.e:-1,inW=(x,y)=>!endd&&be>=x*M&&be<y*M;
  al.push(['da',!!st.da&&act==='d'&&b.d>=st.da*M,'Driving alarm: you have driven '+fmt(b.d)+' since your last break.'],
   ['k15',isTc()&&inW(15,20),'15 minutes of break done. Take 30 more to finish a split driving break, or carry on to 45.'],
@@ -1410,7 +1418,7 @@ function liveRun(){
   /* the planned shift on the card: before it starts, its times and when its break goes; during it, when to take your break
      so it lasts to the finish, counting the breaks you have had */
   let hpl='';if(typeof plOcc==='function'){try{if(st.active&&busy&&ss){const pc=plOcc(ss-3*H,n+H).filter(o=>o.st!=='skip'&&o.E>n+15*M&&o.S<n+H&&Math.abs(o.S-ss)<4*H).sort((x,y)=>Math.abs(x.S-ss)-Math.abs(y.S-ss)),po=(jobsOn()&&pc.find(o=>o.j===st.cj))||(!jobsOn()&&pc[0])||null;
-    if(po){const fe=po.rv?ss+(po.E-po.S):po.E,tc=isTc(),tx=plLive({n,E:fe,mv:po.rv&&fe!==po.E,br:po.br||0,tk:WT.brk,tot:WT.tot,w0:wc.d,d0:tc?b.d:0,Dr:tc?Math.max(0,(po.dr||0)*H-day):0,half:tc&&!!b.q,drv:act==='d'});if(tx)hpl=`<div class="h-pl">${tx}</div>`}}
+    if(po){const fe=po.rv?ss+(po.E-po.S):po.E,tc=isTc(),tx=plLive({n,E:fe,mv:po.rv&&fe!==po.E,br:po.br||0,tk:WT.brk,tot:WT.tot,w0:wc.d,d0:tc?b.d:0,Dr:tc?Math.max(0,(po.dr||0)*H-day):0,half:tc&&!!b.q,drv:act==='d'});if(tx)hpl=`<div class="h-pl">${tx}</div>`}else if(typeof tkNextLine==='function'){const tx=tkNextLine();if(tx)hpl=`<div class="h-pl">${tx}</div>`}}
    else if(!st.active&&typeof plPending==='function'&&(()=>{const pk=Math.floor(n/3e4)+'|'+st.sessions.length+'|'+JSON.stringify(st.pls||{}).length+'|'+(st.u||0);if(pk!==hplK){hplK=pk;hplP=plPending()}const u=hplP.filter(x=>x.k==='end'&&x.o.E>n-24*H).pop();if(u)hpl=`<div class="h-pl"><span class="h-plk">Not logged yet</span>Your planned shift <b>${u.o.s.slice(0,5)}–${u.o.e.slice(0,5)}</b> ${esc(jobC(u.o.j).n)} (${typeof plDayW==='function'?plDayW(u.o.S):dlong(u.o.S)}) is not in your log, so the times above leave it out. The Plan counts it as worked. Log it with <b>What happened?</b> below.</div>`;return !!u})()){}
    else if(!st.active){const L0=a0.filter(x=>x.t!=='r'),po=plOcc(n-2*H,n+20*H).filter(o=>!o.st&&o.E>n&&!L0.some(x=>x.e>o.S-H&&x.s<o.E))[0];
     if(po)hpl=`<div class="h-pl"><span class="h-plk">${sod(po.S)===sod(n)?'Planned today':sod(po.S)===nxd(sod(n))?'Planned tomorrow':'Planned '+new Date(po.S).toLocaleDateString('en-GB',{weekday:'long'})}</span>${plHeroPlan(po)}</div>`}}catch(e){}}
@@ -2140,7 +2148,7 @@ function fromAcc(s){try{if(!s||!s.exists)return;const d=s.data(),ru=d.u||0;if(ru
   if(d.j===lastMain){baseU=ru;return}
   {const r=JSON.parse(d.j);if(r&&Array.isArray(r.sessions))adopt(r,ru,mainJ()!==lastMain)}}catch(e){}}
 function queuePush(now){if(!cloudReady)return;clearTimeout(pushT);pushT=setTimeout(doPush,now?0:Math.max(1200,15000-(Date.now()-lastPush)))}
-const KEEP=['wr','wrp','wri','jobs','rp','rpb','na','cj','rml','rms','tce','snd'];
+const KEEP=['wr','wrp','wri','jobs','rp','rpb','na','cj','rml','rms','tce','snd','rsl','awy'];
 function keepKeys(r){let ch=0;if(r)KEEP.forEach(k=>{if(r[k]!==undefined&&r[k]!==null&&st[k]===undefined){st[k]=r[k];ch=1}});if(ch){try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}}return ch}
 function doPush(){if(!cloudReady)return;if(pushing){pushAgain=true;return}
  pushing=(async()=>{try{lastPush=Date.now();
@@ -2298,5 +2306,6 @@ window.TG_OK=1;$('ver').textContent='TachoGuard v'+APPV.replace(/^tg-(\d+)-(\d+)
 addSrc();updWatch();wnUi();if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 </script>
 <script src="plan.js"></script>
+<script src="track.js"></script>
 </body>
 </html>

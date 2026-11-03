@@ -538,7 +538,7 @@ function plPending(){const n=Date.now(),out=[],L=all(),src=o=>o.pat?(st.rota||[]
   /* never ask about a day from before the repeat or rota was added */const r=src(o);if(r&&r.made&&o.E<r.made)return;
   const lg=L.some(x=>x.e>o.S-H&&x.s<o.E+H);
   if(lg){if(o.S<n){st.pls=Object.assign({},st.pls,{[o.oid]:'done'});out.dirty=1}return}
-  if(o.E<=n)out.push({o,k:'end'});else if(!o.rv&&o.S+60*M<=n&&!st.active)out.push({o,k:'late'})});
+  if(o.E<=n)out.push({o,k:'end'});else if(!o.rv&&o.S+(typeof tkRsl==='function'&&tkRsl()?tkRsl():60)*M<=n&&!st.active)out.push({o,k:'late'})});
  if(out.dirty){delete out.dirty;save()}return out}
 /* The day a planned shift was on, in words: Today, Yesterday or Tomorrow, then the date, so it is never unclear */
 const plDayW=t=>{const d=sod(t),td=sod(Date.now()),lab=d===td?'Today':d===sod(td-1)?'Yesterday':d===nxd(td)?'Tomorrow':'';return(lab?lab+', ':'')+new Date(t).toLocaleDateString('en-GB',{weekday:lab?'short':'long',day:'numeric',month:'short'})};
