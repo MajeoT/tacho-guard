@@ -13,10 +13,43 @@ const tkRsl=()=>st.rsl===undefined?30:+st.rsl||0,tkAwy=()=>st.awy===undefined?60
 const tkF=m=>{m=Math.round(m);const h=Math.floor(m/60),r=m%60;return h?h+'h'+(r?' '+r+'m':''):r+'m'};
 const TKN={d:'Driving',w:'Other work',p:'POA',r:'Break'},TKI={d:'🚛',w:'⚒',p:'◪',r:'🛏'};
 
+/* Location (st.gloc on): a rough snapshot of where you are each time the app is opened, kept on this phone only (tachoguard.loc,
+   the last 3 days), and saved places (st.places: [{id, n, lat, lon}]), so the questions can say how far you have moved and
+   suggest a driving time. Nothing here tracks you in the background: it only looks while the app is open. */
+const TKLOC='tachoguard.loc';
+/* the job a stretch is logged against, when it is not the current one (filling in a planned shift) */
+let tkJ=null;
+const tkLocs=()=>{try{return JSON.parse(localStorage.getItem(TKLOC)||'[]')}catch(e){return[]}};
+const tkLocOn=()=>!!st.gloc&&!!navigator.geolocation;
+function tkLocAdd(c){const L=tkLocs().filter(x=>x.t>Date.now()-3*864e5),l=L[L.length-1];if(l&&c.t-l.t<5*M&&hav(l,c)<300)L[L.length-1]=c;else L.push(c);try{localStorage.setItem(TKLOC,JSON.stringify(L.slice(-80)))}catch(e){}}
+/* where you are now (null if location is off, blocked or too slow); also saved as a snapshot */
+function tkPos(maxAge,force){return new Promise(res=>{if(!(force?navigator.geolocation:tkLocOn()))return res(null);let done=false;const fin=v=>{if(!done){done=true;clearTimeout(tm);res(v)}},tm=setTimeout(()=>fin(null),9000);
+ try{navigator.geolocation.getCurrentPosition(p=>{if(p.coords.accuracy>2000)return fin(null);const c={t:Date.now(),lat:p.coords.latitude,lon:p.coords.longitude,a:Math.round(p.coords.accuracy)};tkLocAdd(c);fin(c)},e=>{tkLocErr=e&&e.code===1?'blocked':'nofix';fin(null)},{enableHighAccuracy:false,maximumAge:maxAge===undefined?60000:maxAge,timeout:8500})}catch(e){fin(null)}})}
+let tkLocErr='';
+/* the snapshot taken nearest before time t (up to 45 minutes before, or 5 after) */
+const tkLocAt=t=>{const L=tkLocs().filter(x=>x.t<=t+5*M&&x.t>=t-45*M);return L.length?L[L.length-1]:null};
+const tkMi=(a,b)=>hav(a,b)/1609.34,tkMiTxt=m=>m<10?m.toFixed(1).replace(/\.0$/,''):String(Math.round(m));
+const tkNear=c=>{if(!c)return null;let b=null;(st.places||[]).forEach(p=>{const d=hav(p,c);if(d<1000&&(!b||d<b.d))b={p,d}});return b?b.p:null};
+/* a rough driving time for a straight-line distance: roads are about a quarter longer, at about 40 mph on average */
+const tkDrv=mi=>Math.max(15,Math.round(mi*1.25/40*60/15)*15);
+/* what to say about the distance, and the driving to suggest: a = where you were (a place or snapshot), b = here */
+function tkGeo(a,b,name,fill){if(!a||!b)return null;const m=tkMi(a,b),nm=name||'where you were at '+hm(a.t);
+ if(m<1.5)return{txt:`📍 You are still near ${esc(nm)}.`,d:0,mi:m};
+ const d=tkDrv(m);return{txt:`📍 You are about <b>${tkMiTxt(m)} miles</b> from ${esc(nm)} (in a straight line). That is roughly <b>${tkF(d)}</b> of driving${fill?', so it is filled in below. Change it if it is wrong':''}.`,d:fill?d:0,mi:m}}
+/* Save a place: name it, and it is stored where you are now */
+function tkPlaceAdd(back){const go=back||moX;
+ mo(`<h3>Save This Place</h3><p>Saves where you are now, so when you start a shift you can tap it to say where you started. TachoGuard then works out how far you have come.</p><div class="fchips">${['Home','Depot','Yard','Base'].map(x=>`<button type="button" class="fchip" data-k="q${x}">${x}</button>`).join('')}</div><label class="fother">Name<input id="tkpn" maxlength="30" placeholder="For example Depot"></label><div class="note bad" id="tkpe"></div><button class="tg big fpri" data-k="ok">Save where I am now</button><button class="tg big" data-k="no">Cancel</button>`);
+ mcb={no:go,ok:async()=>{const n=$('tkpn').value.trim();if(!n){$('tkpe').textContent='Give it a name.';return}$('tkpe').textContent='Finding where you are…';const c=await tkPos(0,true);
+  if(!c){$('tkpe').textContent=tkLocErr==='blocked'?'Location is blocked. Allow location for this site in Chrome, then try again.':'Could not get a location fix. Try again outside or by a window.';return}
+  st.places=(st.places||[]).filter(x=>x.n.toLowerCase()!==n.toLowerCase()).concat([{id:Date.now().toString(36),n,lat:+c.lat.toFixed(5),lon:+c.lon.toFixed(5)}]).slice(-12);if(!st.gloc)st.gloc=true;save();live();go()}};
+ ['Home','Depot','Yard','Base'].forEach(x=>mcb['q'+x]=()=>{$('tkpn').value=x})}
+/* a short wait while it finds where you are */
+function tkWait(msg,p,then){let done=false;mo(`<h3>One Moment</h3><p>📍 ${msg}</p><button class="tg big" data-k="no">Skip this</button>`);mcb={no:()=>{done=true;then(null)}};p.then(v=>{if(!done){done=true;then(v)}})}
+
 /* Lay rough amounts over a stretch of time. Breaks first (one break in the advised window, several spread evenly), then the work
    in this order: a little other work to start (checks), driving, POA, then the rest as the main activity (def). */
 function tkBuild(from,to,def,amt,brk,tc,pre){const T=to-from,B=brk.reduce((q,x)=>q+x,0)*M,W=T-B;if(W<0)return null;pre=pre||{d0:0,w0:0};
- const job=o=>{if(jobsOn()&&o.t!=='r'){if(st.cj)o.j=st.cj;o.c=o.t==='d'?1:isTc()?1:0}return o};
+ const job=o=>{if(jobsOn()&&o.t!=='r'){const jj=tkJ||st.cj;if(jj)o.j=jj;o.c=o.t==='d'?1:(tkJ?jobC(tkJ).tc!==false:isTc())?1:0}return o};
  /* the work, in order */
  const others=['d','w','p'].filter(k=>k!==def&&amt[k]>0).map(k=>[k,amt[k]*M]),oth=others.reduce((q,x)=>q+x[1],0);if(oth>W+6e4)return null;
  const rest=W-oth;
@@ -65,18 +98,20 @@ function tkJudge(E,from,to,goingOn){const A=all().filter(x=>x.t!=='r'&&(x.e<=fro
  return{bad,next}}
 
 /* The screen: o = {from, to, def (the main activity, other work if not given), title, lead, ok (button text), done(E), back, quick} */
-function acctAsk(o){const tc=isTc(),T=(o.to-o.from)/M,def=o.def||'w';
+function acctAsk(o){tkJ=o.j||null;const tc=o.j?jobC(o.j).tc!==false:isTc(),T=(o.to-o.from)/M,def=o.def||'w';
  /* driving and work since the last full break, up to the start of this stretch, so the breaks it suggests count them */
  const pre=(()=>{const A=all().filter(x=>x.t!=='r'&&x.s<o.from).map(x=>Object.assign({},x,{e:Math.min(x.e,o.from)}));if(!A.length||o.from-A[A.length-1].e>=9*H)return{d0:0,w0:0,half:false};
   let i=A.length-1;while(i>0&&A[i].s-A[i-1].e<9*H)i--;const S=A.slice(i);let d=0,p=false,rn=0;S.forEach((x,k)=>{if(k){const g=x.s-S[k-1].e;if(g>=45*M||(p&&g>=30*M)){d=0;p=false}else if(g>=15*M&&d>0)p=true;if(g>=15*M)rn=0}if(x.t==='d')d+=x.e-x.s;if(x.t!=='p')rn+=x.e-x.s});
   const g=o.from-S[S.length-1].e;if(g>=45*M||(p&&g>=30*M)){d=0;p=false}if(g>=15*M)rn=0;return{d0:d,w0:rn,half:p}})();
  const amt={d:0,w:0,p:0},on={d:false,w:false,p:false,r:false};let brk=[];
- if(o.quick){/* a whole shift: suggest the breaks the law needs, so they only have to be changed if wrong */const w=T;if(w>9*60+45)brk=[45];else if(w>6*60+30)brk=[30];if(brk.length)on.r=true}
+ if(o.init){['d','w','p'].forEach(k=>{if(o.init[k]>0&&k!==def&&(k!=='d'||tc)){on[k]=true;amt[k]=Math.min(Math.round(o.init[k]/15)*15||15,T)}});if(o.init.brk&&o.init.brk.length){brk=o.init.brk.slice();on.r=true}}
+ if(o.geo&&o.geo.d&&tc&&def!=='d'){on.d=true;amt.d=Math.min(o.geo.d,Math.floor(T/15)*15)}
+ if(o.quick&&!(o.init&&o.init.brk)){/* a whole shift: suggest the breaks the law needs, so they only have to be changed if wrong */const w=T;if(w>9*60+45)brk=[45];else if(w>6*60+30)brk=[30];if(brk.length)on.r=true}
  const kinds=[...(tc?['d']:[]),'w','p'].filter(k=>k!==def);
  const chips={d:[15,30,45,60,90,120,180,240],w:[15,30,60,90,120],p:[15,30,60,90,120]},bchips=[[15],[30],[45],[15,30],[60]];
  const draw=()=>{const B=brk.reduce((q,x)=>q+x,0),oth=kinds.reduce((q,k)=>q+(on[k]?amt[k]:0),0),rest=T-(on.r?B:0)-oth,E=rest>=0?tkBuild(o.from,o.to,def,{d:on.d?amt.d:0,w:on.w?amt.w:0,p:on.p?amt.p:0},on.r?brk:[],tc,pre):null,J=E?tkJudge(E,o.from,o.to,!o.quick):null;
   const row=k=>`<div class="acr${on[k]?' on':''}"><label class="fsw" style="margin:0"><span>${TKI[k]} ${k==='w'?'Did you do other work?':k==='d'?'Did you drive?':'Did you have POA (waiting time)?'}</span><span class="swt"><input type="checkbox" data-ak="t:${k}"${on[k]?' checked':''} aria-label="${TKN[k]}"><i></i></span></label>${on[k]?`<div class="fsub">Roughly how long?</div><div class="fchips fsm">${chips[k].filter(m=>m<=T).map(m=>`<button type="button" class="fchip${amt[k]===m?' on':''}" data-ak="a:${k}:${m}">${tkF(m)}</button>`).join('')}</div><div class="fstep"><button type="button" data-ak="s:${k}:-15" aria-label="Less">−</button><span><b>${tkF(amt[k])}</b></span><button type="button" data-ak="s:${k}:15" aria-label="More">+</button></div>`:''}</div>`;
-  mo(`<h3>${o.title}</h3><p>${o.lead||''} That is <b>${tkF(T)}</b> to account for, from ${hm(o.from)} to ${hm(o.to)}. Turn on what you did. ${def==='w'?'Anything left over counts as other work, which is how most shifts start.':'Anything left over stays as '+TKN[def].toLowerCase()+'.'}</p><div class="acq">
+  mo(`<h3>${o.title}</h3><p>${o.lead||''} That is <b>${tkF(T)}</b> to account for, from ${hm(o.from)} to ${hm(o.to)}. Turn on what you did. ${def==='w'?'Anything left over counts as other work, which is how most shifts start.':'Anything left over stays as '+TKN[def].toLowerCase()+'.'}</p>${o.geo?`<div class="note" style="margin:-4px 0 10px">${o.geo.txt}</div>`:''}<div class="acq">
   ${kinds.map(row).join('')}
   <div class="acr${on.r?' on':''}"><label class="fsw" style="margin:0"><span>🛏 Did you have a break?</span><span class="swt"><input type="checkbox" data-ak="t:r"${on.r?' checked':''} aria-label="Break"><i></i></span></label>${on.r?`<div class="fsub">Which?</div><div class="fchips fsm">${bchips.filter(b=>b.reduce((q,x)=>q+x,0)<T).map(b=>`<button type="button" class="fchip${brk.join('+')===b.join('+')?' on':''}" data-ak="b:${b.join('+')}">${b.map(x=>x+' min').join(' + ')}</button>`).join('')}</div>`:''}</div>
   </div><div class="fsum">${rest<0?`<span class="bad">That adds up to more than ${tkF(T)}. Take some off.</span>`:`${TKI[def]} ${TKN[def]}: <b>${tkF(rest)}</b> (the rest)`}</div>
@@ -97,42 +132,66 @@ document.addEventListener('change',e=>{if(tkEv&&e.target.closest&&e.target.close
 /* Put the entries in: everything logged in that stretch is replaced */
 function tkPut(E,from,to){clear(from,to,1);E.forEach(x=>st.sessions.push(x));if(st.rs&&from<st.rs)st.rs=from}
 
-/* Starting a shift: when did you really start? */
-function tkStartAsk(t,o){const n=Date.now(),A=all(),pe=A.length?A[A.length-1].e:0,ps=o?o.S:0,opts=[];
+/* Starting a shift: when did you really start? (and, with location on, where) */
+function tkStartAsk(t,o){const n=Date.now(),A=all(),pe=A.length?A[A.length-1].e:0,ps=o?o.S:0,opts=[],PL=tkLocOn()?(st.places||[]):[];
  if(o&&ps<n-5*M&&ps>=pe)opts.push([ps,`I started at ${hm(ps)}, as planned`]);
  [15,30,60,120].forEach(m=>{const x=n-m*M;if(x>pe)opts.push([x,`${m<60?m+' minutes':m/60+(m===60?' hour':' hours')} ago (${hm(x)})`])});
- mo(`<h3>When Did You Start?</h3><p>${o?`You had <b>${esc(jobC(o.j).n)}</b> planned from <b>${o.s.slice(0,5)}</b>. `:''}If your shift started before now, say when, and TachoGuard asks what you did since, so your hours and breaks count from the right time.</p><button class="tg big fpri" data-k="now">I am starting now (${hm(n)})</button>${opts.map(([x,l],i)=>`<button class="tg big" data-k="o${i}">${l}</button>`).join('')}<div class="tr" style="margin-top:12px"><label>Or I started at<input type="time" id="tkst"></label><button class="tg" data-k="at">Use time</button></div><div class="note bad" id="tkerr"></div><button class="tg big" data-k="no">Cancel</button>`);
+ let sel=PL.length===1?PL[0].id:'';
+ const plc=()=>PL.length?`<div class="fsub" style="margin-top:10px">Where did you start? <span class="note">(so it can work out how far you have driven)</span></div><div class="fchips fsm" id="tkpl">${PL.map(p=>`<button type="button" class="fchip${sel===p.id?' on':''}" data-k="p_${p.id}">📍 ${esc(p.n)}</button>`).join('')}<button type="button" class="fchip${sel==='h'?' on':''}" data-k="p_h">Right here</button></div>`:'';
+ mo(`<h3>When Did You Start?</h3><p>${o?`You had <b>${esc(jobC(o.j).n)}</b> planned from <b>${o.s.slice(0,5)}</b>. `:''}If your shift started before now, say when, and TachoGuard asks what you did since, so your hours and breaks count from the right time.</p><button class="tg big fpri" data-k="now">I am starting now (${hm(n)})</button>${opts.map(([x,l],i)=>`<button class="tg big" data-k="o${i}">${l}</button>`).join('')}<div class="tr" style="margin-top:12px"><label>Or I started at<input type="time" id="tkst"></label><button class="tg" data-k="at">Use time</button></div>${plc()}<div class="note bad" id="tkerr"></div>${tkLocOn()&&!tkNear(tkLocAt(Date.now()))?`<button class="tg" data-k="sp" style="margin-top:8px">⭐ Save where I am as a place</button>`:''}<button class="tg big" data-k="no">Cancel</button>`);
+ const ask=(x,geo)=>acctAsk({from:x,to:n,def:'w',geo,title:'Since '+hm(x),lead:`You started at <b>${hm(x)}</b> and are starting ${TKN[t==='x'?'d':t].toLowerCase()} now.`,ok:'Save and start my shift',back:()=>tkStartAsk(t,o),
+   done:E=>{begin(t,1);tkPut(E,x,n);st.active=n;st.act=t;save();render();tkMark()}});
  const go=x=>{if(n-x<5*M){begin(t,1);return}
-  acctAsk({from:x,to:n,def:'w',title:'Since '+hm(x),lead:`You started at <b>${hm(x)}</b> and are starting ${TKN[t==='x'?'d':t].toLowerCase()} now.`,ok:'Save and start my shift',back:()=>tkStartAsk(t,o),
-   done:E=>{begin(t,1);tkPut(E,x,n);st.active=n;st.act=t;save();render();tkMark()}})};
- mcb={no:undo,now:()=>begin(t,1),at:()=>{const v=$('tkst').value;if(!v){$('tkerr').textContent='Enter the time you started.';return}const x=prevT(v,n);
+  if(!tkLocOn()||sel==='h'){ask(x,sel==='h'?{txt:'📍 You started right here.',d:0}:null);return}
+  const pl=PL.find(p=>p.id===sel),then=c=>{if(!c){ask(x,null);return}const a=pl||tkLocAt(x);ask(x,tkGeo(a,c,pl?pl.n:a?'where you were at '+hm(a.t):'',true))};
+  if(!pl&&!tkLocAt(x)){ask(x,null);return}
+  tkWait('Checking where you are, to see how far you have come…',tkPos(0),then)};
+ mcb={no:undo,now:()=>begin(t,1),sp:()=>tkPlaceAdd(()=>tkStartAsk(t,o)),at:()=>{const v=$('tkst').value;if(!v){$('tkerr').textContent='Enter the time you started.';return}const x=prevT(v,n);
   if(x<pe){$('tkerr').textContent='That is before your last activity ended ('+hm(pe)+'). Pick a later time.';return}if(n-x>16*H){$('tkerr').textContent='That is more than 16 hours ago. Check the time.';return}go(x)}};
- opts.forEach(([x],i)=>mcb['o'+i]=()=>go(x))}
+ opts.forEach(([x],i)=>mcb['o'+i]=()=>go(x));
+ PL.concat([{id:'h'}]).forEach(p=>mcb['p_'+p.id]=()=>{sel=sel===p.id?'':p.id;$('tkpl').querySelectorAll('[data-k]').forEach(b=>b.classList.toggle('on',b.dataset.k==='p_'+sel))})}
 
-/* Back in the app after a while, in the middle of a shift: was it all what the app has been counting? */
+/* Back in the app after a while, in the middle of a shift: was it all what the app has been counting? With location on, it
+   also says how far you have moved since you last had the app open. */
 function tkAway(){const prev=tkSeen(),n=Date.now(),thr=tkAwy();tkMark();
- if(!thr||!prev||!st.active||!$('mo').hidden||n-prev<thr*M||n-prev>18*H)return;
+ if(!thr||!prev||!st.active||!$('mo').hidden||n-prev<thr*M||n-prev>18*H){if(tkLocOn()&&!document.hidden){const l=tkLocs().pop();if(!l||n-l.t>10*M)tkPos(120000)}return}
  const from=Math.max(prev,st.active),act=st.act==='x'?'d':st.act;if(n-from<thr*M)return;
- mo(`<h3>Welcome Back</h3><p>You last had TachoGuard open at <b>${hm(prev)}</b>, ${tkF((n-prev)/M)} ago. Since ${hm(from)} it has been counting <b>${TKN[act]}</b>.</p><p>Is that what you were doing all that time?</p><button class="tg big fpri" data-k="y">Yes, ${TKN[act].toLowerCase()} the whole time</button><button class="tg big" data-k="nn">No, I did other things too</button><button class="tg big" data-k="no">Ask me later</button>`);
- mcb={no:()=>{try{localStorage.setItem(TKSEEN,String(prev))}catch(e){}moX()},y:moX,nn:()=>acctAsk({from,to:n,def:act,title:'Since '+hm(from),lead:`TachoGuard had you on ${TKN[act].toLowerCase()} since ${hm(from)}.`,ok:'Save',cancel:moX,
+ const a=tkLocOn()?tkLocAt(prev):null;
+ if(!a){tkAwayAsk(prev,from,act,null);return}
+ tkPos(0).then(c=>{if(!$('mo').hidden||tkSeen()>n+60000)return;tkAwayAsk(prev,from,act,c?tkGeo(a,c,'where you were at '+hm(a.t),act!=='d'):null)})}
+function tkAwayAsk(prev,from,act,geo){const n=Date.now(),moved=geo&&geo.mi>=1.5,still=geo&&geo.mi<1.5&&act==='d'&&n-from>=45*M;
+ const hint=moved&&act!=='d'?`<p>You have moved since then, so you may have been driving.</p>`:still?`<p>You have hardly moved, so you may have been on a break or doing other work.</p>`:'';
+ const yes=`<button class="tg big${moved&&act!=='d'||still?'':' fpri'}" data-k="y">Yes, ${TKN[act].toLowerCase()} the whole time</button>`,nn=`<button class="tg big${moved&&act!=='d'||still?' fpri':''}" data-k="nn">No, I did other things too</button>`;
+ mo(`<h3>Welcome Back</h3><p>You last had TachoGuard open at <b>${hm(prev)}</b>, ${tkF((n-prev)/M)} ago. Since ${hm(from)} it has been counting <b>${TKN[act]}</b>.</p>${geo?`<p>${geo.txt.replace(', so it is filled in below. Change it if it is wrong','')}</p>`:''}${hint}<p>Is that what you were doing all that time?</p>${moved&&act!=='d'||still?nn+yes:yes+nn}<button class="tg big" data-k="no">Ask me later</button>`);
+ mcb={no:()=>{try{localStorage.setItem(TKSEEN,String(prev))}catch(e){}moX()},y:moX,nn:()=>acctAsk({from,to:n,def:act,geo,title:'Since '+hm(from),lead:`TachoGuard had you on ${TKN[act].toLowerCase()} since ${hm(from)}.`,ok:'Save',cancel:moX,
   done:E=>{snap=JSON.stringify(st);const a0=st.active,t0=st.act;if(from>a0){st.act=t0;st.sessions.push(rec(a0,from))}st.active=n;st.act=t0;tkPut(E,from,n);save();moX();render();
    flash=`Saved. ${TKN[act]} carries on from now: if you are doing something else now, tap it below. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>`;usnap=snap;snap=null;setTimeout(()=>{flash='';live()},12000);live()}})}}
 
-/* A whole shift in a few taps */
-function tkQuick(){const n=Date.now(),td=sod(n);let day=td;
- const draw=()=>{mo(`<h3>Log a Shift Quickly</h3><p>For a shift you did not log as you went. Say when it started and finished, then what you did.</p><div class="fchips">${[0,1,2].map(k=>{const d=td-k*864e5,dd=sod(d);return `<button type="button" class="fchip${dd===day?' on':''}" data-k="d${k}">${k===0?'Today':k===1?'Yesterday':new Date(dd).toLocaleDateString('en-GB',{weekday:'long'})}</button>`}).join('')}</div><label class="fother">Or another day<input type="date" id="tqd" value="${ymd(day)}"></label><div class="tr" style="margin-top:10px"><label>Started<input type="time" id="tqs"></label><label>Finished<input type="time" id="tqe"></label></div><div class="note bad" id="tqerr"></div><button class="tg big fpri" data-k="ok">Next</button><button class="tg big" data-k="no">Cancel</button>`);
-  [0,1,2].forEach(k=>mcb['d'+k]=()=>{day=sod(td-k*864e5);keep()});$('tqd').onchange=e=>{if(e.target.value){day=pdt(e.target.value);keep()}}};
- let sv='',ev='';const keep=()=>{sv=$('tqs').value;ev=$('tqe').value;draw();$('tqs').value=sv;$('tqe').value=ev;mcb.ok=ok;mcb.no=moX};
- const ok=()=>{const a=$('tqs').value,b=$('tqe').value,er=m=>{$('tqerr').textContent=m};if(!a||!b){er('Enter when it started and finished.');return}
+/* A whole shift in a few taps. pre (from a day in the Plan) = {day, s, e ('HH:MM'), j, dr (hours), br (minutes), oid, name}:
+   the times start as planned, and what you did starts from what is already logged, else from the plan. */
+function tkQuick(pre){const n=Date.now(),td=sod(n);let day=pre&&pre.day?pre.day:td;
+ const draw=()=>{mo(`<h3>${pre&&pre.oid?'What Did You Do?':'Log a Shift Quickly'}</h3><p>${pre&&pre.oid?`<b>${esc(pre.name||'')}</b>, planned ${pre.ps||pre.s} to ${pre.pe||pre.e}. Change the times to when you really started and finished, then say what you did. It replaces anything logged in that time.`:'For a shift you did not log as you went. Say when it started and finished, then what you did.'}</p>${pre&&pre.oid?`<p><b>${new Date(day).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}</b></p>`:`<div class="fchips">${[0,1,2].map(k=>{const d=td-k*864e5,dd=sod(d);return `<button type="button" class="fchip${dd===day?' on':''}" data-k="d${k}">${k===0?'Today':k===1?'Yesterday':new Date(dd).toLocaleDateString('en-GB',{weekday:'long'})}</button>`}).join('')}</div><label class="fother">Or another day<input type="date" id="tqd" value="${ymd(day)}"></label>`}<div class="tr" style="margin-top:10px"><label>Started<input type="time" id="tqs"></label><label>Finished<input type="time" id="tqe"></label></div><div class="note bad" id="tqerr"></div><button class="tg big fpri" data-k="ok">Next</button>${pre&&pre.back?'<button class="tg big" data-k="bk">← Back</button>':''}<button class="tg big" data-k="no">Cancel</button>`);mcb={};
+  [0,1,2].forEach(k=>mcb['d'+k]=()=>{day=sod(td-k*864e5);keep()});if($('tqd'))$('tqd').onchange=e=>{if(e.target.value){day=pdt(e.target.value);keep()}};$('tqs').value=sv;$('tqe').value=ev;mcb.ok=ok;mcb.no=moX;if(pre&&pre.back)mcb.bk=pre.back};
+ let sv=pre&&pre.s||'',ev=pre&&pre.e||'';const keep=()=>{sv=$('tqs').value;ev=$('tqe').value;draw()};
+ const ok=()=>{const a=$('tqs').value,b=$('tqe').value,er=m=>{$('tqerr').textContent=m};if(!a||!b){er('Enter when it started and finished.');return}sv=a;ev=b;
   const s=plAt(day,a);let e=plAt(day,b);if(e<=s)e=plAt(nxd(day),b);if(e>n){er('That finishes after now. If you are still working, start your shift on the Today screen instead.');return}if(e-s>18*H){er('That is over 18 hours. Check the times.');return}
-  const ov=all().filter(x=>x.t!=='r'&&x.e>s&&x.s<e);
-  acctAsk({from:s,to:e,def:'w',quick:true,title:'Your Shift',lead:`${new Date(s).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'})}, ${hm(s)} to ${hm(e)}.${ov.length?' This replaces what is already logged in that time.':''}`,ok:'Save this shift',back:draw,cancel:moX,
-   done:E=>{const sv2=JSON.stringify(st);tkPut(E,s,e);save();moX();render();flash=`Shift saved: ${hm(s)} to ${hm(e)}. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>`;usnap=sv2;setTimeout(()=>{flash='';live()},12000);live()}})};
- draw();mcb={no:moX,ok};[0,1,2].forEach(k=>mcb['d'+k]=()=>{day=sod(td-k*864e5);keep()})}
+  const ov=all().filter(x=>x.e>s&&x.s<e),ow=ov.filter(x=>x.t!=='r');
+  /* start from what is logged in that time (so a fix only needs the changes), else from the plan */
+  let init=null;if(ow.length){const sum=t=>ov.filter(x=>x.t===t).reduce((q,x)=>q+Math.min(x.e,e)-Math.max(x.s,s),0)/M,br=[];
+   const W=ov.slice().sort((x,y)=>x.s-y.s);W.forEach((x,k)=>{if(x.t==='r'&&x.e-x.s>=15*M)br.push(Math.round((Math.min(x.e,e)-Math.max(x.s,s))/M/15)*15);if(k&&x.s-W[k-1].e>=15*M&&x.t!=='r'&&W[k-1].t!=='r')br.push(Math.round((x.s-W[k-1].e)/M/15)*15)});
+   init={d:sum('d'),p:sum('p'),brk:br.filter(x=>x>=15)}}
+  else if(pre&&pre.oid){init={d:(pre.dr||0)*60,brk:pre.br?(pre.br>=45&&e-s>9*H+45*M&&pre.dr>=4.5?[45]:[pre.br]):[]}}
+  acctAsk({from:s,to:e,def:'w',quick:true,j:pre&&pre.j,init,title:pre&&pre.oid?'What You Did':'Your Shift',lead:`${new Date(s).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'})}, ${hm(s)} to ${hm(e)}.${ow.length?' It starts from what is already logged in that time, and replaces it.':pre&&pre.oid?' It starts from what was planned.':''}`,ok:'Save this shift',back:draw,cancel:moX,
+   done:E=>{const sv2=JSON.stringify(st);tkPut(E,s,e);if(pre&&pre.oid)st.pls=Object.assign({},st.pls,{[pre.oid]:'done'});tkJ=null;save();moX();render();flash=`Shift saved: ${hm(s)} to ${hm(e)}. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>`;usnap=sv2;setTimeout(()=>{flash='';live()},12000);live()}})};
+ draw()}
+/* From a day in the Plan: fill in what you really did on a planned shift (o, an occurrence), or on a day with nothing planned */
+function tkFill(o,d,back){if(o){const L=all().filter(x=>x.e>o.S-H&&x.s<o.E+H&&x.t!=='r'),s=L.length?Math.min(...L.map(x=>x.s)):o.S,e=L.length?Math.max(...L.map(x=>x.e)):o.E;
+  tkQuick({day:sod(s),s:hm(s),e:hm(Math.min(e,Date.now())),j:o.j,dr:jobC(o.j).tc!==false?o.dr||0:0,br:o.br||0,oid:o.oid,name:jobC(o.j).n,ps:o.s.slice(0,5),pe:o.e.slice(0,5),back})}
+ else{const L=all().filter(x=>x.t!=='r'&&x.s<nxd(d)&&x.e>d);tkQuick(L.length?{day:d,s:hm(Math.min(...L.map(x=>x.s))),e:hm(Math.max(...L.map(x=>x.e))),back}:{day:d,back})}}
 
 /* The next break when no planned shift is giving advice: for the Today card */
 function tkNextLine(){if(!st.active||st.act==='r')return '';const n=Date.now(),J=tkJudge([],n,n,true);return J.next}
 
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(tkAway,400);else tkMark()});
-setInterval(()=>{if(!document.hidden&&$('mo').hidden)tkMark()},30000);
+setInterval(()=>{if(!document.hidden&&$('mo').hidden){tkMark();if(tkLocOn()){const l=tkLocs().pop();if(!l||Date.now()-l.t>10*M)tkPos(120000)}}},30000);
 setTimeout(tkAway,1500);

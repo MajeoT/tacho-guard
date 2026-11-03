@@ -476,6 +476,8 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <h2>GPS</h2>
 <div class="g"><div class="tr"><span><span class="lbl">Distance Tracking</span><br><span class="note">Off by default. When on, it uses your location only while Driving is on, and the screen stays awake.</span></span><button class="tg" id="gp"></button></div><div class="row" style="margin-top:14px"><span class="lbl">Distance This Drive</span><span class="num" id="gd"></span></div><div class="note" id="gs"></div></div>
 <p class="note">Distance only updates while this page is open, so keep your phone unlocked. If location is blocked, allow it for this site in Chrome.</p>
+<div class="g" style="margin-top:12px"><div class="tr"><span><span class="lbl">Location Check-ins</span><br><span class="note">Off by default. When on, TachoGuard notes roughly where you are when you open it, kept on this phone only for 3 days. When it asks what you did, it can then say how far you have moved and suggest how much driving. It never tracks you in the background.</span></span><button class="tg" id="gl"></button></div><div class="note bad" id="gle"></div>
+<div class="lbl" style="margin-top:14px">Saved Places</div><div class="note">Tap one when you start a shift to say where you started, for example your depot.</div><div id="gpl" style="margin-top:8px"></div><button class="tg" id="gla" style="margin-top:8px">⭐ Save where I am now</button></div>
 <h2>Reminders</h2>
 <div class="g"><div class="tr"><span><span class="lbl">Reminders</span><br><span class="note">A box at the top of the screen, with vibration (and a sound if Sound is on), when it is time to start a planned shift or take a break.</span></span><button class="tg" id="al"></button></div>
 <label class="tr" style="margin-top:14px;cursor:pointer"><span><span class="lbl">Sound</span><br><span class="note">A beep when a reminder shows while the app is open. Turn it off to keep it quiet: the box and vibration still work, and phone notifications follow your phone's own sound settings.</span></span><span class="swt"><input type="checkbox" id="snd" aria-label="Reminder sound"><i></i></span></label>
@@ -507,7 +509,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-162';
+const APPV='tg-2026-10-23-163';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1373,7 +1375,7 @@ function liveRun(){
  {const alc={};al.forEach(([k,c,m])=>{alc[k]=c;if(c){if(!fired[k]&&!(snz[k]>n)){fired[k]=true;fire(m,k)}else if(rmq.has(k)&&rmq.get(k).m!==m){rmq.get(k).m=m;rmDraw()}}else fired[k]=false});
   [...rmq.keys()].forEach(k=>{if(!alc[k]){rmq.delete(k);rmDraw()}})}
  const L=[];
- $('gp').textContent=st.gps?'GPS On':'GPS Off';$('gd').textContent=act==='d'&&st.gps?mi(st.ad):'Not tracking';$('gs').textContent=!st.gps?'GPS is off. Turn it on above to track distance.':act==='d'?(gmsg||'Starting GPS...'):'GPS is on and starts when you start driving.';
+ $('gp').textContent=st.gps?'GPS On':'GPS Off';if($('gl')){$('gl').textContent=st.gloc?'On':'Off';const P=st.places||[],h=P.map(p=>`<div class="row" style="padding:6px 0"><span>📍 ${esc(p.n)}</span><button class="tg" data-pd="${p.id}" aria-label="Remove ${esc(p.n)}">✕</button></div>`).join('')||'<div class="note">None yet.</div>';if($('gpl').dataset.h!==h){$('gpl').innerHTML=h;$('gpl').dataset.h=h}}$('gd').textContent=act==='d'&&st.gps?mi(st.ad):'Not tracking';$('gs').textContent=!st.gps?'GPS is off. Turn it on above to track distance.':act==='d'?(gmsg||'Starting GPS...'):'GPS is on and starts when you start driving.';
  if(act==='p')L.push('POA is not counted as driving or working time.');
  else if(act==='w'&&isTc())L.push('Counting as working time only, not driving.');
  else if(act==='x')L.push('Driving with no tacho. Counted as working time only, not towards your driving limits. <button class="tg" data-cv="d">Count as tacho driving</button>');
@@ -1587,6 +1589,8 @@ const endAsk=same=>{const n=Date.now(),a=all(),z=a[a.length-1],fresh0=!z||(!z.li
  draw();
  mcb={no:moX,clr:()=>clearShift(ss,a),ed:()=>{moX();usnap=null;if(st.act&&st.active){const e=touched?T:Date.now(),a0=st.act;commit(e);save();render();flash=NM[a0]+' stopped at '+hm(e)+' so you can edit it. When you are done, tap End Shift.';setTimeout(()=>{flash='';live()},10000);live()}openDay(sod(ss),'today')},ok:()=>{moX();usnap=null;const e=touched?T:Date.now();commit(e);st.se=e;save();flash='Shift ended at '+hm(e)+'. Daily rest is counting.';setTimeout(()=>{flash='';live()},8000);render()}}};
 $('esh').onclick=()=>endAsk();
+$('gl').onclick=async()=>{st.gloc=!st.gloc;$('gle').textContent='';save();live();if(st.gloc){const c=await tkPos(0,true);if(!c){$('gle').textContent=tkLocErr==='blocked'?'Location is blocked. Allow location for this site in Chrome, then turn this on again.':'Could not get a location fix yet. It will try again when you next open the app.';if(tkLocErr==='blocked'){st.gloc=false;save();live()}}}};
+$('gla').onclick=()=>tkPlaceAdd();$('gpl').onclick=e=>{const b=e.target.closest('[data-pd]');if(!b)return;const p=(st.places||[]).find(x=>x.id===b.dataset.pd);if(!p)return;mo(`<h3>Remove ${esc(p.n)}?</h3><p>It will no longer be offered when you start a shift. Your log is not changed.</p><button class="tg big fpri" data-k="ok">Remove</button><button class="tg big" data-k="no">Cancel</button>`);mcb={no:moX,ok:()=>{st.places=(st.places||[]).filter(x=>x.id!==p.id);save();moX();live()}}};
 $('gp').onclick=()=>{st.gps=!st.gps;if(st.gps){if(st.act==='d'){gpsOn();wake()}}else gpsOff();save();live()};
 $('snd').onchange=e=>{st.snd=e.target.checked;save();if(st.snd)beep()};
 $('al').onclick=()=>{st.alerts=!st.alerts;if(st.alerts){try{'Notification' in window&&Notification.permission==='default'&&Notification.requestPermission().then(ntUi)}catch(e){}beep();try{navigator.vibrate&&navigator.vibrate(200)}catch(e){}}save();live()};
@@ -2148,7 +2152,7 @@ function fromAcc(s){try{if(!s||!s.exists)return;const d=s.data(),ru=d.u||0;if(ru
   if(d.j===lastMain){baseU=ru;return}
   {const r=JSON.parse(d.j);if(r&&Array.isArray(r.sessions))adopt(r,ru,mainJ()!==lastMain)}}catch(e){}}
 function queuePush(now){if(!cloudReady)return;clearTimeout(pushT);pushT=setTimeout(doPush,now?0:Math.max(1200,15000-(Date.now()-lastPush)))}
-const KEEP=['wr','wrp','wri','jobs','rp','rpb','na','cj','rml','rms','tce','snd','rsl','awy'];
+const KEEP=['wr','wrp','wri','jobs','rp','rpb','na','cj','rml','rms','tce','snd','rsl','awy','places','gloc'];
 function keepKeys(r){let ch=0;if(r)KEEP.forEach(k=>{if(r[k]!==undefined&&r[k]!==null&&st[k]===undefined){st[k]=r[k];ch=1}});if(ch){try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}}return ch}
 function doPush(){if(!cloudReady)return;if(pushing){pushAgain=true;return}
  pushing=(async()=>{try{lastPush=Date.now();
