@@ -115,7 +115,7 @@ function acctAsk(o){tkJ=o.j||null;const tc=o.j?jobC(o.j).tc!==false:isTc(),T=(o.
   ${kinds.map(row).join('')}
   <div class="acr${on.r?' on':''}"><label class="fsw" style="margin:0"><span>🛏 Did you have a break?</span><span class="swt"><input type="checkbox" data-ak="t:r"${on.r?' checked':''} aria-label="Break"><i></i></span></label>${on.r?`<div class="fsub">Which?</div><div class="fchips fsm">${bchips.filter(b=>b.reduce((q,x)=>q+x,0)<T).map(b=>`<button type="button" class="fchip${brk.join('+')===b.join('+')?' on':''}" data-ak="b:${b.join('+')}">${b.map(x=>x+' min').join(' + ')}</button>`).join('')}</div>`:''}</div>
   </div><div class="fsum">${rest<0?`<span class="bad">That adds up to more than ${tkF(T)}. Take some off.</span>`:`${TKI[def]} ${TKN[def]}: <b>${tkF(rest)}</b> (the rest)`}</div>
-  ${E?`<div class="note" style="margin-top:8px"><b>How it goes in your log:</b> ${E.map(x=>`${TKI[x.t]} ${hm(x.s)}–${hm(x.e)}`).join(' · ')}<br>The order is a best guess. If you want exact times, change them in Today's Log afterwards.</div>`:''}
+  ${E?tkLogView(E,o.from,o.to):''}
   ${J&&J.bad.length?`<div class="wn" style="margin-top:8px"><b>⚠ With these answers:</b> ${J.bad.join('. ')}. If this is what really happened, save it so your record is honest.</div>`:''}
   ${J&&J.next?`<div class="note" style="margin-top:8px">${J.next}</div>`:''}
   <div class="note bad" id="akerr"></div><button class="tg big fpri" data-k="ok"${rest<0?' disabled':''}>${o.ok||'Save'}</button>${o.back?'<button class="tg big" data-k="bk">← Back</button>':''}<button class="tg big" data-k="no">Cancel</button>`);
@@ -128,6 +128,15 @@ function acctAsk(o){tkJ=o.j||null;const tc=o.j?jobC(o.j).tc!==false:isTc(),T=(o.
 let tkEv=null;
 document.addEventListener('click',e=>{const b=e.target.closest('[data-ak]');if(tkEv&&b&&b.tagName!=='INPUT'&&!$('mo').hidden)tkEv(e)});
 document.addEventListener('change',e=>{if(tkEv&&e.target.closest&&e.target.closest('[data-ak]')&&!$('mo').hidden)tkEv(e)});
+
+/* The entries as they will go in the log: a bar from start to finish in the activity colours, then one line per entry */
+function tkLogView(E,from,to){const L=E.slice().sort((a,b)=>a.s-b.s),seg=[];let c=from;
+ L.forEach(x=>{if(x.s>c+M/2)seg.push({s:c,e:x.s,t:'r',gap:1});seg.push(x);c=Math.max(c,x.e)});if(to>c+M/2)seg.push({s:c,e:to,t:'r',gap:1});
+ const tot=k=>seg.filter(x=>x.t===k).reduce((q,x)=>q+x.e-x.s,0);
+ return `<div class="tkl"><div class="tkh"><b>How it goes in your log</b><span>${['d','w','p','r'].filter(k=>tot(k)>0).map(k=>`<span class="tkk"><i class="k-${k}"></i>${TKN[k]} ${tkF(tot(k)/M)}</span>`).join('')}</span></div>
+ <div class="tkb" aria-hidden="true">${seg.map(x=>`<i class="k-${x.t}" style="flex:${Math.max(1,Math.round((x.e-x.s)/M))} 0 0"></i>`).join('')}</div><div class="tkt"><span>${hm(from)}</span><span>${hm(to)}</span></div>
+ ${seg.map(x=>`<div class="tkr${x.t==='r'?' br':''}"><i class="k-${x.t}"></i><span>${TKI[x.t]} ${TKN[x.t]}</span><span class="tm">${hm(x.s)}–${hm(x.e)}<small>${tkF((x.e-x.s)/M)}</small></span></div>`).join('')}
+ <div class="tkn">The order is a best guess. Change exact times in Today's Log afterwards.</div></div>`}
 
 /* Put the entries in: everything logged in that stretch is replaced */
 function tkPut(E,from,to){clear(from,to,1);E.forEach(x=>st.sessions.push(x));if(st.rs&&from<st.rs)st.rs=from}
