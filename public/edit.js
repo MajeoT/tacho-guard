@@ -1,0 +1,125 @@
+/* TachoGuard: Edit Shift. The whole shift as a lineup of blocks (driving, other work, POA, breaks) laid end to end from the
+   shift start, so it can be put right in one place: drag a block by its handle to change the order (the times follow and the
+   shift keeps its length), tap a block to change its type, its start or end, or its length, or to split, add, move or delete it.
+   Nothing is saved until Save, and Save has an undo. End Shift opens the same screen with the end time ready.
+   SE = { S: shift start, B: [{t, len, o (the entry it came from), run (still running)}], open (the open row), mode ('edit' or
+   'end'), S0/E0 (the stretch it replaces), pre (a line at the top) } */
+let SE=null;
+const SEN={d:'Driving',x:'Driving (no tacho)',w:'Other work',p:'POA',r:'Break'},SEI={d:'🚛',x:'🚚',w:'⚒',p:'◪',r:'🛏'};
+const seF=ms=>{const m=Math.round(ms/M),h=Math.floor(m/60),r=m%60;return h?h+'h'+(r?' '+r+'m':''):r+'m'};
+
+/* The shift at time t (or the latest one): logged entries plus what is running now, split where there is 9 hours or more off */
+function seShift(t){const n=Date.now(),L=st.sessions.filter(x=>(x.t||'d')!=='r'&&x.e>x.s).map(x=>Object.assign({t:'d'},x));
+ if(st.active&&st.act&&n>st.active)L.push({s:st.active,e:n,t:st.act,live:1,j:st.cj});
+ const A=lay(L);if(!A.length)return null;const C=[];let cur=[];A.forEach(x=>{if(cur.length&&x.s-cur[cur.length-1].e>=9*H){C.push(cur);cur=[]}cur.push(x)});C.push(cur);
+ if(t==null)return C[C.length-1];return C.find(c=>t>=c[0].s-H&&t<=c[c.length-1].e+H)||C.filter(c=>c[0].s<=t).pop()||C[0]}
+
+function seOpen(t,mode,pre,focus){const c=seShift(t);if(!c){if(mode==='end'&&typeof endAskOld==='function'){endAskOld();return}openDay(sod(Date.now()),'today');return}
+ const B=[];let pe=null;c.forEach(x=>{if(pe!==null){const g=x.s-pe;if(g>=M)B.push({t:'r',len:g,o:null});else if(g>0&&B.length)B[B.length-1].len+=g}
+  const o=Object.assign({},x);delete o.s;delete o.e;delete o.live;B.push({t:x.t||'d',len:x.e-x.s,o,run:!!x.live});pe=x.e});
+ /* a break running now is part of the shift too */
+ if(st.active&&st.act==='r'&&!c[c.length-1].live&&st.active>=pe){const n=Date.now();if(st.active-pe>=M)B.push({t:'r',len:st.active-pe,o:null});B.push({t:'r',len:n-st.active,o:{},run:true})}
+ SE={S:c[0].s,B,open:null,mode:mode||'edit',S0:c[0].s,E0:c[0].s+B.reduce((q,b)=>q+b.len,0),pre:pre||'',dirty:false};
+ if(focus!=null){let s=SE.S;SE.B.forEach((b,i)=>{if(focus>=s&&focus<s+b.len)SE.open=i;s+=b.len})}
+ if(SE.mode==='end')seToEnd();
+ let el=$('sed');if(!el){el=document.createElement('div');el.id='sed';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');document.body.appendChild(el);el.addEventListener('click',seClick);el.addEventListener('change',seChange);el.addEventListener('pointerdown',seDown)}
+ el.hidden=false;document.body.classList.add('sedon');seDraw();el.scrollTop=0}
+function seClose(){const el=$('sed');if(el)el.hidden=true;document.body.classList.remove('sedon');SE=null}
+
+/* end mode: the running block stops being "running"; its end is the shift end (now to start with) */
+function seToEnd(){SE.mode='end';const l=SE.B[SE.B.length-1];if(l&&l.run){l.run=false;l.wasRun=true}}
+const seStarts=()=>{let s=SE.S;return SE.B.map(b=>{const x=s;s+=b.len;return x})};
+const seEnd=()=>SE.S+SE.B.reduce((q,b)=>q+b.len,0);
+const seRun=()=>{const l=SE.B[SE.B.length-1];return l&&l.run?l:null};
+
+/* entries as they would be saved */
+function seEntries(){const S=seStarts();return SE.B.map((b,i)=>({s:S[i],e:S[i]+b.len,t:b.t,run:b.run}))}
+
+/* ---- the changes ---- */
+const seMin=M;
+function seLen(i,nl){const B=SE.B,b=B[i];nl=Math.max(seMin,Math.round(nl/M)*M);const d=nl-b.len;if(!d)return;
+ if(b.run){/* running: its end is now, so the start moves and the block before gives or takes the time */if(i>0){const p=B[i-1],pl=p.len-d;if(pl<seMin)return seLen(i,b.len+p.len-seMin);p.len=pl}else SE.S-=d;b.len=nl}
+ else if(i<B.length-1){const nx=B[i+1],nn=nx.len-d;if(nn<seMin){if(nx.run)return;return seLen(i,b.len+nx.len-seMin)}nx.len=nn;b.len=nl}
+ else{/* the last block of a finished shift: the end moves */const e=SE.S+B.reduce((q,x)=>q+x.len,0)+d;if(e>Date.now())nl=b.len+(Date.now()-(e-d));b.len=Math.max(seMin,nl)}
+ SE.dirty=true}
+/* a start time for row i: moves the line between it and the row before */
+function seSetStart(i,ts){const S=seStarts(),B=SE.B,e=S[i]+B[i].len;if(ts>=e-seMin+1)ts=e-seMin;
+ if(i===0){SE.S=ts;B[0].len=e-ts}else{const ps=S[i-1];if(ts<ps+seMin)ts=ps+seMin;B[i-1].len=ts-ps;B[i].len=e-ts}SE.dirty=true}
+/* an end time for row i: moves the line between it and the row after (or the shift end) */
+function seSetEnd(i,ts){const S=seStarts(),B=SE.B,s=S[i];if(ts<s+seMin)ts=s+seMin;
+ if(i<B.length-1){const ne=S[i+1]+B[i+1].len;if(ts>ne-seMin)ts=ne-seMin;B[i+1].len=ne-ts;B[i].len=ts-s}else{if(ts>Date.now())ts=Date.now();B[i].len=Math.max(seMin,ts-s)}SE.dirty=true}
+/* the shift end: later adds a break at the end, earlier cuts off whatever is after it */
+function seSetShiftEnd(ts){const n=Date.now();if(ts>n)ts=n;const B=SE.B,S=seStarts(),e=seEnd();if(ts<=SE.S+seMin)ts=SE.S+seMin;
+ if(ts>e){const l=B[B.length-1];if(l.t==='r'&&!l.o)l.len+=ts-e;else B.push({t:'r',len:ts-e,o:null})}
+ else{let k=B.length-1;while(k>0&&S[k]>=ts-seMin+1)k--;B.length=k+1;B[k].len=ts-S[k]}
+ SE.dirty=true}
+function seSplit(i){const b=SE.B[i];if(b.len<2*seMin)return;const h=Math.round(b.len/2/M)*M;SE.B.splice(i+1,0,{t:b.t,len:b.len-h,o:b.o?Object.assign({},b.o,{d:0,a:null,z:null}):null,run:b.run});b.len=h;b.run=false;SE.open=i+1;SE.dirty=true}
+/* add a block next to row i, taking the time from row i, so the rest of the shift stays where it is */
+function seAdd(i,t){const B=SE.B,b=B[i];if(b.len<2*seMin)return;const c=Math.min(15*M,Math.round(b.len/2/M)*M);b.len-=c;const nb={t,len:c,o:null};
+ if(b.run){B.splice(i,0,nb);SE.open=i}else{B.splice(i+1,0,nb);SE.open=i+1}SE.dirty=true}
+function seDel(i){const B=SE.B;if(B.length<2||B[i].run)return;const b=B[i];if(i>0)B[i-1].len+=b.len;else{B[1].len+=b.len}B.splice(i,1);SE.open=null;SE.dirty=true}
+function seMove(i,j){const B=SE.B,last=seRun()?B.length-2:B.length-1;if(B[i].run)return;j=Math.max(0,Math.min(last,j));if(i===j)return;const[b]=B.splice(i,1);B.splice(j,0,b);if(SE.open===i)SE.open=j;SE.dirty=true}
+
+/* ---- drawing ---- */
+function seBar(E){const tot={};E.forEach(x=>{const k=x.t==='x'?'d':x.t;tot[k]=(tot[k]||0)+x.e-x.s});
+ return `<div class="sek">${['d','w','p','r'].filter(k=>tot[k]).map(k=>`<span><i class="k-${k}"></i>${k==='d'?'Driving':SEN[k]} ${seF(tot[k])}</span>`).join('')}</div><div class="tkb" aria-hidden="true">${E.map(x=>`<i class="k-${x.t==='x'?'d':x.t}" style="flex:${Math.max(1,Math.round((x.e-x.s)/M))} 0 0"></i>`).join('')}</div>`}
+function seRules(E){const W=E.filter(x=>x.t!=='r').map(x=>({s:x.s,e:x.e,t:x.t}));if(!W.length||typeof audRules!=='function')return '';const R=audRules(W);
+ return R.length?`<div class="wn" style="margin-top:10px"><b>⚠ This breaks the rules:</b><br>${R.map(r=>'• '+r[0]).join('<br>')}<br><span class="note">If this is what really happened, save it so your record is honest.</span></div>`:`<div class="note ok" style="margin-top:10px">✓ No rules broken in this shift.</div>`}
+function seDraw(){const el=$('sed');if(!el||!SE)return;const S=seStarts(),E=seEntries(),end=seEnd(),run=seRun(),day=t=>sod(t)===sod(SE.S)?hm(t):hm(t)+' (+'+Math.round((sod(t)-sod(SE.S))/864e5)+')';
+ const kinds=t=>{const ks=['d','w','p','r'];if(t==='x')ks.splice(1,0,'x');return ks};
+ const row=(b,i)=>{const op=SE.open===i,s=S[i],e=s+b.len;return `<div class="ser${op?' op':''}${b.run?' run':''}" data-row="${i}">
+  <div class="serh">${b.run?'<span class="seh off" aria-hidden="true">●</span>':`<span class="seh" data-drag="${i}" aria-label="Drag to move" role="button" tabindex="0">≡</span>`}<button type="button" class="serb" data-sk="o:${i}" aria-expanded="${op}"><i class="k-${b.t==='x'?'d':b.t}"></i><span class="sen">${SEI[b.t]} ${SEN[b.t]}${b.run?' <small>running</small>':''}</span><span class="set">${day(s)}–${b.run?'now':day(e)}</span><span class="sel">${seF(b.len)}</span></button></div>
+  ${op?`<div class="sep"><div class="sepl">Type</div><div class="fchips fsm">${kinds(b.t).map(k=>`<button type="button" class="fchip${k===b.t?' on':''}" data-sk="t:${i}:${k}">${SEI[k]} ${k==='x'?'No tacho':SEN[k]}</button>`).join('')}</div>
+  <div class="tr" style="margin:10px 0 6px"><label>Start<input type="time" data-se="s:${i}" value="${hm(s)}"></label><label>End${b.run?'<input type="text" value="now" disabled>':`<input type="time" data-se="e:${i}" value="${hm(e)}">`}</label></div>
+  <div class="sepl">Length</div><div class="fstep sestep"><button type="button" data-sk="l:${i}:-15">−15</button><button type="button" data-sk="l:${i}:-5">−5</button><span><b>${seF(b.len)}</b></span><button type="button" data-sk="l:${i}:5">+5</button><button type="button" data-sk="l:${i}:15">+15</button></div>
+  <div class="note" style="margin-top:4px">${b.run?'Changing the length moves its start; the block before gives or takes the time.':i<SE.B.length-1?'Changing the length moves the next block; the rest of the shift stays put.':'This is the last block, so changing it moves the end of the shift.'}</div>
+  <div class="sepl" style="margin-top:10px">Add next to it <span class="note">(takes up to 15 minutes from this block)</span></div><div class="fchips fsm">${['d','w','p','r'].map(k=>`<button type="button" class="fchip" data-sk="a:${i}:${k}">+ ${SEI[k]} ${SEN[k]}</button>`).join('')}</div>
+  <div class="sea">${b.run?'':`<button type="button" class="tg" data-sk="u:${i}"${i===0?' disabled':''} aria-label="Move up">↑ Up</button><button type="button" class="tg" data-sk="dn:${i}"${i>=SE.B.length-(run?2:1)?' disabled':''} aria-label="Move down">↓ Down</button>`}<button type="button" class="tg" data-sk="sp:${i}"${b.len<2*seMin?' disabled':''}>Split</button>${b.run||SE.B.length<2?'':`<button type="button" class="tg bad" data-sk="x:${i}">Delete</button>`}</div></div>`:''}</div>`};
+ const endRow=SE.mode==='end'||!run?`<div class="tr seend"><label>${SE.mode==='end'?'End the shift at':'Shift ended at'}<input type="time" data-se="end" value="${hm(end)}"></label>${SE.mode==='end'?`<span class="note">Daily rest counts from then.</span>`:''}</div>`:`<div class="note seend">● ${SEN[run.t]} is running now. Tap End shift below to finish the shift.</div>`;
+ const rest=SE.mode==='end'?`<div class="note" style="margin-top:6px">After ending at ${hm(end)}: earliest next start ${tt(end+11*H)} after an 11 hour rest, or ${tt(end+9*H)} with a reduced 9 hour rest. You cannot drive or work again before then unless it counts as part of this shift.</div>`:'';
+ el.innerHTML=`<div class="sew"><div class="setop"><button type="button" class="tg" data-sk="close">✕ Close</button><div><b>${SE.mode==='end'?'End Shift':'Edit Shift'}</b><div class="note">${new Date(SE.S).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'})}</div></div></div>
+ ${SE.pre?`<div class="note warn" style="margin-bottom:8px">${SE.pre}</div>`:''}
+ <p class="note" style="margin:0 0 10px">Drag ≡ to change the order: the times follow and the shift keeps its length. Tap a block to change it.</p>
+ <div class="tr sestart"><label>Shift started at<input type="time" data-se="start" value="${hm(SE.S)}"></label><span class="note">${seF(end-SE.S)} in all</span></div>
+ ${seBar(E)}<div id="sel">${SE.B.map(row).join('')}</div>${endRow}${rest}${seRules(E)}
+ <div class="sebtn"><button type="button" class="tg big fpri" data-sk="save">${SE.mode==='end'?'End shift at '+hm(end):'Save changes'}</button>${SE.mode!=='end'&&run?`<button type="button" class="tg big" data-sk="toend">End shift…</button>`:''}<button type="button" class="tg big" data-sk="close">Cancel</button>${SE.mode==='end'?'':`<button type="button" class="tg big bad" data-sk="clr">Clear this shift</button>`}</div></div>`}
+
+/* ---- events ---- */
+function seClick(e){const b=e.target.closest('[data-sk]');if(!b||!SE)return;const[k,a,v]=b.dataset.sk.split(':'),i=+a;
+ if(k==='close'){if(SE.dirty){mo(`<h3>Leave Without Saving?</h3><p>Your changes to this shift will be lost.</p><button class="tg big bad" data-k="ok">Leave without saving</button><button class="tg big" data-k="no">Keep editing</button>`);mcb={no:moX,ok:()=>{moX();seClose()}};return}seClose();return}
+ if(k==='o')SE.open=SE.open===i?null:i;else if(k==='t'){SE.B[i].t=v;SE.dirty=true}else if(k==='l')seLen(i,SE.B[i].len+(+v)*M);else if(k==='a')seAdd(i,v);else if(k==='sp')seSplit(i);
+ else if(k==='u')seMove(i,i-1);else if(k==='dn')seMove(i,i+1);else if(k==='x')seDel(i);else if(k==='toend'){seToEnd();SE.dirty=true}
+ else if(k==='save'){seSave();return}else if(k==='clr'){const ss=SE.S;seClose();clearShift(ss,all());return}
+ seDraw()}
+function seChange(e){const x=e.target.closest('[data-se]');if(!x||!SE||!x.value)return;const[k,a]=x.dataset.se.split(':'),i=+a,S=seStarts();
+ const near=(v,ref)=>nearT(v,ref);
+ if(k==='start'){const ts=near(x.value,SE.S),d=ts-SE.S;if(d<SE.B[0].len){SE.S=ts;SE.B[0].len-=d;SE.dirty=true}}
+ else if(k==='end')seSetShiftEnd(near(x.value,seEnd()));
+ else if(k==='s')seSetStart(i,near(x.value,S[i]));else if(k==='e')seSetEnd(i,near(x.value,S[i]+SE.B[i].len));
+ seDraw()}
+
+/* drag by the handle: the row follows the finger, the others make room, and it drops where it is let go */
+let seDrag=null;
+function seDown(e){const h=e.target.closest('[data-drag]');if(!h||!SE)return;e.preventDefault();const i=+h.dataset.drag,list=$('sel'),rows=[...list.children],row=rows[i];
+ const R=rows.map(r=>{const b=r.getBoundingClientRect();return{top:b.top,h:b.height}});const lim=seRun()?SE.B.length-2:SE.B.length-1;
+ seDrag={i,to:i,y0:e.clientY,sc0:$('sed').scrollTop,rows,R,row,lim,id:e.pointerId};row.classList.add('drag');try{h.setPointerCapture(e.pointerId)}catch(er){}
+ h.addEventListener('pointermove',seMoveEv);h.addEventListener('pointerup',seUp);h.addEventListener('pointercancel',seUp)}
+function seMoveEv(e){const D=seDrag;if(!D)return;const sed=$('sed');if(e.clientY<90)sed.scrollTop-=12;else if(e.clientY>innerHeight-90)sed.scrollTop+=12;
+ const dy=e.clientY-D.y0+(sed.scrollTop-D.sc0);D.row.style.transform=`translateY(${dy}px)`;const c=D.R[D.i].top+D.R[D.i].h/2+dy;
+ let to=D.i;for(let k=0;k<=D.lim;k++){const m=D.R[k].top+D.R[k].h/2;if(k<D.i&&c<m){to=k;break}if(k>D.i&&c>m)to=k}D.to=to;
+ D.rows.forEach((r,k)=>{if(k===D.i)return;let t=0;if(D.i<to&&k>D.i&&k<=to)t=-D.R[D.i].h;else if(D.i>to&&k>=to&&k<D.i)t=D.R[D.i].h;r.style.transform=t?`translateY(${t}px)`:''})}
+function seUp(e){const D=seDrag;if(!D)return;const h=e.currentTarget;h.removeEventListener('pointermove',seMoveEv);h.removeEventListener('pointerup',seUp);h.removeEventListener('pointercancel',seUp);seDrag=null;
+ D.rows.forEach(r=>{r.style.transform=''});D.row.classList.remove('drag');if(D.to!==D.i)seMove(D.i,D.to);seDraw()}
+
+/* ---- saving ---- */
+function seSave(){const sv=JSON.stringify(st),E=seEntries(),n=Date.now(),from=Math.min(SE.S0,SE.S),endN=seEnd(),to=Math.max(SE.E0,endN,SE.mode==='end'||seRun()?n:0),mainJ=(()=>{const c={};SE.B.forEach(b=>{if(b.o&&b.o.j)c[b.o.j]=(c[b.o.j]||0)+b.len});const k=Object.keys(c).sort((a,b)=>c[b]-c[a])[0];return k||st.cj})();
+ const out=[];E.forEach((x,i)=>{const b=SE.B[i];if(x.run)return;const o=Object.assign({},b.o||{});['s','e','t','live','run'].forEach(k=>delete o[k]);if(x.t!=='d'){delete o.d;delete o.a;delete o.z}
+  const y=Object.assign(o,{s:x.s,e:x.e,t:x.t,chk:1});if(x.t!=='r'&&jobsOn()){y.j=o.j||mainJ;y.c=x.t==='d'?1:x.t==='x'?0:jobC(y.j).tc!==false?1:0}if(x.t==='r'){delete y.j;delete y.c;delete y.cd}if(x.t!=='p')delete y.cd;
+  const l=out[out.length-1];if(l&&l.t===y.t&&l.e===y.s&&(l.j||'')===(y.j||'')&&!!l.cd===!!y.cd){l.e=y.e;if(y.d)l.d=(l.d||0)+y.d}else out.push(y)});
+ clear(from,to,1);out.forEach(x=>st.sessions.push(x));if(st.rs&&from<st.rs)st.rs=from;
+ const r=seRun(),ended=SE.mode==='end';
+ if(r){const x=E[E.length-1];st.active=x.s;if(st.act!==r.t){st.act=r.t;if(r.t!=='p')st.pcd=0}}
+ else if(st.active&&(ended||SE.B.some(b=>b.wasRun))){if(st.act==='d'&&typeof gpsOff==='function')gpsOff();st.active=null;st.act=null;st.ad=0;st.as=st.ae=null}
+ if(ended)st.se=endN;else if(st.se&&Math.abs(st.se-SE.E0)<M)st.se=endN;
+ seClose();save();render();usnap=sv;snap=sv;
+ flash=(ended?'Shift ended at '+hm(endN)+'. Your daily rest is counting.':'Shift saved.')+' <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';setTimeout(()=>{if(usnap===sv){flash='';live()}},12000);live()}

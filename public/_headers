@@ -20,3 +20,7 @@
   Cache-Control: no-cache
 /changes.js
   Cache-Control: no-cache
+/track.js
+  Cache-Control: no-cache
+/edit.js
+  Cache-Control: no-cache
