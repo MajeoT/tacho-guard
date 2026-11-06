@@ -346,7 +346,7 @@ function plLive(q){const{n,E,mv,br,tk,tot,w0,d0,Dr,half,drv}=q,tkm=Math.round(tk
  const X=plWin(w0,d0,Math.max(0,R),Dr);
  /* driving right now: if you keep going, 4h 30m comes sooner than the plan's spread-out driving says */
  if(X&&drv&&dv&&270*M-d0<X.hi){X.hi=Math.max(0,270*M-d0);X.hw='dn';X.ok=X.lo<=X.hi+6e4}
- if(!X)return rem?`☕ ${had}${more}Take ${rem>=15?'it in one go of at least 15 minutes':'it'} by <b>${plHm(E-rem*M)}</b>.`:(tkm||w0>30*M||d0>0)?`☕ ${had}You do not need another break before ${f}.`:'';
+ if(!X)return rem?`☕ ${had}${more}Take ${rem>=15?'it in one go of at least 15 minutes':'it'} by <b>${plHm(E-rem*M)}</b>.`:(tkm||w0>30*M||d0>0)?`<span class="h-ok">✓ You have had enough breaks for this shift${tkm?' ('+tkm+' min)':''}.</span> Your breaks cover the working time and driving rules up to ${f}. If you work later than that, check again.`:'';
  if(!X.ok){const t1=n+plR5(Math.max(0,X.hi)),l1=rem||15,X2=plWin(0,0,Math.max(0,R-X.hi),Math.max(0,Dr-(270*M-d0)));
   let t=`☕ ${had}${X.hw==='dn'?`If you keep driving you reach 4h 30m at <b>${plHm(t1)}</b>, so take your ${l1} minute break by then.`:`Take a ${l1} minute break by <b>${plHm(t1)}</b>.`}`;
   if(X2&&X2.ok){const a2=t1+l1*M+plR5(X2.lo,1),b2=Math.max(a2,t1+l1*M+plR5(X2.hi));t+=` After it you will still have more than 6 hours of work before ${f}, so take one more break of at least 15 minutes between <b>${plHm(a2)}</b> and <b>${plHm(b2)}</b>.`}
