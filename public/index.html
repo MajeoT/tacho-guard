@@ -542,7 +542,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-173';
+const APPV='tg-2026-10-23-174';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1469,7 +1469,10 @@ function liveRun(){
  if(!busy&&l){restShown=true;
   const c=gap>=11*H?'ok':gap>=9*H?'warn':'acc';
   let t=gap>=45*H?'Weekly rest done.':gap>=11*H?'Regular daily rest done. Weekly rest of 45h is at '+tt(l.e+45*H)+'.':gap>=9*H?'Reduced daily rest done (allowed 3 times between weekly rests). Regular 11h at '+tt(l.e+11*H)+'.':'Reduced 9h rest at '+tt(l.e+9*H)+', regular 11h at '+tt(l.e+11*H)+'.';
-  if(ss)t+=n>ss+DW-rd9*H?' <span class="bad">Your '+DW/H+' hour window is up: your daily rest had to start by '+tt(ss+DW-rd9*H)+'. Check your tachograph.</span>':MM?' With two drivers, a 9 hour daily rest must be finished by '+tt(ss+DW)+', so start it by '+tt(ss+DW-9*H)+'.':' Your daily rest must be finished by '+tt(ss+24*H)+', so start it by '+tt(ss+24*H-11*H)+(need11?'':' (or '+tt(ss+15*H)+' for a reduced 9h rest)')+'.';
+  /* once the shift has ended, the rest started when it ended: judge the window by that, not by the time now */
+  const rst=(fresh||(st.se&&st.se>=l.e))?l.e:n;
+  if(ss&&rst<n&&rst<=ss+DW-rd9*H)t+=' Your rest started at '+hm(rst)+', inside your '+DW/H+' hour window (it had to start by '+tt(ss+DW-rd9*H)+').';
+  else if(ss)t+=rst>ss+DW-rd9*H?' <span class="bad">Your '+DW/H+' hour window is up: your daily rest had to start by '+tt(ss+DW-rd9*H)+'. Check your tachograph.</span>':MM?' With two drivers, a 9 hour daily rest must be finished by '+tt(ss+DW)+', so start it by '+tt(ss+DW-9*H)+'.':' Your daily rest must be finished by '+tt(ss+24*H)+', so start it by '+tt(ss+24*H-11*H)+(need11?'':' (or '+tt(ss+15*H)+' for a reduced 9h rest)')+'.';
   const rOn=fresh||(st.se&&st.se>=l.e);
   h+=rOn?`<div class="g cd w on kp"><div class="row"><span class="lbl">Daily Rest ${ib('rest')}${CNT}</span><span class="num">${fmt(gap)} <small>/ 11h</small></span></div><div class="bar"><i style="width:${Math.round(Math.min(100,gap/(11*H)*100))}%;background:var(--${c})"></i></div><div class="note">${t}</div>${ex('rest')}${wrCard(WRI,1)}</div>`
    :`<div class="g cd w off kp"><div class="row"><span class="lbl">Daily Rest ${ib('rest')}</span><span class="num">0h 00m <small>/ 11h</small></span></div><div class="bar"><i style="width:0"></i></div><div class="note">Not counting. Your shift is still running, so this is a break, not rest. It starts when you tap End Shift.</div>${ex('rest')}${wrCard(WRI,1)}</div>`}
