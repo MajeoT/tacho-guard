@@ -359,6 +359,8 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .sestep{display:flex;align-items:center;gap:6px}.sestep span{flex:1;text-align:center}.sestep button{min-width:48px}
 .sea{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}.sea .tg{flex:1 1 auto}
 .sebtn{margin-top:14px}
+.wkp{display:flex;justify-content:flex-end;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 8px}.wkpb{background:none;border:1px solid var(--bd);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;color:var(--mut);cursor:pointer;white-space:nowrap}.wkpb.ok{color:var(--okc,var(--ok))}span.wkpb{cursor:default;border-color:transparent;padding-left:4px;padding-right:4px}button.wkpb:hover{border-color:var(--acc);color:var(--acc)}
+#es{flex-wrap:wrap;row-gap:6px}#es>label{flex-basis:100%;margin:0}.esg{display:flex;align-items:center;gap:8px;flex:1;min-width:0}.esg input{min-width:0;flex:1;text-align:center}.esm{width:42px;height:42px;flex:none;border-radius:50%;border:1px solid var(--bd2,var(--bd));background:var(--card);color:var(--tx);font-size:22px;line-height:1;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}.esm:active{border-color:var(--acc);color:var(--acc)}
 .sesp{margin-top:12px;padding:10px;border:1px dashed var(--bd2,var(--bd));border-radius:10px}.seseg{display:flex;gap:6px}.seseg .fchip{flex:1;justify-content:center}.sepv{display:flex;flex-direction:column;gap:4px;margin-top:10px;font-size:14px;font-variant-numeric:tabular-nums}.sepv i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}
 .wk1{display:flex;align-items:center;gap:8px;cursor:default;font-size:14px}.wk1>span{flex:1;min-width:0}.wkl{background:none;border:0;color:var(--acc);font:inherit;font-weight:600;padding:8px 6px;cursor:pointer;white-space:nowrap}
 .ecq{border:1px solid rgba(251,191,36,.5);border-left:4px solid var(--warn);background:rgba(251,191,36,.1);border-radius:12px;padding:10px 12px;margin-bottom:10px}.ecq b{display:block;margin-bottom:2px}.ecq .ecb{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.ecq .ecb .tg{flex:1 1 auto}
@@ -417,7 +419,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div class="alert" id="alert" hidden></div>
 <div id="ntp"></div><div id="ecq"></div><div id="plb"></div><div id="iss"></div><div id="wkb"></div><div id="mx"></div><div id="owe"></div>
 <div id="herow"><div id="hero"></div>
-<div class="acts-l" id="actl"></div><div class="acts"><button class="act" data-a="d"><b>🚛</b>Driving<small class="as">drive</small></button><button class="act" data-a="w"><b>⚒</b>Work<small class="as">other work</small></button><button class="act" data-a="p"><b>◪</b>POA<small class="as">waiting</small></button><button class="act" data-a="r"><b>🛏</b>Break<small class="as">take a break</small></button></div><div class="tr" id="es" hidden><label for="est" id="esl">Started At</label><input type="time" id="est"><button class="tg" id="esb">Change</button></div></div><div id="tcsw"></div><div id="mmrow"></div>
+<div class="acts-l" id="actl"></div><div class="acts"><button class="act" data-a="d"><b>🚛</b>Driving<small class="as">drive</small></button><button class="act" data-a="w"><b>⚒</b>Work<small class="as">other work</small></button><button class="act" data-a="p"><b>◪</b>POA<small class="as">waiting</small></button><button class="act" data-a="r"><b>🛏</b>Break<small class="as">take a break</small></button></div><div class="tr" id="es" hidden><label for="est" id="esl">Started At</label><div class="esg"><button type="button" class="esm" data-es="-1" aria-label="1 minute earlier">−</button><input type="time" id="est"><button type="button" class="esm" data-es="1" aria-label="1 minute later">+</button></div><button class="tg" id="esb">Change</button></div></div><div id="tcsw"></div><div id="mmrow"></div>
 <div class="live" id="live"></div><div id="shl"></div>
 <div id="s1"></div><div id="s2"></div><button class="tg" id="esh" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">End Shift</button><button class="tg" id="tlog" style="display:block;width:100%;margin-top:18px;padding:14px;font-size:16px;border-radius:12px">✎ Edit shift</button><p class="note" style="text-align:center;margin:6px 0 0">Change, reorder or add driving, work, POA and breaks.</p><button class="tg" id="tql" style="display:block;width:100%;margin-top:14px;padding:14px;font-size:16px;border-radius:12px">⚡ Log a shift quickly</button><p class="note" style="text-align:center;margin:6px 0 0">For a shift you did not log as you went: when it started and finished, and what you did.</p><button class="tg" id="rd2" style="display:block;width:100%;margin-top:30px;padding:14px;font-size:16px;border-radius:12px;color:#fff;background:#c2352b;border-color:#c2352b">Reset Day</button><p class="note" style="text-align:center;margin:6px 0 0">Starts breaks, shift and working time again from now. Asks twice and can be undone for 20 seconds.</p></section><section id="t-plan" hidden><h2>Shift Planner</h2><p class="note" style="margin-top:-6px">Plan shifts for all your jobs. Each day is checked against the rest, working time and driving rules, using what you have logged so far.</p><div id="plc"></div></section><section id="t-tacho" hidden><h2>Tacho</h2><div class="pls" id="tpn"><button class="pl on" data-tp="dl">Downloads</button><button class="pl" data-tp="use">Using a tacho</button><button class="pl" data-tp="ent">Manual Entries</button><button class="pl" data-tp="pap">Paper Rolls</button></div><div id="tp-dl"><h3 class="h3p">Downloads <button class="i" data-i="tac" aria-label="More info">i</button></h3><div id="tcx"></div><div class="g"><div class="tr"><label for="tc">Driver Card Downloaded</label><input type="date" id="tc"></div><div class="note" id="tcn"></div><div class="tr" style="margin-top:12px"><label for="tu">Vehicle Unit Downloaded</label><input type="date" id="tu"></div><div class="note" id="tun"></div></div>
 
@@ -542,7 +544,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-174';
+const APPV='tg-2026-10-23-175';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1678,6 +1680,12 @@ const estAsk=()=>{const v=$('est').value,cur=$('est').dataset.cur;if(!v||v===cur
  mo(`<h3>Change Start Time</h3><p>${who} started at <b>${cur}</b> in the app. Change it to <b>${v}</b>?</p>${busy?`<p class="note">${NM[st.act]} will then count from ${v} up to now.</p>`:''}<button class="tg big" data-k="ok" style="font-weight:700">Yes, change it to ${v}</button><button class="tg big" data-k="no">No, keep ${cur}</button>`);
  mcb={ok:()=>{moX();$('esb').onclick()},no:()=>{moX();$('est').value=cur;estPend()}}};
 $('est').addEventListener('input',estPend);
+/* − and + by the start time: 1 minute a tap, faster while held (5 minutes a step after a moment); then tap Save */
+{let rt=null,ri=null,cnt=0;const step=d=>{const e=$('est'),v=e.value||e.dataset.cur;if(!v)return;const[h,m]=v.split(':').map(Number);const t=((h*60+m+d)%1440+1440)%1440;e.value=pad(Math.floor(t/60))+':'+pad(t%60);estPend()};
+ const stop=()=>{clearTimeout(rt);clearInterval(ri);rt=ri=null};
+ $('es').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-es]');if(!b)return;e.preventDefault();const d=+b.dataset.es;cnt=0;step(d);stop();rt=setTimeout(()=>{ri=setInterval(()=>{cnt++;step(cnt>10?d*5:d)},110)},420)});
+ ['pointerup','pointerleave','pointercancel'].forEach(k=>$('es').addEventListener(k,stop));
+ $('es').addEventListener('keydown',e=>{const b=e.target.closest('[data-es]');if(b&&(e.key==='Enter'||e.key===' ')){e.preventDefault();step(+b.dataset.es)}})}
 $('est').addEventListener('change',()=>{estPend();clearTimeout(estT);estT=setTimeout(estAsk,700)});/* short wait so typing a time on a keyboard is finished first */
 const pad=n=>String(n).padStart(2,'0'),now=new Date();
 $('d').value=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
@@ -2066,11 +2074,12 @@ function wkUpdate(){
  const bt=(k,t,o)=>`<button class="tg" ${k} style="flex:1 1 0;min-width:0;white-space:normal">${t}</button>`;
  if(w){const n=w.D.length,dg=w.D.some(x=>x.d);
   h=n?`<button class="wkb wn"><b>Walkaround done ${hm(w.t)}, ${n} defect${n>1?'s':''}</b><span>${dg?'A dangerous defect is recorded. Do not drive until it is fixed.':'Make sure they are reported in writing.'}</span></button>`
-   :`<button class="wkb slim ok"><b>✓ Walkaround done ${hm(w.t)}</b><span>No defects${w.reg?', '+esc(w.reg):''} ›</span></button>`}
- else if(off)h=`<button class="wkb slim"><b>Walkaround</b><span>Open the checklist ›</span></button>`;
- else if(dd==='e')h=`<div class="wkb dn2 wk1"><span>✓ Walkaround done elsewhere, ${hm(st.dd.t)}</span><button class="wkl" data-wgo="1">Do mine</button><button class="wkl" data-dd="">Undo</button></div>`
+   :`<div class="wkp"><button class="wkpb ok">✓ Walkaround ${hm(w.t)}${w.reg?', '+esc(w.reg):''} ›</button></div>`}
+ /* not needed now: a small link at the side, so it can still be opened */
+ else if(off)h=`<div class="wkp"><button class="wkpb">🔧 Walkaround ›</button></div>`;
+ else if(dd==='e')h=`<div class="wkp dn2"><span class="wkpb ok">✓ Walkaround done elsewhere ${hm(st.dd.t)}</span><button class="wkpb" data-wgo="1">Do mine</button><button class="wkpb" data-dd="">Undo</button></div>`
  else if(act==='d'||dd==='y'){dot=true;h=`<div class="wkb nb"><b>Walkaround not done</b><span>${act==='d'?'You are driving and no walkaround is recorded for this shift.':'Do it before you drive. The DVSA expects it before the first drive of the day.'}</span><div style="display:flex;gap:8px;margin-top:8px">${bt('data-wgo="1"','Do it now')}${bt('data-dd="e"','Done elsewhere')}${bt('data-dd="n"','Not needed')}</div></div>`}
- else if(dd==='n')h=`<div class="wkb slim dn2"><b>Walkaround not needed</b><span>Not driving this shift. <u data-dd="" style="cursor:pointer">Change</u></span></div>`;
+ else if(dd==='n')h=`<div class="wkp dn2"><span class="wkpb">Walkaround not needed</span><button class="wkpb" data-dd="">Change</button></div>`;
  else h=`<div class="wkb"><b>Walkaround check</b><span>The DVSA expects one before the first drive of the day. Will you do your own, or has it been done elsewhere?</span><div style="display:flex;gap:8px;margin-top:8px">${bt('data-dd="y"','I will do my own')}${bt('data-dd="e"','Done elsewhere')}${bt('data-dd="n"','Not driving')}</div></div>`;
  set($('wkb'),h);cDot=!!dot;subUi(tab);mxUpdate();issUpdate();if(typeof plBanner==='function')plBanner();if(Date.now()-ntpT>1e4){ntpT=Date.now();ntpUi()}}
 function issUpdate(){const I=st.iss||[],el=$('iss');if(!el)return;
