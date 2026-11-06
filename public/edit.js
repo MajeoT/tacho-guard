@@ -14,11 +14,13 @@ function seShift(t){const n=Date.now(),L=st.sessions.filter(x=>(x.t||'d')!=='r'&
  const A=lay(L);if(!A.length)return null;const C=[];let cur=[];A.forEach(x=>{if(cur.length&&x.s-cur[cur.length-1].e>=9*H){C.push(cur);cur=[]}cur.push(x)});C.push(cur);
  if(t==null)return C[C.length-1];return C.find(c=>t>=c[0].s-H&&t<=c[c.length-1].e+H)||C.filter(c=>c[0].s<=t).pop()||C[0]}
 
-function seOpen(t,mode,pre,focus){const c=seShift(t);if(!c){if(mode==='end'&&typeof endAskOld==='function'){endAskOld();return}openDay(sod(Date.now()),'today');return}
- const B=[];let pe=null;c.forEach(x=>{if(pe!==null){const g=x.s-pe;if(g>=M)B.push({t:'r',len:g,o:null});else if(g>0&&B.length)B[B.length-1].len+=g}
+/* the shift's entries as blocks end to end: gaps of a minute or more are breaks, and a break running now is part of it */
+function seBlocks(c){const B=[];let pe=null;c.forEach(x=>{if(pe!==null){const g=x.s-pe;if(g>=M)B.push({t:'r',len:g,o:null});else if(g>0&&B.length)B[B.length-1].len+=g}
   const o=Object.assign({},x);delete o.s;delete o.e;delete o.live;B.push({t:x.t||'d',len:x.e-x.s,o,run:!!x.live});pe=x.e});
- /* a break running now is part of the shift too */
  if(st.active&&st.act==='r'&&!c[c.length-1].live&&st.active>=pe){const n=Date.now();if(st.active-pe>=M)B.push({t:'r',len:st.active-pe,o:null});B.push({t:'r',len:n-st.active,o:{},run:true})}
+ return B}
+function seOpen(t,mode,pre,focus){const c=seShift(t);if(!c){if(mode==='end'&&typeof endAskOld==='function'){endAskOld();return}openDay(sod(Date.now()),'today');return}
+ const B=seBlocks(c);
  SE={S:c[0].s,B,open:null,mode:mode||'edit',S0:c[0].s,E0:c[0].s+B.reduce((q,b)=>q+b.len,0),pre:pre||'',dirty:false};
  if(focus!=null){let s=SE.S;SE.B.forEach((b,i)=>{if(focus>=s&&focus<s+b.len)SE.open=i;s+=b.len})}
  if(SE.mode==='end')seToEnd();
@@ -122,4 +124,22 @@ function seSave(){const sv=JSON.stringify(st),E=seEntries(),n=Date.now(),from=Ma
  else if(st.active&&(ended||SE.B.some(b=>b.wasRun))){if(st.act==='d'&&typeof gpsOff==='function')gpsOff();st.active=null;st.act=null;st.ad=0;st.as=st.ae=null}
  if(ended)st.se=endN;else if(st.se&&Math.abs(st.se-SE.E0)<M)st.se=endN;
  seClose();save();render();usnap=sv;snap=sv;
- flash=(ended?'Shift ended at '+hm(endN)+'. Your daily rest is counting.':'Shift saved.')+' <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';setTimeout(()=>{if(usnap===sv){flash='';live()}},12000);live()}
+ flash=(ended?'Shift ended at '+hm(endN)+'. Your daily rest is counting.':'Shift saved.')+' <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';setTimeout(()=>{if(usnap===sv){flash='';live()}},12000);live();
+ /* nothing running and the shift not ended: has it finished? */
+ if(!ended&&!st.active&&!(st.se&&st.se>=endN-6e4)&&!st.sessions.some(x=>(x.t||'d')!=='r'&&x.s>=endN)&&Date.now()-endN>=5*M){mo(`<h3>Has This Shift Ended?</h3><p>Nothing is running and the shift has not been ended, so the time since <b>${hm(endN)}</b> counts as a break, not rest.</p><button class="tg big fpri" data-k="y">Yes, it ended at ${hm(endN)}</button><button class="tg big" data-k="no">No, I am on a break</button>`);mcb={no:()=>{st.ebq=endN;save();moX();live()},y:()=>{st.se=endN;save();moX();render()}}}}
+
+/* ---- on the Today screen ---- */
+/* nothing logged for an hour or more and the shift not ended (or only a break running): did it end? */
+function ecqLast(){if(st.active&&st.act!=='r')return null;const a=all(),l=a[a.length-1];if(!l||l.live)return null;const n=Date.now();if(st.se&&st.se>=l.e-6e4)return null;if(n-l.e<60*M||n-l.e>=9*H||st.ebq===l.e)return null;return l}
+const ecqNeed=()=>!!ecqLast();
+let shlAll=false;
+function seToday(){const eq=$('ecq'),sl=$('shl');if(!eq||!sl)return;const n=Date.now(),l=ecqLast();
+ set(eq,l?`<div class="ecq"><b>Did your shift end at ${hm(l.e)}?</b><span class="note">Nothing has been logged since then (${seF(n-l.e)} ago)${st.active&&st.act==='r'?' apart from a break':''}. Until you answer, TachoGuard counts it as a break, not rest, and says you could carry on.</span><div class="ecb"><button class="tg fpri" data-ec="y">Yes, at ${hm(l.e)}</button><button class="tg" data-ec="t">Another time</button><button class="tg" data-ec="b">I am on a break</button></div></div>`:'');
+ /* this shift, newest last: tap an entry to change it */
+ const c=seShift(null);let h='';if(c){const live=c.some(x=>x.live)||(st.active&&st.act==='r'),last=c[c.length-1].e;if(live||n-last<12*H){const B=seBlocks(c);let s=c[0].s;const R=B.map(b=>{const r={b,s};s+=b.len;return r}),show=shlAll||R.length<=5?R:R.slice(-5);
+  h=`<div class="shl"><div class="shlh"><b>This shift</b><button class="tg" data-sh="edit">✎ Edit</button></div>${show.length<R.length?`<button class="shr" data-sh="all" style="justify-content:center;display:block;text-align:center;color:var(--acc)">Show all ${R.length} entries</button>`:''}${show.map(({b,s})=>`<button class="shr${b.run?' run':''}" data-sh="${s+1}"><i class="k-${b.t==='x'?'d':b.t}"></i><span>${SEI[b.t]} ${SEN[b.t]}</span><span class="tm">${hm(s)}–${b.run?'now':hm(s+b.len)}</span><span class="ln">${seF(b.len)}</span><span class="ch">›</span></button>`).join('')}</div>`}}
+ set(sl,h)}
+document.addEventListener('click',e=>{const q=e.target.closest('[data-ec]');if(q){const l=ecqLast();if(!l)return;const k=q.dataset.ec;
+  if(k==='y'){const sv=JSON.stringify(st);if(st.active&&st.act==='r'){st.active=null;st.act=null}st.se=l.e;save();render();usnap=sv;snap=sv;flash='Shift ended at '+hm(l.e)+'. Your daily rest counts from then. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';setTimeout(()=>{if(usnap===sv){flash='';live()}},12000);live()}
+  else if(k==='t')seOpen(null,'end');else{st.ebq=l.e;save();live()}return}
+ const r=e.target.closest('[data-sh]');if(!r)return;const v=r.dataset.sh;if(v==='all'){shlAll=true;live();return}if(v==='edit'){seOpen(null,'edit');return}const t=+v;seOpen(t,'edit',null,t)});
