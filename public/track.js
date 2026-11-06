@@ -180,7 +180,7 @@ function tkRunCheck(){if(!st.active||!st.act||st.act==='r')return 0;const n=Date
    shift while it has you on something other than driving, ask if you drove. */
 let tkGC=0;
 function tkGeoCheck(){if(!tkLocOn()||document.hidden||Date.now()-tkGC<20000)return;tkGC=Date.now();const L=tkLocs(),last=L[L.length-1];
- tkPos(0).then(c=>{const n=Date.now();if(!c||!last||!st.active||!$('mo').hidden||document.hidden)return;const act=st.act==='x'?'d':st.act;if(act==='d'||last.t<st.active-15*M)return;
+ tkPos(0).then(c=>{const n=Date.now();if(!c||!last||!st.active||!$('mo').hidden||document.hidden)return;const act=st.act==='x'?'d':st.act;const ss0=typeof shiftStart==='function'?shiftStart(all()):st.active;if(act==='d'||last.t<Math.min(ss0,st.active)-15*M)return;
   /* far enough to be more than a weak fix wandering: 2 miles, or more when the fixes are rough */
   const m=tkMi(last,c),thr=Math.max(2,((last.a||0)+(c.a||0))/1609.34*1.5),from=Math.max(last.t,st.active);if(m<thr||n-from<5*M)return;
   tkMovedAsk(from,act,tkGeo(last,c,'where you were at '+hm(last.t),true))})}
@@ -212,7 +212,7 @@ function tkQuick(pre){const n=Date.now(),td=sod(n);let day=pre&&pre.day?pre.day:
    init={d:sum('d'),p:sum('p'),brk:br.filter(x=>x>=15)}}
   else if(pre&&pre.oid){init={d:(pre.dr||0)*60,brk:pre.br?(pre.br>=45&&e-s>9*H+45*M&&pre.dr>=4.5?[45]:[pre.br]):[]}}
   acctAsk({from:s,to:e,def:'w',quick:true,j:pre&&pre.j,init,title:pre&&pre.oid?'What You Did':'Your Shift',lead:`${new Date(s).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'})}, ${hm(s)} to ${hm(e)}.${ow.length?' It starts from what is already logged in that time, and replaces it.':pre&&pre.oid?' It starts from what was planned.':''}`,ok:'Save this shift',back:draw,cancel:moX,
-   done:E=>{const sv2=JSON.stringify(st);tkPut(E,s,e);if(pre&&pre.oid)st.pls=Object.assign({},st.pls,{[pre.oid]:'done'});tkJ=null;save();moX();render();flash=`Shift saved: ${hm(s)} to ${hm(e)}. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>`;usnap=sv2;snap=sv2;setTimeout(()=>{flash='';live()},12000);live();tkRunCheck()}})};
+   done:E=>{const sv2=JSON.stringify(st);tkPut(E,s,e);if(pre&&pre.oid)st.pls=Object.assign({},st.pls,{[pre.oid]:'done'});/* the latest shift, nothing running after it: it has ended at its finish */if(!st.active&&!st.sessions.some(x=>(x.t||'d')!=='r'&&x.s>=e)&&!(st.se&&st.se>=e))st.se=e;tkJ=null;save();moX();render();flash=`Shift saved: ${hm(s)} to ${hm(e)}. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>`;usnap=sv2;snap=sv2;setTimeout(()=>{flash='';live()},12000);live();tkRunCheck()}})};
  draw()}
 /* From a day in the Plan: fill in what you really did on a planned shift (o, an occurrence), or on a day with nothing planned */
 function tkFill(o,d,back){if(o){const L=all().filter(x=>!x.live&&x.e>o.S-H&&x.s<o.E+H&&x.t!=='r'),s=L.length?Math.min(...L.map(x=>x.s)):o.S,e=L.length?Math.max(...L.map(x=>x.e)):o.E;

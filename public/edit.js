@@ -21,7 +21,9 @@ function seBlocks(c){const B=[];let pe=null;c.forEach(x=>{if(pe!==null){const g=
  return B}
 function seOpen(t,mode,pre,focus){const c=seShift(t);if(!c){if(mode==='end'&&typeof endAskOld==='function'){endAskOld();return}openDay(sod(Date.now()),'today');return}
  const B=seBlocks(c);
- SE={S:c[0].s,B,open:null,mode:mode||'edit',S0:c[0].s,E0:c[0].s+B.reduce((q,b)=>q+b.len,0),pre:pre||'',dirty:false};
+ const E0=c[0].s+B.reduce((q,b)=>q+b.len,0),W=st.sessions.filter(x=>(x.t||'d')!=='r'&&x.e>x.s),pv=W.filter(x=>x.e<=c[0].s).reduce((m,x)=>Math.max(m,x.e),0),nx=W.filter(x=>x.s>=E0).reduce((m,x)=>Math.min(m,x.s),Infinity);
+ /* lo/hi: the shift cannot be stretched over the shift before or after it */
+ SE={S:c[0].s,B,open:null,mode:mode||'edit',S0:c[0].s,E0,lo:pv,hi:nx,pre:pre||'',dirty:false};
  if(focus!=null){let s=SE.S;SE.B.forEach((b,i)=>{if(focus>=s&&focus<s+b.len)SE.open=i;s+=b.len})}
  if(SE.mode==='end')seToEnd();
  let el=$('sed');if(!el){el=document.createElement('div');el.id='sed';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');document.body.appendChild(el);el.addEventListener('click',seClick);el.addEventListener('change',seChange);el.addEventListener('pointerdown',seDown)}
@@ -30,6 +32,9 @@ function seClose(){const el=$('sed');if(el)el.hidden=true;document.body.classLis
 
 /* end mode: the running block stops being "running"; its end is the shift end (now to start with) */
 function seToEnd(){SE.mode='end';const l=SE.B[SE.B.length-1];if(l&&l.run){l.run=false;l.wasRun=true}}
+/* driving in a no-tacho job is 'x' (not counted towards the tacho limits): the choices follow the block's job */
+const seTcOf=b=>{const j=b&&b.o&&b.o.j?b.o.j:st.cj;return jobsOn()?jobC(j).tc!==false:isTc()},seKinds=b=>{const ks=[seTcOf(b)?'d':'x','w','p','r'];if(b&&!ks.includes(b.t))ks.unshift(b.t);return ks};
+const seMaxEnd=()=>Math.min(Date.now(),SE.hi);
 const seStarts=()=>{let s=SE.S;return SE.B.map(b=>{const x=s;s+=b.len;return x})};
 const seEnd=()=>SE.S+SE.B.reduce((q,b)=>q+b.len,0);
 const seRun=()=>{const l=SE.B[SE.B.length-1];return l&&l.run?l:null};
@@ -40,18 +45,18 @@ function seEntries(){const S=seStarts();return SE.B.map((b,i)=>({s:S[i],e:S[i]+b
 /* ---- the changes ---- */
 const seMin=M;
 function seLen(i,nl){const B=SE.B,b=B[i];nl=Math.max(seMin,Math.round(nl/M)*M);const d=nl-b.len;if(!d)return;
- if(b.run){/* running: its end is now, so the start moves and the block before gives or takes the time */if(i>0){const p=B[i-1],pl=p.len-d;if(pl<seMin)return seLen(i,b.len+p.len-seMin);p.len=pl}else SE.S-=d;b.len=nl}
+ if(b.run){/* running: its end is now, so the start moves and the block before gives or takes the time */if(i>0){const p=B[i-1],pl=p.len-d;if(pl<seMin)return seLen(i,b.len+p.len-seMin);p.len=pl}else{if(SE.S-d<SE.lo)return seLen(i,b.len+(SE.S-SE.lo));SE.S-=d}b.len=nl}
  else if(i<B.length-1){const nx=B[i+1],nn=nx.len-d;if(nn<seMin){if(nx.run)return;return seLen(i,b.len+nx.len-seMin)}nx.len=nn;b.len=nl}
- else{/* the last block of a finished shift: the end moves */const e=SE.S+B.reduce((q,x)=>q+x.len,0)+d;if(e>Date.now())nl=b.len+(Date.now()-(e-d));b.len=Math.max(seMin,nl)}
+ else{/* the last block of a finished shift: the end moves (not past now or the next shift) */const e=SE.S+B.reduce((q,x)=>q+x.len,0)+d,mx=seMaxEnd();if(e>mx)nl=b.len+(mx-(e-d));b.len=Math.max(seMin,nl)}
  SE.dirty=true}
 /* a start time for row i: moves the line between it and the row before */
 function seSetStart(i,ts){const S=seStarts(),B=SE.B,e=S[i]+B[i].len;if(ts>=e-seMin+1)ts=e-seMin;
- if(i===0){SE.S=ts;B[0].len=e-ts}else{const ps=S[i-1];if(ts<ps+seMin)ts=ps+seMin;B[i-1].len=ts-ps;B[i].len=e-ts}SE.dirty=true}
+ if(i===0){if(ts<SE.lo)ts=SE.lo;SE.S=ts;B[0].len=e-ts}else{const ps=S[i-1];if(ts<ps+seMin)ts=ps+seMin;B[i-1].len=ts-ps;B[i].len=e-ts}SE.dirty=true}
 /* an end time for row i: moves the line between it and the row after (or the shift end) */
 function seSetEnd(i,ts){const S=seStarts(),B=SE.B,s=S[i];if(ts<s+seMin)ts=s+seMin;
- if(i<B.length-1){const ne=S[i+1]+B[i+1].len;if(ts>ne-seMin)ts=ne-seMin;B[i+1].len=ne-ts;B[i].len=ts-s}else{if(ts>Date.now())ts=Date.now();B[i].len=Math.max(seMin,ts-s)}SE.dirty=true}
+ if(i<B.length-1){const ne=S[i+1]+B[i+1].len;if(ts>ne-seMin)ts=ne-seMin;B[i+1].len=ne-ts;B[i].len=ts-s}else{if(ts>seMaxEnd())ts=seMaxEnd();B[i].len=Math.max(seMin,ts-s)}SE.dirty=true}
 /* the shift end: later adds a break at the end, earlier cuts off whatever is after it */
-function seSetShiftEnd(ts){const n=Date.now();if(ts>n)ts=n;const B=SE.B,S=seStarts(),e=seEnd();if(ts<=SE.S+seMin)ts=SE.S+seMin;
+function seSetShiftEnd(ts){const mx=seMaxEnd();if(ts>mx)ts=mx;const B=SE.B,S=seStarts(),e=seEnd();if(ts<=SE.S+seMin)ts=SE.S+seMin;
  if(ts>e){const l=B[B.length-1];if(l.t==='r'&&!l.o)l.len+=ts-e;else B.push({t:'r',len:ts-e,o:null})}
  else{let k=B.length-1;while(k>0&&S[k]>=ts-seMin+1)k--;B.length=k+1;B[k].len=ts-S[k]}
  SE.dirty=true}
@@ -67,13 +72,13 @@ function seSpDef(b){const t=b.t==='w'?'p':'w',h=Math.max(seMin,Math.round(b.len/
 function seSplitUi(b,i,s){const P=SE.sp||(SE.sp=seSpDef(b)),max=b.len-seMin,L=Math.max(seMin,Math.min(P.len,max)),a=P.at==='start'?[P.t,L,b.t,b.len-L]:[b.t,b.len-L,P.t,L];
  const ch=[15,30,45,60,90,120].filter(m=>m*M<=max);
  return `<div class="sesp"><div class="sepl">Part of it was something else?</div><div class="note" style="margin:-2px 0 6px">For example 45 minutes of this was other work. Pick what, how long and where it goes.</div>
- <div class="fchips fsm">${['d','w','p','r'].map(k=>`<button type="button" class="fchip${P.t===k?' on':''}" data-sk="pt:${i}:${k}">${SEI[k]} ${SEN[k]}</button>`).join('')}</div>
+ <div class="fchips fsm">${[seTcOf(b)?'d':'x','w','p','r'].map(k=>`<button type="button" class="fchip${P.t===k?' on':''}" data-sk="pt:${i}:${k}">${SEI[k]} ${k==='x'?'Driving (no tacho)':SEN[k]}</button>`).join('')}</div>
  <div class="sepl">How long was that part?</div><div class="fchips fsm">${ch.map(m=>`<button type="button" class="fchip${L===m*M?' on':''}" data-sk="pl:${i}:${m}">${seF(m*M)}</button>`).join('')}<button type="button" class="fchip${Math.abs(L-Math.round(b.len/2/M)*M)<M?' on':''}" data-sk="ph:${i}">Half</button></div>
  <div class="fstep sestep" style="margin-top:6px"><button type="button" data-sk="pd:${i}:-5">−5</button><span><b>${seF(L)}</b> of ${seF(b.len)}</span><button type="button" data-sk="pd:${i}:5">+5</button></div>
  <div class="sepl">Where does it go?</div><div class="seseg"><button type="button" class="fchip${P.at==='start'?' on':''}" data-sk="pa:${i}:start">↑ At the start</button><button type="button" class="fchip${P.at==='end'?' on':''}" data-sk="pa:${i}:end">↓ At the end</button></div>
  <div class="sepv"><span><i class="k-${a[0]==='x'?'d':a[0]}"></i>${SEI[a[0]]} ${SEN[a[0]]} ${hm(s)}–${hm(s+a[1])}</span><span><i class="k-${a[2]==='x'?'d':a[2]}"></i>${SEI[a[2]]} ${SEN[a[2]]} ${hm(s+a[1])}–${b.run&&P.at==='start'?'now':hm(s+b.len)}</span></div>
  <button type="button" class="tg big fpri" data-sk="pg:${i}" style="margin-top:8px">Split it</button></div>`}
-function seSplitInto(i){const B=SE.B,b=B[i],P=SE.sp;if(!P)return;const L=Math.max(seMin,Math.min(P.len,b.len-seMin)),nb={t:P.t,len:L,o:null};b.len-=L;
+function seSplitInto(i){const B=SE.B,b=B[i],P=SE.sp;if(!P)return;const L=Math.max(seMin,Math.min(P.len,b.len-seMin)),bo=b.o||{},no=P.t===b.t?Object.assign({},bo,{d:0,a:null,z:null}):Object.assign({},bo.j?{j:bo.j}:{},bo.mm?{mm:1}:{}),nb={t:P.t,len:L,o:Object.keys(no).length?no:null};b.len-=L;
  if(P.at==='start')B.splice(i,0,nb);else{B.splice(i+1,0,nb);if(b.run){b.run=false;nb.run=true;nb.o={}}}
  SE.sp=null;SE.open=null;SE.dirty=true}
 
@@ -83,10 +88,9 @@ function seBar(E){const tot={};E.forEach(x=>{const k=x.t==='x'?'d':x.t;tot[k]=(t
 function seRules(E){const W=E.filter(x=>x.t!=='r').map(x=>({s:x.s,e:x.e,t:x.t}));if(!W.length||typeof audRules!=='function')return '';const R=audRules(W);
  return R.length?`<div class="wn" style="margin-top:10px"><b>⚠ This breaks the rules:</b><br>${R.map(r=>'• '+r[0]).join('<br>')}<br><span class="note">If this is what really happened, save it so your record is honest.</span></div>`:`<div class="note ok" style="margin-top:10px">✓ No rules broken in this shift.</div>`}
 function seDraw(){const el=$('sed');if(SE&&SE.open==null)SE.sp=null;if(!el||!SE)return;const S=seStarts(),E=seEntries(),end=seEnd(),run=seRun(),day=t=>sod(t)===sod(SE.S)?hm(t):hm(t)+' (+'+Math.round((sod(t)-sod(SE.S))/864e5)+')';
- const kinds=t=>{const ks=['d','w','p','r'];if(t==='x')ks.splice(1,0,'x');return ks};
  const row=(b,i)=>{const op=SE.open===i,s=S[i],e=s+b.len;return `<div class="ser${op?' op':''}${b.run?' run':''}" data-row="${i}">
   <div class="serh">${b.run?'<span class="seh off" aria-hidden="true">●</span>':`<span class="seh" data-drag="${i}" aria-label="Drag to move" role="button" tabindex="0">≡</span>`}<button type="button" class="serb" data-sk="o:${i}" aria-expanded="${op}"><i class="k-${b.t==='x'?'d':b.t}"></i><span class="sen">${SEI[b.t]} ${SEN[b.t]}${b.run?' <small>running</small>':''}</span><span class="set">${day(s)}–${b.run?'now':day(e)}</span><span class="sel">${seF(b.len)}</span></button></div>
-  ${op?`<div class="sep"><div class="sepl">Type</div><div class="fchips fsm">${kinds(b.t).map(k=>`<button type="button" class="fchip${k===b.t?' on':''}" data-sk="t:${i}:${k}">${SEI[k]} ${k==='x'?'No tacho':SEN[k]}</button>`).join('')}</div>
+  ${op?`<div class="sep"><div class="sepl">Type</div><div class="fchips fsm">${seKinds(b).map(k=>`<button type="button" class="fchip${k===b.t?' on':''}" data-sk="t:${i}:${k}">${SEI[k]} ${SEN[k]}</button>`).join('')}</div>
   <div class="tr" style="margin:10px 0 6px"><label>Start<input type="time" data-se="s:${i}" value="${hm(s)}"></label><label>End${b.run?'<input type="text" value="now" disabled>':`<input type="time" data-se="e:${i}" value="${hm(e)}">`}</label></div>
   <div class="sepl">Length</div><div class="fstep sestep"><button type="button" data-sk="l:${i}:-15">−15</button><button type="button" data-sk="l:${i}:-5">−5</button><span><b>${seF(b.len)}</b></span><button type="button" data-sk="l:${i}:5">+5</button><button type="button" data-sk="l:${i}:15">+15</button></div>
   <div class="note" style="margin-top:4px">${b.run?'Changing the length moves its start; the block before gives or takes the time.':i<SE.B.length-1?'Changing the length moves the next block; the rest of the shift stays put.':'This is the last block, so changing it moves the end of the shift.'}</div>
@@ -111,7 +115,7 @@ function seClick(e){const b=e.target.closest('[data-sk]');if(!b||!SE)return;cons
  seDraw()}
 function seChange(e){const x=e.target.closest('[data-se]');if(!x||!SE||!x.value)return;const[k,a]=x.dataset.se.split(':'),i=+a,S=seStarts();
  const near=(v,ref)=>nearT(v,ref);
- if(k==='start'){const ts=near(x.value,SE.S),d=ts-SE.S;if(d<SE.B[0].len){SE.S=ts;SE.B[0].len-=d;SE.dirty=true}}
+ if(k==='start')seSetStart(0,near(x.value,SE.S));
  else if(k==='end')seSetShiftEnd(near(x.value,seEnd()));
  else if(k==='s')seSetStart(i,near(x.value,S[i]));else if(k==='e')seSetEnd(i,near(x.value,S[i]+SE.B[i].len));
  seDraw()}
