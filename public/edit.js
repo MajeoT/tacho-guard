@@ -62,12 +62,27 @@ function seAdd(i,t){const B=SE.B,b=B[i];if(b.len<2*seMin)return;const c=Math.min
 function seDel(i){const B=SE.B;if(B.length<2||B[i].run)return;const b=B[i];if(i>0)B[i-1].len+=b.len;else{B[1].len+=b.len}B.splice(i,1);SE.open=null;SE.dirty=true}
 function seMove(i,j){const B=SE.B,last=seRun()?B.length-2:B.length-1;if(B[i].run)return;j=Math.max(0,Math.min(last,j));if(i===j)return;const[b]=B.splice(i,1);B.splice(j,0,b);if(SE.open===i)SE.open=j;SE.dirty=true}
 
+/* split part of a block off as another activity: SE.sp = {t, len, at ('start' or 'end')} for the open block */
+function seSpDef(b){const t=b.t==='w'?'p':'w',h=Math.max(seMin,Math.round(b.len/2/(5*M))*5*M);return{t,len:Math.min(h,b.len-seMin),at:'end'}}
+function seSplitUi(b,i,s){const P=SE.sp||(SE.sp=seSpDef(b)),max=b.len-seMin,L=Math.max(seMin,Math.min(P.len,max)),a=P.at==='start'?[P.t,L,b.t,b.len-L]:[b.t,b.len-L,P.t,L];
+ const ch=[15,30,45,60,90,120].filter(m=>m*M<=max);
+ return `<div class="sesp"><div class="sepl">Part of it was something else?</div><div class="note" style="margin:-2px 0 6px">For example 45 minutes of this was other work. Pick what, how long and where it goes.</div>
+ <div class="fchips fsm">${['d','w','p','r'].map(k=>`<button type="button" class="fchip${P.t===k?' on':''}" data-sk="pt:${i}:${k}">${SEI[k]} ${SEN[k]}</button>`).join('')}</div>
+ <div class="sepl">How long was that part?</div><div class="fchips fsm">${ch.map(m=>`<button type="button" class="fchip${L===m*M?' on':''}" data-sk="pl:${i}:${m}">${seF(m*M)}</button>`).join('')}<button type="button" class="fchip${Math.abs(L-Math.round(b.len/2/M)*M)<M?' on':''}" data-sk="ph:${i}">Half</button></div>
+ <div class="fstep sestep" style="margin-top:6px"><button type="button" data-sk="pd:${i}:-5">−5</button><span><b>${seF(L)}</b> of ${seF(b.len)}</span><button type="button" data-sk="pd:${i}:5">+5</button></div>
+ <div class="sepl">Where does it go?</div><div class="seseg"><button type="button" class="fchip${P.at==='start'?' on':''}" data-sk="pa:${i}:start">↑ At the start</button><button type="button" class="fchip${P.at==='end'?' on':''}" data-sk="pa:${i}:end">↓ At the end</button></div>
+ <div class="sepv"><span><i class="k-${a[0]==='x'?'d':a[0]}"></i>${SEI[a[0]]} ${SEN[a[0]]} ${hm(s)}–${hm(s+a[1])}</span><span><i class="k-${a[2]==='x'?'d':a[2]}"></i>${SEI[a[2]]} ${SEN[a[2]]} ${hm(s+a[1])}–${b.run&&P.at==='start'?'now':hm(s+b.len)}</span></div>
+ <button type="button" class="tg big fpri" data-sk="pg:${i}" style="margin-top:8px">Split it</button></div>`}
+function seSplitInto(i){const B=SE.B,b=B[i],P=SE.sp;if(!P)return;const L=Math.max(seMin,Math.min(P.len,b.len-seMin)),nb={t:P.t,len:L,o:null};b.len-=L;
+ if(P.at==='start')B.splice(i,0,nb);else{B.splice(i+1,0,nb);if(b.run){b.run=false;nb.run=true;nb.o={}}}
+ SE.sp=null;SE.open=null;SE.dirty=true}
+
 /* ---- drawing ---- */
 function seBar(E){const tot={};E.forEach(x=>{const k=x.t==='x'?'d':x.t;tot[k]=(tot[k]||0)+x.e-x.s});
  return `<div class="sek">${['d','w','p','r'].filter(k=>tot[k]).map(k=>`<span><i class="k-${k}"></i>${k==='d'?'Driving':SEN[k]} ${seF(tot[k])}</span>`).join('')}</div><div class="tkb" aria-hidden="true">${E.map(x=>`<i class="k-${x.t==='x'?'d':x.t}" style="flex:${Math.max(1,Math.round((x.e-x.s)/M))} 0 0"></i>`).join('')}</div>`}
 function seRules(E){const W=E.filter(x=>x.t!=='r').map(x=>({s:x.s,e:x.e,t:x.t}));if(!W.length||typeof audRules!=='function')return '';const R=audRules(W);
  return R.length?`<div class="wn" style="margin-top:10px"><b>⚠ This breaks the rules:</b><br>${R.map(r=>'• '+r[0]).join('<br>')}<br><span class="note">If this is what really happened, save it so your record is honest.</span></div>`:`<div class="note ok" style="margin-top:10px">✓ No rules broken in this shift.</div>`}
-function seDraw(){const el=$('sed');if(!el||!SE)return;const S=seStarts(),E=seEntries(),end=seEnd(),run=seRun(),day=t=>sod(t)===sod(SE.S)?hm(t):hm(t)+' (+'+Math.round((sod(t)-sod(SE.S))/864e5)+')';
+function seDraw(){const el=$('sed');if(SE&&SE.open==null)SE.sp=null;if(!el||!SE)return;const S=seStarts(),E=seEntries(),end=seEnd(),run=seRun(),day=t=>sod(t)===sod(SE.S)?hm(t):hm(t)+' (+'+Math.round((sod(t)-sod(SE.S))/864e5)+')';
  const kinds=t=>{const ks=['d','w','p','r'];if(t==='x')ks.splice(1,0,'x');return ks};
  const row=(b,i)=>{const op=SE.open===i,s=S[i],e=s+b.len;return `<div class="ser${op?' op':''}${b.run?' run':''}" data-row="${i}">
   <div class="serh">${b.run?'<span class="seh off" aria-hidden="true">●</span>':`<span class="seh" data-drag="${i}" aria-label="Drag to move" role="button" tabindex="0">≡</span>`}<button type="button" class="serb" data-sk="o:${i}" aria-expanded="${op}"><i class="k-${b.t==='x'?'d':b.t}"></i><span class="sen">${SEI[b.t]} ${SEN[b.t]}${b.run?' <small>running</small>':''}</span><span class="set">${day(s)}–${b.run?'now':day(e)}</span><span class="sel">${seF(b.len)}</span></button></div>
@@ -75,8 +90,8 @@ function seDraw(){const el=$('sed');if(!el||!SE)return;const S=seStarts(),E=seEn
   <div class="tr" style="margin:10px 0 6px"><label>Start<input type="time" data-se="s:${i}" value="${hm(s)}"></label><label>End${b.run?'<input type="text" value="now" disabled>':`<input type="time" data-se="e:${i}" value="${hm(e)}">`}</label></div>
   <div class="sepl">Length</div><div class="fstep sestep"><button type="button" data-sk="l:${i}:-15">−15</button><button type="button" data-sk="l:${i}:-5">−5</button><span><b>${seF(b.len)}</b></span><button type="button" data-sk="l:${i}:5">+5</button><button type="button" data-sk="l:${i}:15">+15</button></div>
   <div class="note" style="margin-top:4px">${b.run?'Changing the length moves its start; the block before gives or takes the time.':i<SE.B.length-1?'Changing the length moves the next block; the rest of the shift stays put.':'This is the last block, so changing it moves the end of the shift.'}</div>
-  <div class="sepl" style="margin-top:10px">Add next to it <span class="note">(takes up to 15 minutes from this block)</span></div><div class="fchips fsm">${['d','w','p','r'].map(k=>`<button type="button" class="fchip" data-sk="a:${i}:${k}">+ ${SEI[k]} ${SEN[k]}</button>`).join('')}</div>
-  <div class="sea">${b.run?'':`<button type="button" class="tg" data-sk="u:${i}"${i===0?' disabled':''} aria-label="Move up">↑ Up</button><button type="button" class="tg" data-sk="dn:${i}"${i>=SE.B.length-(run?2:1)?' disabled':''} aria-label="Move down">↓ Down</button>`}<button type="button" class="tg" data-sk="sp:${i}"${b.len<2*seMin?' disabled':''}>Split</button>${b.run||SE.B.length<2?'':`<button type="button" class="tg bad" data-sk="x:${i}">Delete</button>`}</div></div>`:''}</div>`};
+  ${b.len>=2*seMin?seSplitUi(b,i,s):''}
+  <div class="sea">${b.run?'':`<button type="button" class="tg" data-sk="u:${i}"${i===0?' disabled':''} aria-label="Move up">↑ Up</button><button type="button" class="tg" data-sk="dn:${i}"${i>=SE.B.length-(run?2:1)?' disabled':''} aria-label="Move down">↓ Down</button>`}${b.run||SE.B.length<2?'':`<button type="button" class="tg bad" data-sk="x:${i}">Delete</button>`}</div></div>`:''}</div>`};
  const endRow=SE.mode==='end'||!run?`<div class="tr seend"><label>${SE.mode==='end'?'End the shift at':'Shift ended at'}<input type="time" data-se="end" value="${hm(end)}"></label>${SE.mode==='end'?`<span class="note">Daily rest counts from then.</span>`:''}</div>`:`<div class="note seend">● ${SEN[run.t]} is running now. Tap End shift below to finish the shift.</div>`;
  const rest=SE.mode==='end'?`<div class="note" style="margin-top:6px">After ending at ${hm(end)}: earliest next start ${tt(end+11*H)} after an 11 hour rest, or ${tt(end+9*H)} with a reduced 9 hour rest. You cannot drive or work again before then unless it counts as part of this shift.</div>`:'';
  el.innerHTML=`<div class="sew"><div class="setop"><button type="button" class="tg" data-sk="close">✕ Close</button><div><b>${SE.mode==='end'?'End Shift':'Edit Shift'}</b><div class="note">${new Date(SE.S).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'})}</div></div></div>
@@ -89,7 +104,8 @@ function seDraw(){const el=$('sed');if(!el||!SE)return;const S=seStarts(),E=seEn
 /* ---- events ---- */
 function seClick(e){const b=e.target.closest('[data-sk]');if(!b||!SE)return;const[k,a,v]=b.dataset.sk.split(':'),i=+a;
  if(k==='close'){if(SE.dirty){mo(`<h3>Leave Without Saving?</h3><p>Your changes to this shift will be lost.</p><button class="tg big bad" data-k="ok">Leave without saving</button><button class="tg big" data-k="no">Keep editing</button>`);mcb={no:moX,ok:()=>{moX();seClose()}};return}seClose();return}
- if(k==='o')SE.open=SE.open===i?null:i;else if(k==='t'){SE.B[i].t=v;SE.dirty=true}else if(k==='l')seLen(i,SE.B[i].len+(+v)*M);else if(k==='a')seAdd(i,v);else if(k==='sp')seSplit(i);
+ if(k==='o'){SE.open=SE.open===i?null:i;SE.sp=null}
+ else if(k==='pt'){SE.sp.t=v}else if(k==='pl'){SE.sp.len=+v*M}else if(k==='ph'){SE.sp.len=Math.round(SE.B[i].len/2/M)*M}else if(k==='pd'){SE.sp.len=Math.max(seMin,Math.min(SE.B[i].len-seMin,SE.sp.len+(+v)*M))}else if(k==='pa'){SE.sp.at=v}else if(k==='pg')seSplitInto(i);else if(k==='t'){SE.B[i].t=v;SE.dirty=true}else if(k==='l')seLen(i,SE.B[i].len+(+v)*M);else if(k==='a')seAdd(i,v);else if(k==='sp')seSplit(i);
  else if(k==='u')seMove(i,i-1);else if(k==='dn')seMove(i,i+1);else if(k==='x')seDel(i);else if(k==='toend'){seToEnd();SE.dirty=true}
  else if(k==='save'){seSave();return}else if(k==='clr'){const ss=SE.S;seClose();clearShift(ss,all());return}
  seDraw()}
