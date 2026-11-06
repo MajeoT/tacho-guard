@@ -205,6 +205,10 @@ function plStat(d,C){const n=C.n,D1=nxd(d),past=D1<=n,td=d===sod(n),os=C.occ.fil
   S.k='work';S.txt=S.os.map(o=>`Planned ${o.s.slice(0,5)}–${o.e.slice(0,5)}${multi()?' · '+esc(jobC(o.j).n):''} · not logged yet`).join('<br>')}
  else if(past)S.k=logged?'did':'off',S.txt=logged?'Worked '+fmt(logged).replace(' 00m',''):'Not working';
  else if(td&&st.active){S.k='work';S.txt='Working now'}
+ else if(td&&logged){/* today's shift is done: show it like a past day (greyed, today still outlined), and when you can start again */
+  const L=all().filter(x=>x.t!=='r'&&x.e>d&&x.s<D1),a0=Math.min(...L.map(x=>x.s)),e0=Math.max(...L.map(x=>x.e)),fr=plFree(d,C.sp,C.I),dw=t=>(sod(t)===d?'':new Date(t).toLocaleDateString('en-GB',{weekday:'short'})+' ')+plHm(t);S.fr=fr;
+  S.k='did';S.past=true;S.txt=L.length?`Worked ${plHm(Math.max(a0,d))}–${plHm(Math.min(e0,D1))} · ${fmt(logged).replace(' 00m','')}`:'Worked '+fmt(logged).replace(' 00m','');
+  if(fr&&fr.lv<3)S.sub.push(['mut','Free again from '+(fr.ea<=n+6e4?'now':plHm(fr.ea))]);else if(L.length)S.sub.push(['mut',`Daily rest: next start ${dw(e0+11*H)}, or ${dw(e0+9*H)} with a reduced rest`])}
  else{const fr=plFree(d,C.sp,C.I);S.fr=fr;
   if(!fr){S.k=logged?'did':'off';S.txt=logged?'Worked '+fmt(logged).replace(' 00m','')+' today':'Not working'}
   else if(fr.lv===3){S.k='rest';S.txt='Rest: '+plRestWhy(fr)}
