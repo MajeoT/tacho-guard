@@ -345,6 +345,21 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .jcols{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}.jcol{width:34px;height:34px;border-radius:50%;border:3px solid transparent;background:var(--c);cursor:pointer;box-shadow:0 0 0 1px var(--bd)}.jcol.on{border-color:var(--tx);box-shadow:0 0 0 2px var(--c)}.jcc{position:relative;display:inline-flex;align-items:center;justify-content:center;color:#fff;font:700 18px var(--body);text-shadow:0 1px 2px #000}.jcc input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:0;padding:0}
 .lh2{font-weight:800;font-size:15px;margin:14px 0 4px;color:var(--acc)}.lh2:first-child{margin-top:0}.lh{font-weight:700;margin:8px 0 1px}.lp{margin:0 0 4px}
 .acq{display:flex;flex-direction:column;gap:8px;margin:8px 0}.acr{border:1px solid var(--bd);border-radius:12px;padding:10px 12px;background:var(--card)}.acr.on{border-color:var(--acc)}
+#sed{position:fixed;inset:0;z-index:19;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}#sed[hidden]{display:none}body.sedon{overflow:hidden}
+.sew{max-width:560px;margin:0 auto;padding:12px 16px calc(28px + env(safe-area-inset-bottom,0px))}
+.setop{display:flex;align-items:center;gap:12px;margin-bottom:10px;position:sticky;top:0;background:var(--bg);padding:6px 0;z-index:2}.setop b{font-size:18px}
+.sestart,.seend{margin:6px 0 10px}.sestart .note{white-space:nowrap}.seend{margin-top:12px}
+.sek{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;color:var(--mut);margin-bottom:6px}.sek span{display:inline-flex;align-items:center;gap:4px}.sek i{width:9px;height:9px;border-radius:2px;display:inline-block}
+#sel{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.ser{border:1px solid var(--bd);border-radius:12px;background:var(--card);transition:transform .15s}.ser.drag{transition:none;position:relative;z-index:3;box-shadow:0 10px 24px rgba(0,0,0,.35);border-color:var(--acc)}.ser.op{border-color:var(--acc)}.ser.run{border-style:dashed}
+.serh{display:flex;align-items:stretch}.seh{display:flex;align-items:center;justify-content:center;width:40px;flex:none;font-size:20px;color:var(--mut);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}.seh.off{font-size:10px;color:var(--ok);cursor:default}
+.serb{flex:1;display:grid;grid-template-columns:10px 1fr auto auto;gap:10px;align-items:center;padding:12px 12px 12px 0;background:none;border:0;color:var(--tx);font:inherit;text-align:left;cursor:pointer;min-width:0}.serb>i{width:10px;height:10px;border-radius:3px}
+.sen{font-weight:600;min-width:0}.sen small{color:var(--ok);font-weight:500}.set{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:14px}.sel{font-variant-numeric:tabular-nums;color:var(--mut);font-size:13px;min-width:44px;text-align:right}
+.sep{padding:4px 12px 12px;border-top:1px solid var(--bd)}.sepl{font-size:13px;font-weight:600;margin:10px 0 6px}
+.sestep{display:flex;align-items:center;gap:6px}.sestep span{flex:1;text-align:center}.sestep button{min-width:48px}
+.sea{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}.sea .tg{flex:1 1 auto}
+.sebtn{margin-top:14px}
+.sew .tr{align-items:flex-end}.sew .tr label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mut);flex:1}.sew .tr label input{color:var(--tx)}.sestart .note,.seend .note{flex:1;padding-bottom:12px}
 .mmr{margin:10px 0 0;padding:10px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--card)}.mmr small{color:var(--mut);font-weight:400;font-size:12.5px}
 .tkl{margin-top:10px;border:1px solid var(--bd);border-radius:12px;padding:10px 12px;background:var(--card)}
 .tkh{display:flex;flex-direction:column;gap:4px;font-size:14px;margin-bottom:8px}.tkh>span{display:flex;gap:4px 12px;flex-wrap:wrap;font-size:12.5px;color:var(--mut)}
@@ -522,7 +537,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-170';
+const APPV='tg-2026-10-23-171';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1496,8 +1511,8 @@ let dayView=null;
 function buildD(){const D={};const SS=st.sessions.slice();if(st.active&&st.act&&Date.now()>st.active)SS.push({s:st.active,e:Date.now(),t:st.act,live:1});SS.forEach(x=>{const k=x.t==='x'?'w':(x.t||'d');let w=sod(x.s);while(w<x.e){const n2=nxd(w),s=Math.max(x.s,w),e=Math.min(x.e,n2);if(e>s){const o=D[w]=D[w]||emptyD();o.T[k]+=e-s;if(x.s>=w)o.m+=x.d||0;o.I.push({x,s,e,c:x.s<w})}w=n2}});return D}
 function rowsOf(o){return o.I.sort((a,b)=>a.s-b.s).map(({x,s,e,c})=>{const t=x.t||'d';
    if(!c&&x.s===ed)return `<div class="item" style="display:block"><div class="lbl">${IC[t]} ${NM[t]}</div><div class="tr" style="margin:8px 0"><input type="time" id="e1" value="${hm(x.s)}"><input type="time" id="e2" value="${hm(x.e)}"></div><select id="e3" style="margin-bottom:8px">${['d','x','w','p','r'].map(k=>`<option value="${k}"${k===t?' selected':''}>${NM[k]}</option>`).join('')}</select><br><button class="tg" data-sv="${x.s}">Save</button> <button class="tg" data-cn="1">Cancel</button><div class="note bad" id="eerr"></div></div>`;
-   if(x.live)return `<div class="item"><div><div class="lbl">${IC[t]} ${NM[t]} (Running Now)</div><div class="note">${hm(s)} to now (${fmt(e-s)}). Change activity or end your shift on the Today tab to edit it.</div></div></div>`;
-   return `<div class="item"><div><div class="lbl">${IC[t]} ${NM[t]}${c?' (from the day before)':''}</div><div class="note">${hm(s)} to ${hm(e)} (${fmt(e-s)}${x.d&&!c?', '+mi(x.d):''})${x.j&&t!=='r'&&(multi()||!jobs().some(j=>j.id===x.j))?' · '+esc(jobC(x.j).n):''}${c?'':lk(x.a,'Start map')+lk(x.z,'End map')}</div></div>${c?'':`<div><button class="del" data-ed="${x.s}">Edit</button><button class="del${dArm===String(x.s)?' bad':''}" data-s="${x.s}">${dArm===String(x.s)?'Tap Again to Delete':'Delete'}</button></div>`}</div>`}).join('')}
+   if(x.live)return `<div class="item"><div><div class="lbl">${IC[t]} ${NM[t]} (Running Now)</div><div class="note">${hm(s)} to now (${fmt(e-s)}). Change activity on the Today tab, or edit the whole shift.</div></div><div><button class="del" data-ed="${x.s}">Edit shift</button></div></div>`;
+   return `<div class="item"><div><div class="lbl">${IC[t]} ${NM[t]}${c?' (from the day before)':''}</div><div class="note">${hm(s)} to ${hm(e)} (${fmt(e-s)}${x.d&&!c?', '+mi(x.d):''})${x.j&&t!=='r'&&(multi()||!jobs().some(j=>j.id===x.j))?' · '+esc(jobC(x.j).n):''}${c?'':lk(x.a,'Start map')+lk(x.z,'End map')}</div></div>${c?'':`<div><button class="del" data-ed="${x.s}">Edit shift</button><button class="del${dArm===String(x.s)?' bad':''}" data-s="${x.s}">${dArm===String(x.s)?'Tap Again to Delete':'Delete'}</button></div>`}</div>`}).join('')}
 function list(){
  if(tab==='log'){
  const D=buildD();
@@ -1594,7 +1609,9 @@ $('live').addEventListener('click',e=>{if(e.target.closest('[data-ua]')){if(usna
 function clearShift(ss,a){const cl=a.filter(x=>x.s>=ss);
  mo(`<h3>Clear Shift?</h3><p>This removes everything logged since <b>${tt(ss)}</b>${cl.length?' ('+cl.length+(cl.length===1?' entry':' entries')+')':''}${st.active?' and stops what is running':''}. Your rest and limits go back to how they were before this shift. You will have 20 seconds to tap Undo on the Today page.</p><button class="tg big bad" data-k="ok">Yes, clear this shift</button><button class="tg big" data-k="no">No, go back</button>`);
  mcb={no:moX,ok:()=>{const sv=JSON.stringify(st);if(st.active&&st.act&&st.act!=='r'&&st.act==='d')gpsOff();st.sessions=st.sessions.filter(x=>x.s<ss&&!(x.t==='r'&&x.e>=ss));st.active=null;st.act=null;delete st.tmt;delete st.dd;st.fq=0;st.gq=0;st.ad=0;st.as=st.ae=null;if(st.se&&st.se>=ss)delete st.se;usnap=null;snap=null;fired={};moX();flash='Shift cleared. <button class="tg" data-ur="1" style="margin-left:6px">Undo</button>';rsnap=sv;setTimeout(()=>{if(rsnap===sv)rsnap=null;flash='';live()},20000);save();render();live()}}}
-const endAsk=same=>{const n=Date.now(),a=all(),z=a[a.length-1],fresh0=!z||(!z.live&&n-z.e>=9*H),ss=fresh0?n:shiftStart(a);
+/* End Shift opens the shift editor in end mode (edit.js); the older box stays for when there is nothing to edit */
+const endAsk=same=>{if(typeof seOpen==='function'){seOpen(null,'end',same===1&&st.act?NM[st.act]+' is already running. To change activity, close this and tap the new one.':'');return}endAskOld(same)};
+const endAskOld=same=>{const n=Date.now(),a=all(),z=a[a.length-1],fresh0=!z||(!z.live&&n-z.e>=9*H),ss=fresh0?n:shiftStart(a);
  /* the end can go back to the end of the last finished entry: something still running that started after the end is dropped (it was after the shift) */
  const run=st.act&&st.active?st.active:0,dn=a.filter(x=>!x.live),dl=dn[dn.length-1],lo=run?(dl&&dl.e>=ss?dl.e:run):(z?z.e:0);let T=n,touched=false,note='';
  const pre=same===1&&st.act?NM[st.act]+' is already running and cannot be switched off on its own. To change activity, tap Cancel and then tap the new one. ':'';
@@ -1626,7 +1643,7 @@ const listClick=e=>{
  const d=e.target.dataset;
  if(d.add){$('d').value=d.add;$('f').scrollIntoView({behavior:'smooth'});return}
  if(d.more){lim+=14;list();return}
- if(d.ed){ed=+d.ed;list();return}
+ if(d.ed){if(typeof seOpen==='function'){seOpen(+d.ed,'edit',null,+d.ed);return}ed=+d.ed;list();return}
  if(d.cn){ed=null;list();return}
  if(d.sv){const x=st.sessions.find(y=>String(y.s)===d.sv),f=(ts,v)=>sameDayT(ts,v);
   if(!x||!$('e1').value||!$('e2').value)return;
@@ -1636,7 +1653,7 @@ const listClick=e=>{
  if(d.s){if(dArm!==d.s){dArm=d.s;clearTimeout(dT);dT=setTimeout(()=>{dArm=null;render()},4000);render();return}dArm=null;clearTimeout(dT);st.sessions=st.sessions.filter(x=>String(x.s)!==d.s);save();render()}
 };
 $('list').onclick=listClick;$('dayc').onclick=listClick;
-$('dback').onclick=()=>showTab(dayFrom);$('tlog').onclick=()=>openDay(sod(Date.now()),'today');
+$('dback').onclick=()=>showTab(dayFrom);$('tlog').onclick=()=>{if(typeof seOpen==='function'&&seShift(null))seOpen(null,'edit');else openDay(sod(Date.now()),'today')};
 $('dform').onsubmit=e=>{e.preventDefault();const dv=ymd(dayView),s=new Date(dv+'T'+$('ds').value).getTime(),en=new Date(dv+'T'+$('de').value).getTime();if(!(en>s)){$('derr').textContent='The end time must be after the start time, on the same day. For an overnight entry, use the Log tab.';return}$('derr').textContent='';clear(s,en,1);st.sessions.push({s,e:en,t:$('dt').value,chk:1});save();$('ds').value='';$('de').value='';render()};
 let estOk=0;
 $('esb').onclick=()=>{const v=$('est').value;if(!v)return;const n=Date.now(),near=nearT(v,n),fut=near>n;let x=prevT(v,n);const say=t=>{flash=t;setTimeout(()=>{flash='';live()},6000);esFor=0;save();render()};if(fut&&n-x>12*H){say('That time is later than now. Pick a time before now.');return}if(st.active&&st.act!=='r'){const ov=x<st.active?st.sessions.filter(y=>y.e>x&&y.s<st.active):[];
@@ -2335,6 +2352,6 @@ window.TG_OK=1;$('ver').textContent='TachoGuard v'+APPV.replace(/^tg-(\d+)-(\d+)
 addSrc();updWatch();wnUi();if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 </script>
 <script src="plan.js"></script>
-<script src="track.js"></script>
+<script src="track.js"></script><script src="edit.js"></script>
 </body>
 </html>
