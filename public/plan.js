@@ -358,7 +358,11 @@ function plLive(q){const{n,E,mv,br,tk,tot,w0,d0,Dr,half,drv}=q,tkm=Math.round(tk
 function plHeroPlan(o){const j=jobC(o.j),tc=j.tc!==false,w=o.E-o.S-(o.br||0)*M,dv=tc?(o.dr||0)*H:0,X=plWin(0,0,w,dv);
  let t=`<b>${o.rv?'About ':''}${o.s.slice(0,5)}–${o.e.slice(0,5)}</b> ${esc(j.n)}`;
  if(!X)t+='. No break needed by law.';
- else if(X.ok){const a=o.S+plR5(X.lo,1),b=Math.max(a,o.S+plR5(X.hi)),need=Math.max(w>9*H?45:w>6*H?30:15,dv>=270*M?45:0);t+=`. ☕ ${Math.max(o.br||0,need)} min break ${X.lo<5*M?'by <b>'+plHm(b)+'</b>':'between <b>'+plHm(a)+'</b> and <b>'+plHm(b)+'</b>'}${X.lo>=5*M?', not before '+plHm(a):''}.`}
+ else if(X.ok){const a=o.S+plR5(X.lo,1),b=Math.max(a,o.S+plR5(X.hi)),need=Math.max(w>9*H?45:w>6*H?30:15,dv>=270*M?45:0),bm=Math.max(o.br||0,need);
+  /* why the window is where it is: the rule that sets each end */
+  const hiW=X.hw==='d'?`by ${plHm(b)} you reach 4h 30m of driving (with the driving spread through the shift)`:`by ${plHm(b)} you will have worked 6 hours in a row`,
+   loW=X.lw==='d'?`before ${plHm(a)} you would still have more than 4h 30m of driving after it`:`before ${plHm(a)} you would still have more than 6 hours of work after it and need another break`;
+  t+=`. ☕ ${bm} min break ${X.lo<5*M?'by <b>'+plHm(b)+'</b>':'between <b>'+plHm(a)+'</b> and <b>'+plHm(b)+'</b>'}.<span class="h-why">Why: ${hiW}${X.lo>=5*M?'; '+loW:''}. ${bm>=30?`You can split it: a 15 minute break earlier restarts your 6 hours in a row${dv>=270*M?' and counts as the first part of your driving break':''}, so the other ${bm-15} minutes can come later. Today then works out the new time. `:''}These times are for a ${o.s.slice(0,5)} start: once you start, the advice follows your real times and breaks.</span>`}
  else t+='. ☕ It needs two breaks: see the Plan for when.';
  return t}
 /* Where the break goes when a planned shift is logged afterwards: in the middle of the advised window, so the log keeps the rules. */
