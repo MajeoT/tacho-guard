@@ -44,10 +44,11 @@ function seEntries(){const S=seStarts();return SE.B.map((b,i)=>({s:S[i],e:S[i]+b
 
 /* ---- the changes ---- */
 const seMin=M;
-function seLen(i,nl){const B=SE.B,b=B[i];nl=Math.max(seMin,Math.round(nl/M)*M);const d=nl-b.len;if(!d)return;
- if(b.run){/* running: its end is now, so the start moves and the block before gives or takes the time */if(i>0){const p=B[i-1],pl=p.len-d;if(pl<seMin)return seLen(i,b.len+p.len-seMin);p.len=pl}else{if(SE.S-d<SE.lo)return seLen(i,b.len+(SE.S-SE.lo));SE.S-=d}b.len=nl}
- else if(i<B.length-1){const nx=B[i+1],nn=nx.len-d;if(nn<seMin){if(nx.run)return;return seLen(i,b.len+nx.len-seMin)}nx.len=nn;b.len=nl}
- else{/* the last block of a finished shift: the end moves (not past now or the next shift) */const e=SE.S+B.reduce((q,x)=>q+x.len,0)+d,mx=seMaxEnd();if(e>mx)nl=b.len+(mx-(e-d));b.len=Math.max(seMin,nl)}
+function seLen(i,nl){const B=SE.B,b=B[i];nl=Math.max(seMin,Math.round(nl/M)*M);let d=nl-b.len;if(!d)return;
+ /* the change is limited by what the neighbour can give, so it never loops and never leaves a block under a minute */
+ if(b.run){/* running: its end is now, so the start moves and the block before gives or takes the time */if(i>0){const p=B[i-1];d=Math.min(d,p.len-seMin);p.len-=d}else{d=Math.min(d,SE.S-SE.lo);SE.S-=d}b.len+=d}
+ else if(i<B.length-1){/* the next block gives or takes the time, so the rest of the shift stays put */const nx=B[i+1];d=Math.min(d,nx.len-seMin);nx.len-=d;b.len+=d}
+ else{/* the last block of a finished shift: the end moves (not past now or the next shift) */d=Math.min(d,seMaxEnd()-seEnd());b.len=Math.max(seMin,b.len+d)}
  SE.dirty=true}
 /* a start time for row i: moves the line between it and the row before */
 function seSetStart(i,ts){const S=seStarts(),B=SE.B,e=S[i]+B[i].len;if(ts>=e-seMin+1)ts=e-seMin;
@@ -115,7 +116,7 @@ function seDraw(){const el=$('sed');if(SE&&SE.open==null)SE.sp=null;if(!el||!SE)
  <div class="sebtn"><button type="button" class="tg big fpri" data-sk="save">${SE.mode==='end'?'End shift at '+hm(end):'Save changes'}</button>${SE.mode!=='end'&&run?`<button type="button" class="tg big" data-sk="toend">End shift…</button>`:''}<button type="button" class="tg big" data-sk="close">Cancel</button>${SE.mode==='end'?'':`<button type="button" class="tg big bad" data-sk="clr">Clear this shift</button>`}</div></div>`}
 
 /* ---- events ---- */
-function seClick(e){const b=e.target.closest('[data-sk]');if(!b||!SE)return;const[k,a,v]=b.dataset.sk.split(':'),i=+a;
+function seClick(e){const b=e.target.closest('[data-sk]');if(!b||!SE)return;SE.redraw=false;const[k,a,v]=b.dataset.sk.split(':'),i=+a;
  if(k==='close'){if(SE.dirty){mo(`<h3>Leave Without Saving?</h3><p>Your changes to this shift will be lost.</p><button class="tg big bad" data-k="ok">Leave without saving</button><button class="tg big" data-k="no">Keep editing</button>`);mcb={no:moX,ok:()=>{moX();seClose()}};return}seClose();return}
  if(k==='o'){SE.open=SE.open===i?null:i;SE.sp=null}
  else if(k==='pon'){SE.sp=seSpDef(SE.B[i]);SE.sp.on=true}else if(k==='pof'){SE.sp=null}else if(k==='pt'){SE.sp.t=v}else if(k==='pw'){if(SE.sp.which!==v){SE.sp.which=v;SE.sp.len=SE.B[i].len-SE.sp.len}}else if(k==='pl'){SE.sp.len=+v*M}else if(k==='ph'){SE.sp.len=Math.round(SE.B[i].len/2/M)*M}else if(k==='q'){SE.sp.len=Math.max(seMin,Math.min(SE.B[i].len-seMin,SE.sp.len+(+v)*M))}else if(k==='pa'){SE.sp.at=v}else if(k==='pg')seSplitInto(i);else if(k==='t'){SE.B[i].t=v;SE.dirty=true}else if(k==='l')seLen(i,SE.B[i].len+(+v)*M);else if(k==='a')seAdd(i,v);else if(k==='sp')seSplit(i);
@@ -128,8 +129,13 @@ function seChange(e){const x=e.target.closest('[data-se]');if(!x||!SE||(x.value=
  else if(k==='end')seSetShiftEnd(near(x.value,seEnd()));
  else if(k==='lh'||k==='lm'||k==='qh'||k==='qm'){const r=x.closest('.selen'),hv=+r.querySelector('[data-se$="h:'+i+'"]').value||0,mv=+r.querySelector('[data-se$="m:'+i+'"]').value||0,ln=(Math.max(0,hv)*60+Math.max(0,mv))*M;if(k[0]==='l')seLen(i,ln);else SE.sp.len=Math.max(seMin,Math.min(SE.B[i].len-seMin,ln))}
  else if(k==='s')seSetStart(i,near(x.value,S[i]));else if(k==='e')seSetEnd(i,near(x.value,S[i]+SE.B[i].len));
- /* redraw after the box has finished losing focus, or the browser can complain the box was removed mid-blur */
- setTimeout(seDraw,0)}
+ /* redraw after the box has finished losing focus; if a finger is down (you tapped a button straight after typing), wait until
+    the tap is done, so the button you tapped is still there to take it */
+ if(sePtr)SE.redraw=true;else setTimeout(seDraw,0)}
+let sePtr=false;
+document.addEventListener('pointerdown',e=>{if(e.target.closest&&e.target.closest('#sed'))sePtr=true},true);
+document.addEventListener('pointerup',()=>{if(!sePtr)return;setTimeout(()=>{sePtr=false;if(SE&&SE.redraw){SE.redraw=false;seDraw()}},60)},true);
+document.addEventListener('pointercancel',()=>{sePtr=false},true);
 
 /* drag by the handle: the row follows the finger, the others make room, and it drops where it is let go */
 let seDrag=null;
@@ -145,7 +151,7 @@ function seUp(e){const D=seDrag;if(!D)return;const h=e.currentTarget;h.removeEve
  D.rows.forEach(r=>{r.style.transform=''});D.row.classList.remove('drag');if(D.to!==D.i)seMove(D.i,D.to);seDraw()}
 
 /* ---- saving ---- */
-function seSave(){const sv=JSON.stringify(st),E=seEntries(),n=Date.now(),from=Math.min(SE.S0,SE.S),endN=seEnd(),to=Math.max(SE.E0,endN,SE.mode==='end'||seRun()?n:0),mainJ=(()=>{const c={};SE.B.forEach(b=>{if(b.o&&b.o.j)c[b.o.j]=(c[b.o.j]||0)+b.len});const k=Object.keys(c).sort((a,b)=>c[b]-c[a])[0];return k||st.cj})();
+function seSave(){const sv=JSON.stringify(st),E=seEntries(),n=Date.now(),from=Math.min(SE.S0,SE.S),endN=seEnd(),to=Math.min(SE.hi,Math.max(SE.E0,endN,SE.mode==='end'||seRun()?n:0)),/* never past the start of the next shift */mainJ=(()=>{const c={};SE.B.forEach(b=>{if(b.o&&b.o.j)c[b.o.j]=(c[b.o.j]||0)+b.len});const k=Object.keys(c).sort((a,b)=>c[b]-c[a])[0];return k||st.cj})();
  const out=[];E.forEach((x,i)=>{const b=SE.B[i];if(x.run)return;const o=Object.assign({},b.o||{});['s','e','t','live','run'].forEach(k=>delete o[k]);if(x.t!=='d'){delete o.d;delete o.a;delete o.z}
   const y=Object.assign(o,{s:x.s,e:x.e,t:x.t,chk:1});if(x.t!=='r'&&jobsOn()){y.j=o.j||mainJ;y.c=x.t==='d'?1:x.t==='x'?0:jobC(y.j).tc!==false?1:0}if(x.t==='r'){delete y.j;delete y.c;delete y.cd}if(x.t!=='p')delete y.cd;
   const l=out[out.length-1];if(l&&l.t===y.t&&l.e===y.s&&(l.j||'')===(y.j||'')&&!!l.cd===!!y.cd){l.e=y.e;if(y.d)l.d=(l.d||0)+y.d}else out.push(y)});
