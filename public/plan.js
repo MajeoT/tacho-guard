@@ -251,7 +251,13 @@ function plAddMenu(){const nR=(st.pat||[]).length+(st.rota||[]).length;
  <button class="tg big" data-k="sel">Remove several shifts</button>
  <button class="tg big" data-k="no">Close</button>`);
  mcb={no:moX,one:()=>plForm({d:ymd(Date.now())}),rep:()=>plPatForm(null),rota:()=>plRotaForm(null),list:()=>plPatList(),sel:()=>{moX();PL.v='list';PL.sel=new Set();plRender();const e=$('plc');if(e)e.scrollIntoView({block:'start'})}}}
-function plRender(){const el=$('plc');if(!el)return;const n=Date.now(),v=PL.v||(PL.v=(()=>{try{return localStorage.getItem('tg.plv')||'list'}catch(e){return 'list'}})());
+/* A repeat or rota whose every date for the next year has been removed one by one was meant to be removed: end it, so its
+   dates do not come back after the year (removing them by ticking used to hide only the dates the list showed). */
+function plTidy(){const n=sod(Date.now()),to=n+366*864e5;let sv=st.plx||[],ch=0;
+ [...(st.pat||[]),...(st.rota||[])].forEach(r=>{if(r.to&&pdt(r.to)<n)return;st.plx=[];const allO=plOcc(n,to).filter(o=>o.pat===r.id);st.plx=sv;if(!allO.length)return;
+  if(plOcc(n,to).some(o=>o.pat===r.id))return;plCutFrom(r.id,ymd(n));st.plx=(st.plx||[]).filter(k=>!(k.startsWith(r.id+'|')&&k.split('|')[1]>=ymd(n)));sv=st.plx;ch=1});
+ st.plx=sv;if(ch&&typeof save==='function')save();return ch}
+function plRender(){const el=$('plc');if(!el)return;try{plTidy()}catch(e){}const n=Date.now(),v=PL.v||(PL.v=(()=>{try{return localStorage.getItem('tg.plv')||'list'}catch(e){return 'list'}})());
  const m0=plMonth(),md=new Date(m0),gs=v==='list'?sod(n):wkS(m0),me=new Date(md.getFullYear(),md.getMonth()+1,1).getTime(),ge=v==='list'?sod(n)+(PL.ln||14)*864e5:nwk(wkS(me-864e5));
  const sp=plSpans(),I=plCheck(sp),occ=plOcc(gs,Math.max(ge,gs+50*864e5)),OFF=plOffs(sp),NX=plNext(sp,OFF),T=typeof dayTot==='function'?dayTot():{},C={n,sp,I,occ,OFF,NX,T,CP:plComp(sp,OFF)};
  let h=`<div class="pls ptabs" role="tablist" aria-label="Plan view"><button class="pl${v==='list'?' on':''}" role="tab" data-pv="list" aria-selected="${v==='list'}">Days</button><button class="pl${v==='month'?' on':''}" role="tab" data-pv="month" aria-selected="${v==='month'}">Month</button><button class="pl${v==='week'?' on':''}" role="tab" data-pv="week" aria-selected="${v==='week'}">Weeks</button></div>`+(typeof oweBanner==='function'?oweBanner(wrInfo()):'')+plSummary(NX)+C.CP.filter(c=>c.log).map(c=>`<div class="note bplan" style="margin:0 0 10px">↺ <b>Owed rest:</b> ${plCompTxt(c)}</div>`).join('')+(PL.sel?'':'<button class="pfab" data-pa="1" aria-label="Add shifts, repeats or rotas"><span aria-hidden="true">+</span> Add</button>');
@@ -540,7 +546,9 @@ function plSelDel(){const n=Date.now(),O=plOcc(sod(n)-864e5,n+400*864e5).filter(
  const one=O.filter(o=>!o.pat).length,ro=O.filter(o=>o.rot).length,rp=O.length-one-ro,parts=[one&&pl(one,'single shift'),rp&&pl(rp,'repeating shift day'),ro&&pl(ro,'rota day')].filter(Boolean);
  mo(`<h3>Remove ${O.length} Shift${O.length>1?'s':''}?</h3><p>${parts.join(', ')}.</p><p class="note">${O.slice(0,8).map(o=>dlong(o.S)+': '+esc(jobC(o.j).n)+' '+o.s.slice(0,5)+'–'+o.e.slice(0,5)+' <small>('+plKind(o).toLowerCase()+')</small>').join('<br>')}${O.length>8?'<br>and '+(O.length-8)+' more':''}</p><button class="tg big fdel" data-k="ok">Remove ${O.length>1?'these '+O.length+' shifts':'this shift'}</button>${reps.length?`<button class="tg big" data-k="fw">Remove these and every later shift of ${reps.length>1?'their repeats and rotas':'its '+(O.find(o=>o.pat).rot?'rota':'repeat')}<small style="display:block;font-weight:400;opacity:.85">Single shifts you added are only removed if you ticked them</small></button>`:''}<button class="tg big" data-k="no">Cancel</button>`);
  const fin=m=>{PL.sel=null;save();moX();plRender();plUndo(sn,m)},sn=plSnap();
- mcb={no:moX,ok:()=>{plDrop(O);fin('Removed '+pl(O.length,'shift')+'.')},fw:()=>{reps.forEach(id=>{const first=O.filter(o=>o.pat===id).sort((a,b)=>a.S-b.S)[0];plCutFrom(id,first.d)});plDrop(O.filter(o=>!o.pat));fin('Removed the ticked shifts and every later one.')}}}
+ mcb={no:moX,ok:()=>{/* a repeat or rota with every date ticked from the first ticked one on: end it there, so it does not carry on past what the list shows */
+  const W=plOcc(sod(n)-864e5,n+400*864e5),ended=[];reps.forEach(id=>{const T=O.filter(o=>o.pat===id).sort((a,b)=>a.S-b.S),f=T[0];if(f&&W.filter(o=>o.pat===id&&o.S>=f.S).every(o=>PL.sel.has(o.oid))){plCutFrom(id,f.d);ended.push(id)}});
+  plDrop(O.filter(o=>!(o.pat&&ended.includes(o.pat))));fin('Removed '+pl(O.length,'shift')+'.'+(ended.length?' '+(ended.length>1?'Those repeats are':'That repeat is')+' ended, so nothing more comes from '+(ended.length>1?'them':'it')+'.':''))},fw:()=>{reps.forEach(id=>{const first=O.filter(o=>o.pat===id).sort((a,b)=>a.S-b.S)[0];plCutFrom(id,first.d)});plDrop(O.filter(o=>!o.pat));fin('Removed the ticked shifts and every later one.')}}}
 const pl=(n,w)=>n+' '+w+(n===1?'':'s');
 function plRotaDel(r){if(!r)return plPatList();const t0=sod(Date.now()),sn=plSnap();
  mo(`<h3>Remove Rota?</h3><p class="note" style="margin-top:-4px">Past planned shifts are only a record of what was planned. Your logged hours are never changed.</p><button class="tg big" data-k="f">Stop it from today<small style="display:block;font-weight:400;opacity:.8">Keeps the past ones</small></button><button class="tg big fdel" data-k="all">Remove all of it</button><button class="tg big" data-k="no">Cancel</button>`);
@@ -655,3 +663,5 @@ $('plc').addEventListener('click',e=>{const t=e.target.closest('[data-pm],[data-
  else if(d.pa)plAddMenu();else if(d.pp)plPatList();else if(d.pd)plDay(+d.pd)});
 $('plc').addEventListener('click',e=>{if(e.target.closest('[data-owe]'))wrDetail()});
 if(typeof KEEP!=='undefined')['plan','pat','plx','pls','rota','plxc'].forEach(k=>{if(!KEEP.includes(k))KEEP.push(k)});
+
+setTimeout(()=>{try{if(plTidy()&&typeof render==='function')render()}catch(e){}},2500);
