@@ -341,7 +341,7 @@ function plLive(q){const{n,E,mv,br,tk,tot,w0,d0,Dr,half,drv}=q,tkm=Math.round(tk
  /* the working time total: 30 minutes for over 6 hours of work, 45 for over 9, counting every break of 15 minutes or more */
  const R0=E-n-Math.max(0,br-tkm)*M,needW=tot+R0>9*H?45:tot+R0>6*H?30:0,dv=Dr>0&&d0+Dr>=270*M,needD=dv?(half?30:45):0,
   rem=Math.max(0,needW-tkm,needD,Math.min(br-tkm,br)),R=E-n-rem*M;if(R<15*M&&!rem)return '';
- const had=tkm?`You have had ${tkm} min of breaks. `:'',
+ const had=tkm?`You have had ${tkm} min of breaks. ${dv&&!half&&d0<=0&&tkm>=15?'They count towards your working time breaks, but a break taken before any driving does not count towards the driving break, so that still needs 45 minutes. ':''}`:'',
   more=rem?`You need <b>${rem} more minutes</b>${half&&dv?' in one go (the 30 minute part of your driving break)':''} before ${f}. `:'';
  const X=plWin(w0,d0,Math.max(0,R),Dr);
  /* driving right now: if you keep going, 4h 30m comes sooner than the plan's spread-out driving says */
