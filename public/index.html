@@ -555,7 +555,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-184';
+const APPV='tg-2026-10-23-185';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1697,6 +1697,7 @@ $('est').addEventListener('input',estPend);
  const stop=()=>{clearTimeout(rt);clearTimeout(ri);rt=ri=null};
  $('es').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-es]');if(!b)return;e.preventDefault();const d=+b.dataset.es;cnt=0;step(d);stop();rt=setTimeout(function go(){cnt++;step(d);ri=setTimeout(go,cnt>25?35:cnt>10?60:110)},420)});
  ['pointerup','pointerleave','pointercancel'].forEach(k=>$('es').addEventListener(k,stop));
+ $('es').addEventListener('contextmenu',e=>{if(e.target.closest('[data-es]'))e.preventDefault()});
  $('es').addEventListener('keydown',e=>{const b=e.target.closest('[data-es]');if(b&&(e.key==='Enter'||e.key===' ')){e.preventDefault();step(+b.dataset.es)}})}
 $('est').addEventListener('change',()=>{estPend();clearTimeout(estT);estT=setTimeout(estAsk,700)});/* short wait so typing a time on a keyboard is finished first */
 const pad=n=>String(n).padStart(2,'0'),now=new Date();
