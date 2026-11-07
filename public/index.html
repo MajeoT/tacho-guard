@@ -546,7 +546,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-178';
+const APPV='tg-2026-10-23-179';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -2094,11 +2094,13 @@ function mxList(){if(!jobsOn())return null;const n=Date.now(),A=st.sessions.filt
  if(st.active&&st.act&&st.act!=='r')A.push({s:st.active,e:n,t:st.act,j:st.cj,c:st.act==='d'?1:st.act==='x'?0:isTc()?1:0,live:1});
  A.sort((a,b)=>a.s-b.s);let i=A.length-1;while(i>=0&&!onCard(A[i]))i--;if(i<0)return null;
  let k=i;while(k>0&&onCard(A[k-1]))k--;const ins=A[k].s;if(n-ins>7*864e5)return null;
+ /* manual entries can only be added when the card goes in: once a daily rest has passed since then (the card has been out and back), it is too late */
+ for(let q=k+1;q<=i;q++)if(A[q].s-A[q-1].e>=9*H)return null;if(!A[i].live&&n-A[i].e>=9*H)return null;
  const items=[];let j=k-1;while(j>=0&&!onCard(A[j])){items.unshift(A[j]);j--}
  if(!items.length)return null;return{items,wd:j>=0?A[j].e:null,ins,key:items[items.length-1].e}}
 const MXN={w:['⚒','Other work'],x:['⚒','Other work'],p:['◪','Availability'],r:['🛏','Rest']};
 function mxUpdate(){const L=mxList(),el=$('mx');if(!el)return;if(!L||(st.mx||0)>=L.key){set(el,'');return}
- set(el,`<div class="wkb wn" data-mx="1" role="button" tabindex="0"><b>Tacho manual entries to add</b><span>${L.items.length} entr${L.items.length>1?'ies':'y'} from your no-tacho work since ${tt(L.wd||L.items[0].s)}..</span></div>`)}
+ set(el,`<div class="wkb wn" data-mx="1" role="button" tabindex="0"><b>Tacho manual entries to add</b><span>${L.items.length} entr${L.items.length>1?'ies':'y'} from your no-tacho work since ${tt(L.wd||L.items[0].s)}.</span></div>`)}
 function mxShow(){const L=mxList();if(!L)return;const P=[];let c=L.wd||L.items[0].s;
  L.items.forEach(x=>{if(x.s-c>=M)P.push({t:'r',s:c,e:x.s});P.push({t:x.t,s:Math.max(x.s,c),e:x.e,j:x.j});c=x.e});if(L.ins-c>=M)P.push({t:'r',s:c,e:L.ins});
  const D=[];P.forEach(p=>{let s0=p.s;while(s0<p.e){const nd=nxd(sod(s0)),e0=Math.min(p.e,nd);let g=D[D.length-1];if(!g||g.d!==sod(s0)){g={d:sod(s0),r:[]};D.push(g)}g.r.push({t:p.t,s:s0,e:e0,j:p.j});s0=e0}});
