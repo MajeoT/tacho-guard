@@ -555,7 +555,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-182';
+const APPV='tg-2026-10-23-183';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1288,7 +1288,8 @@ function wrInfo(){const W=st.wr;if(!W)return null;const n=Date.now(),A=all();let
  const mis=!W.fresh?A.find(x=>x.e>W.e-(W.len||45*H)&&x.s<W.e):null;
  const rc=!!last&&ong>0&&ong<24*H&&!st.active&&!!st.se&&st.se>=last.e&&last.e<=lastEnd+144*H&&(lastEnd+144*H-n<24*H||n>lastEnd+144*H);/* resting since End Shift, and the rest began before the deadline */
  return{W,anc,lastEnd,rc,due:lastEnd+144*H,prevRed,redD,C,ong,R,inWr:ong>=24*H,S,mis,RH,intlOk,pair,pairBad,full45,w4,wk4,owedTot:C.reduce((q,x)=>q+x.owed,0),owedDl:C.reduce((m,x)=>Math.min(m,x.dl),Infinity)}}
-const dmy=x=>new Date(x).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' '+hm(x);
+/* a date and time; the year is added when it is not this year, so a date a year away is never mistaken for one coming up soon */
+const dmy=x=>{const d=new Date(x),y=d.getFullYear()!==new Date().getFullYear();return d.toLocaleDateString('en-GB',y?{weekday:'short',day:'numeric',month:'short',year:'numeric'}:{weekday:'short',day:'numeric',month:'short'})+' '+hm(x)};
 let wpm_k='',wpm_v='';
 function wrPlanned(I){if(typeof plSpans!=='function'||!I||I.anc===null||I.inWr)return '';
  const k=(st.u||0)+'|'+Math.floor(Date.now()/6e4)+'|'+I.lastEnd;if(k===wpm_k)return wpm_v;wpm_k=k;
