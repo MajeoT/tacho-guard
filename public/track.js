@@ -231,7 +231,15 @@ function tkFill(o,d,back){if(o){const L=all().filter(x=>!x.live&&x.e>o.S-H&&x.s<
  else{const L=all().filter(x=>!x.live&&x.t!=='r'&&x.s<nxd(d)&&x.e>d);tkQuick(L.length?{day:d,s:hm(Math.min(...L.map(x=>x.s))),e:hm(Math.max(...L.map(x=>x.e))),back}:{day:d,back})}}
 
 /* The next break when no planned shift is giving advice: for the Today card */
-function tkNextLine(){if(!st.active||st.act==='r')return '';const n=Date.now(),J=tkJudge([],n,n,true);return J.next}
+/* With no planned shift (so no finish time), the next break the rules need, as the same card the planned advice uses */
+function tkNextCard(){if(!st.active||st.act==='r')return '';const n=Date.now(),A=all(),ss=shiftStart(A),S=A.filter(x=>x.s>=ss),b=dsbFix(cnt(A,45,x=>x.t==='d'),A),WT=wtS(S,n),act=st.act==='x'?'w':st.act,tc=isTc();
+ /* the same clocks as the top of Today: what you are doing now decides which limit comes next */
+ const L=[];if(act==='d'&&tc)L.push({at:n+270*M-b.d,len:b.q?30:45,why:'4h 30m of driving since your last full break',dk:1});if(act==='d'||act==='w')L.push({at:n+6*H-WT.rn,len:15,why:'6 hours of work in a row'});L.sort((x,y)=>x.at-y.at);const x=L[0];
+ const item=(len,t,c)=>`<div class="bki"><span class="bkn${c?' '+c:''}">${len}<small>min</small></span><span class="bkt">${t}</span></div>`,need=WT.tot>9*H?45:WT.tot>6*H?30:0,had=Math.round(WT.brk/M);
+ const side=[];if(tc&&act!=='d'&&b.d>0)side.push(`Driving: ${fmt(Math.max(0,270*M-b.d))} left before a ${b.q?30:45} minute break.`);if(act==='p')side.push('POA pauses your work clock, so nothing is building up right now.');if(need&&had<need*M/M)side.push(`Over ${need===45?9:6} hours of work you need ${need} minutes of breaks in all; you have had ${had}.`);
+ side.push('No planned shift, so this is the next break only. Add the shift to your Plan to see every break up to your finish.');
+ if(!x)return `<div class="bkh"><span>☕ Your breaks</span></div>${side.map(t=>`<div class="bkn2">${t}</div>`).join('')}`;const due=x.at<=n+6e4;
+ return `<div class="bkh"><span>☕ Your breaks</span><span class="bkc${due?' due':''}">${due?'Due now':'Next by '+hm(x.at)}</span></div><div class="bkr">${item(x.len,due?'<b class="bkx">now</b>':'by '+hm(x.at),due?'bkx':'')}<div class="bkn2" style="margin-top:4px">${due?'You have reached':'When you reach'} ${x.why}.${x.dk&&!b.q&&!due?` Or 15 now and 30 by ${hm(x.at)}.`:x.dk&&b.q?' In one go: it finishes the 15 you had.':''}</div></div>${side.map(t=>`<div class="bkn2">${t}</div>`).join('')}`}
 
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(tkAway,400);else tkMark()});
 setInterval(()=>{if(!document.hidden&&$('mo').hidden){tkMark();if(tkLocOn()){const l=tkLocs().pop();if(!l||Date.now()-l.t>10*M)tkGeoCheck()}}},30000);
