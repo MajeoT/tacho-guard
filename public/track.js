@@ -51,7 +51,7 @@ function tkWait(msg,p,then){let done=false;mo(`<h3>One Moment</h3><p>📍 ${msg}
 function tkBuild(from,to,def,amt,brk,tc,pre){const T=to-from,B=brk.reduce((q,x)=>q+x,0)*M,W=T-B;if(W<0)return null;pre=pre||{d0:0,w0:0};
  const job=o=>{if(jobsOn()&&o.t!=='r'){const jj=tkJ||st.cj;if(jj)o.j=jj;o.c=o.t==='d'?1:(tkJ?jobC(tkJ).tc!==false:isTc())?1:0}return o};
  /* the work, in order */
- const others=['d','w','p'].filter(k=>k!==def&&amt[k]>0).map(k=>[k,amt[k]*M]),oth=others.reduce((q,x)=>q+x[1],0);if(oth>W+6e4)return null;
+ const others=(pre&&pre.pf?['p','d','w']:['d','w','p']).filter(k=>k!==def&&amt[k]>0).map(k=>[k,amt[k]*M]),oth=others.reduce((q,x)=>q+x[1],0);if(oth>W+6e4)return null;
  const rest=W-oth;
  /* halves: when one block of driving makes the break impossible to place legally, half of everything goes before the break and half after */
  const mk=half=>{const q=[],lead=def==='w'&&!pre.mid?Math.min(rest,15*M):0,r=rest-lead,part=(f)=>{others.forEach(([k,l])=>q.push([k,Math.round(l*f/M)*M]));q.push([def,Math.round(r*f/M)*M])};
@@ -86,32 +86,41 @@ function tkBuild(from,to,def,amt,brk,tc,pre){const T=to-from,B=brk.reduce((q,x)=
   const end=Math.min(c+left,nb,to);put(c,end,seq[q][0]);left-=end-c;c=end;if(left<=1){q++;left=q<seq.length?seq[q][1]:0}}
  return out}
 
+/* two drivers: every entry is marked as double manned, and POA as riding as the co-driver */
+function tkMark2(E,on){if(E&&on)E.forEach(x=>{if(x.t!=='r'){x.mm=1;if(x.t==='p')x.cd=1}});return E}
+/* the short reminder shown wherever POA is put in: what it does to the two sets of rules */
+function tkPoaTip(mm){return mm?'As the passenger, your first 45 minutes counts as your <b>driving</b> break, as long as you do no work. For <b>working time</b> it is not a break: it only pauses your 6 hours. Anything you did while riding (paperwork, navigating) is other work.':'POA pauses your working time: it is not work, and it is not a break either. Only a break of 15 minutes or more counts towards your breaks.'}
 /* What the rules make of a set of entries, merged into the log: problems in the shift, and when the next break is due and why */
-function tkJudge(E,from,to,goingOn){const A=all().filter(x=>x.t!=='r'&&(x.e<=from||x.s>=to)).map(x=>Object.assign({},x)).concat(E.filter(x=>x.t!=='r')).sort((a,b)=>a.s-b.s);
+function tkJudge(E,from,to,goingOn){const A0=all(),keep=CDC,cc=CDC.filter(([s,e])=>e<=from||s>=to),E2=[];
+ /* co-driver time in these answers counts the same way all() counts it: its first 45 minutes is a driving break, not a working time one */
+ E.forEach(x=>{if(x.t==='p'&&x.cd){const s2=x.s+45*M;cc.push([x.s,Math.min(x.e,s2)]);if(x.e>s2)E2.push(Object.assign({},x,{s:s2}))}else E2.push(x)});CDC=cc;
+ try{const A=A0.filter(x=>x.t!=='r'&&(x.e<=from||x.s>=to)).map(x=>Object.assign({},x)).concat(E2.filter(x=>x.t!=='r')).sort((a,b)=>a.s-b.s);
  if(!A.length)return{bad:[],next:''};let i=A.length-1;while(i>0&&A[i].s-A[i-1].e<9*H)i--;const S=A.slice(i).filter(x=>x.s<to+1);
- const bad=typeof audRules==='function'?audRules(S).map(r=>r[0]):[];let next='';
- if(goingOn){const tc=isTc();let d=0,p=false,rn=0,tot=0,brkT=0;S.forEach((x,k)=>{if(k){const g=x.s-S[k-1].e;if(g>=45*M||(p&&g>=30*M)){d=0;p=false}else if(g>=15*M&&d>0)p=true;if(g>=15*M){brkT+=g;rn=0}}if(x.t==='d')d+=x.e-x.s;if(x.t!=='p'){rn+=x.e-x.s;tot+=x.e-x.s}});
+ const bad=typeof audRules==='function'?audRules(S).map(r=>r[0]):[];let next='';CDC=cc;
+ if(goingOn){const tc=isTc();let d=0,p=false,rn=0,tot=0,brkT=0;S.forEach((x,k)=>{if(k){const g=x.s-S[k-1].e,gw=wg(S[k-1].e,x.s);if(g>=45*M||(p&&g>=30*M)){d=0;p=false}else if(g>=15*M&&d>0)p=true;if(gw>=15*M){brkT+=gw;rn=0}}if(x.t==='d')d+=x.e-x.s;if(x.t!=='p'){rn+=x.e-x.s;tot+=x.e-x.s}});
   const L=[];if(tc&&d>0)L.push([270*M-d,'you reach 4h 30m of driving since your last full break',p?'30 minutes, to finish the 15 you had':'45 minutes, or 15 now and 30 later']);
   L.push([6*H-rn,'you reach 6 hours of work in a row','at least 15 minutes']);L.sort((a,b)=>a[0]-b[0]);const k=L[0];
   next=k[0]<=0?`☕ Take a break now: ${k[1].replace('you reach','you have reached')}. It needs to be ${k[2]}.`:`☕ Next break by <b>${hm(to+k[0])}</b>, because by then ${k[1]}. It needs to be ${k[2]}.`;
   const need=tot>9*H?45:tot>6*H?30:0;if(need&&brkT<need*M)next+=` Over ${need===45?'9':'6'} hours of work you need ${need} minutes of breaks in all; you have had ${Math.round(brkT/M)}.`}
- return{bad,next}}
+ return{bad,next}}finally{CDC=keep}}
 
 /* The screen: o = {from, to, def (the main activity, other work if not given), title, lead, ok (button text), done(E), back, quick} */
 function acctAsk(o){tkJ=o.j||null;const tc=o.j?jobC(o.j).tc!==false:isTc(),T=(o.to-o.from)/M,def=o.def||'w';
  /* driving and work since the last full break, up to the start of this stretch, so the breaks it suggests count them */
  const pre=(()=>{const A=all().filter(x=>x.t!=='r'&&x.s<o.from).map(x=>Object.assign({},x,{e:Math.min(x.e,o.from)}));if(!A.length||o.from-A[A.length-1].e>=9*H)return{d0:0,w0:0,half:false};
-  let i=A.length-1;while(i>0&&A[i].s-A[i-1].e<9*H)i--;const S=A.slice(i);let d=0,p=false,rn=0;S.forEach((x,k)=>{if(k){const g=x.s-S[k-1].e;if(g>=45*M||(p&&g>=30*M)){d=0;p=false}else if(g>=15*M&&d>0)p=true;if(g>=15*M)rn=0}if(x.t==='d')d+=x.e-x.s;if(x.t!=='p')rn+=x.e-x.s});
-  const g=o.from-S[S.length-1].e;if(g>=45*M||(p&&g>=30*M)){d=0;p=false}if(g>=15*M)rn=0;return{d0:d,w0:rn,half:p}})();pre.mid=!!o.mid;
- const amt={d:0,w:0,p:0},on={d:false,w:false,p:false,r:false};let brk=[];
+  let i=A.length-1;while(i>0&&A[i].s-A[i-1].e<9*H)i--;const S=A.slice(i);let d=0,p=false,rn=0;S.forEach((x,k)=>{if(k){const g=x.s-S[k-1].e;if(g>=45*M||(p&&g>=30*M)){d=0;p=false}else if(g>=15*M&&d>0)p=true;if(wg(S[k-1].e,x.s)>=15*M)rn=0}if(x.t==='d')d+=x.e-x.s;if(x.t!=='p')rn+=x.e-x.s});
+  const g=o.from-S[S.length-1].e;if(g>=45*M||(p&&g>=30*M)){d=0;p=false}if(wg(S[S.length-1].e,o.from)>=15*M)rn=0;return{d0:d,w0:rn,half:p}})();pre.mid=!!o.mid;
+ const amt={d:0,w:0,p:0},on={d:false,w:false,p:false,r:false};let brk=[],mm2=!!(o.init&&o.init.mm)&&tc,pf=!!(o.init&&o.init.pf);
  if(o.init){['d','w','p'].forEach(k=>{if(o.init[k]>0&&k!==def&&(k!=='d'||tc)){on[k]=true;amt[k]=Math.min(Math.round(o.init[k]/15)*15||15,T)}});if(o.init.brk&&o.init.brk.length){brk=o.init.brk.slice();on.r=true}}
  if(o.geo&&o.geo.d&&tc&&def!=='d'){on.d=true;amt.d=Math.min(o.geo.d,Math.floor(T/15)*15)}
  if(o.quick&&!(o.init&&o.init.brk)){/* a whole shift: suggest the breaks the law needs, so they only have to be changed if wrong */const w=T;if(w>9*60+45)brk=[45];else if(w>6*60+30)brk=[30];if(brk.length)on.r=true}
  const kinds=[...(tc?['d']:[]),'w','p'].filter(k=>k!==def);
- const chips={d:[15,30,45,60,90,120,180,240],w:[15,30,60,90,120],p:[15,30,60,90,120]},bchips=[[15],[30],[45],[15,30],[60]];
- const draw=()=>{const B=brk.reduce((q,x)=>q+x,0),oth=kinds.reduce((q,k)=>q+(on[k]?amt[k]:0),0),rest=T-(on.r?B:0)-oth,E=rest>=0?tkBuild(o.from,o.to,def,{d:on.d?amt.d:0,w:on.w?amt.w:0,p:on.p?amt.p:0},on.r?brk:[],tc,pre):null,J=E?tkJudge(E,o.from,o.to,!o.quick):null;
-  const row=k=>`<div class="acr${on[k]?' on':''}"><label class="fsw" style="margin:0"><span>${TKI[k]} ${k==='w'?'Did you do other work?':k==='d'?'Did you drive?':'Did you have POA (waiting time)?'}</span><span class="swt"><input type="checkbox" data-ak="t:${k}"${on[k]?' checked':''} aria-label="${TKN[k]}"><i></i></span></label>${on[k]?`<div class="fsub">Roughly how long?</div><div class="fchips fsm">${chips[k].filter(m=>m<=T).map(m=>`<button type="button" class="fchip${amt[k]===m?' on':''}" data-ak="a:${k}:${m}">${tkF(m)}</button>`).join('')}</div><div class="fstep"><button type="button" data-ak="s:${k}:-5" aria-label="5 minutes less">−5</button><span><b>${tkF(amt[k])}</b></span><button type="button" data-ak="s:${k}:5" aria-label="5 minutes more">+5</button></div>`:''}</div>`;
+ const chips={d:[15,30,45,60,90,120,180,240],w:[15,30,60,90,120,180],p:[15,30,60,90,120]},bchips=[[15],[30],[45],[15,15],[15,30],[60]];
+ const draw=()=>{const B=brk.reduce((q,x)=>q+x,0),oth=kinds.reduce((q,k)=>q+(on[k]?amt[k]:0),0),rest=T-(on.r?B:0)-oth,E=rest>=0?tkMark2(tkBuild(o.from,o.to,def,{d:on.d?amt.d:0,w:on.w?amt.w:0,p:on.p?amt.p:0},on.r?brk:[],tc,Object.assign({},pre,{pf:mm2&&pf})),mm2):null,J=E?tkJudge(E,o.from,o.to,!o.quick):null;
+  const pch=mm2?[30,60,90,120,180,240,300]:chips.p;
+  const row=k=>`<div class="acr${on[k]?' on':''}"><label class="fsw" style="margin:0"><span>${TKI[k]} ${k==='w'?'Did you do other work?':k==='d'?'Did you drive?':mm2?'Time as the passenger (POA)?':'Did you have POA (waiting time)?'}</span><span class="swt"><input type="checkbox" data-ak="t:${k}"${on[k]?' checked':''} aria-label="${TKN[k]}"><i></i></span></label>${on[k]?`<div class="fsub">Roughly how long?</div><div class="fchips fsm">${(k==='p'?pch:chips[k]).filter(m=>m<=T).map(m=>`<button type="button" class="fchip${amt[k]===m?' on':''}" data-ak="a:${k}:${m}">${tkF(m)}</button>`).join('')}</div><div class="fstep"><button type="button" data-ak="s:${k}:-5" aria-label="5 minutes less">−5</button><span><b>${tkF(amt[k])}</b></span><button type="button" data-ak="s:${k}:5" aria-label="5 minutes more">+5</button></div>${k==='p'?`<div class="note" style="margin-top:6px">${tkPoaTip(mm2)}</div>`:''}`:''}</div>`;
   mo(`<h3>${o.title}</h3><p>${o.lead||''} That is <b>${tkF(T)}</b> to account for, from ${hm(o.from)} to ${hm(o.to)}. Turn on what you did. ${def==='w'&&!o.mid?'Anything left over counts as other work, which is how most shifts start.':'Anything left over stays as '+tkLow(def)+'.'}</p>${o.geo?`<div class="note" style="margin:-4px 0 10px">${o.geo.txt}</div>`:''}<div class="acq">
+  ${o.quick&&tc?`<div class="acr${mm2?' on':''}"><label class="fsw" style="margin:0"><span>👥 Two drivers (double manning)?</span><span class="swt"><input type="checkbox" data-ak="t:m"${mm2?' checked':''} aria-label="Two drivers"><i></i></span></label>${mm2?`<div class="note" style="margin-top:4px">Put in your own driving, and your time as the passenger as POA. You then need 9 hours of rest within 30 hours of starting.</div>${on.d&&on.p?`<div class="fsub">Who drove first?</div><div class="fchips fsm"><button type="button" class="fchip${pf?'':' on'}" data-ak="f:0">Me</button><button type="button" class="fchip${pf?' on':''}" data-ak="f:1">The other driver</button></div>`:''}`:''}</div>`:''}
   ${kinds.map(row).join('')}
   <div class="acr${on.r?' on':''}"><label class="fsw" style="margin:0"><span>🛏 Did you have a break?</span><span class="swt"><input type="checkbox" data-ak="t:r"${on.r?' checked':''} aria-label="Break"><i></i></span></label>${on.r?`<div class="fsub">Which?</div><div class="fchips fsm">${bchips.filter(b=>b.reduce((q,x)=>q+x,0)<T).map(b=>`<button type="button" class="fchip${brk.join('+')===b.join('+')?' on':''}" data-ak="b:${b.join('+')}">${b.map(x=>x+' min').join(' + ')}</button>`).join('')}</div>`:''}</div>
   </div><div class="fsum">${rest<0?`<span class="bad">That adds up to more than ${tkF(T)}. Take some off.</span>`:`${TKI[def]} ${TKN[def]}: <b>${tkF(rest)}</b> (the rest)`}</div>
@@ -121,7 +130,9 @@ function acctAsk(o){tkJ=o.j||null;const tc=o.j?jobC(o.j).tc!==false:isTc(),T=(o.
   <div class="note bad" id="akerr"></div><button class="tg big fpri" data-k="ok"${rest<0?' disabled':''}>${o.ok||'Save'}</button>${o.back?'<button class="tg big" data-k="bk">← Back</button>':''}<button class="tg big" data-k="no">Cancel</button>`);
   mcb={no:o.cancel||undo,bk:o.back,ok:()=>{if(!E){$('akerr').textContent='Those times do not fit. Check the amounts.';return}o.done(E)}}};
  const ev=e=>{const b=e.target.closest('[data-ak]');if(!b||!$('mo').contains(b))return;const[k,a,v]=b.dataset.ak.split(':');
-  if(k==='t'){on[a]=b.tagName==='INPUT'?b.checked:!on[a];if(a!=='r'&&on[a]&&!amt[a])amt[a]=Math.min(a==='d'?60:30,Math.floor(T/15)*15)||15;if(a==='r'&&on.r&&!brk.length)brk=T>9*60?[45]:T>6*60?[30]:[15]}
+  if(k==='t'&&a==='m'){mm2=b.tagName==='INPUT'?b.checked:!mm2;if(mm2&&!on.p){on.p=true;amt.p=Math.min(180,Math.floor(T/15)*15)||15}}
+  else if(k==='f')pf=a==='1';
+  else if(k==='t'){on[a]=b.tagName==='INPUT'?b.checked:!on[a];if(a!=='r'&&on[a]&&!amt[a])amt[a]=Math.min(a==='d'?60:30,Math.floor(T/15)*15)||15;if(a==='r'&&on.r&&!brk.length)brk=T>9*60?[45]:T>6*60?[30]:[15]}
   else if(k==='a')amt[a]=+v;else if(k==='s')amt[a]=Math.max(0,Math.min(T,amt[a]+ +v));else if(k==='b')brk=a.split('+').map(Number);draw()};
  tkEv=ev;draw()}
 /* the toggles and chips of acctAsk (the pop-up's own buttons still go through its usual handler) */
@@ -136,7 +147,7 @@ function tkLogView(E,from,to){const L=E.slice().sort((a,b)=>a.s-b.s),seg=[];let 
  return `<div class="tkl"><div class="tkh"><b>How it goes in your log</b><span>${['d','w','p','r'].filter(k=>tot(k)>0).map(k=>`<span class="tkk"><i class="k-${k}"></i>${TKN[k]} ${tkF(tot(k)/M)}</span>`).join('')}</span></div>
  <div class="tkb" aria-hidden="true">${seg.map(x=>`<i class="k-${x.t}" style="flex:${Math.max(1,Math.round((x.e-x.s)/M))} 0 0"></i>`).join('')}</div><div class="tkt"><span>${hm(from)}</span><span>${hm(to)}</span></div>
  ${seg.map(x=>`<div class="tkr${x.t==='r'?' br':''}"><i class="k-${x.t}"></i><span>${TKI[x.t]} ${TKN[x.t]}</span><span class="tm">${hm(x.s)}–${hm(x.e)}<small>${tkF((x.e-x.s)/M)}</small></span></div>`).join('')}
- <div class="tkn">The order is a best guess. Change exact times in Today's Log afterwards.</div></div>`}
+ <div class="tkn">The order is a best guess. Once saved, tap the shift on Today, or the day in the Plan, to drag the blocks into the order you really did them.</div></div>`}
 
 /* Put the entries in: everything logged in that stretch is replaced */
 function tkPut(E,from,to){clear(from,to,1);E.forEach(x=>st.sessions.push(x));if(st.rs&&from<st.rs)st.rs=from}
@@ -204,12 +215,12 @@ function tkQuick(pre){const n=Date.now(),td=sod(n);let day=pre&&pre.day?pre.day:
   [0,1,2].forEach(k=>mcb['d'+k]=()=>{day=sod(td-k*864e5);keep()});if($('tqd'))$('tqd').onchange=e=>{if(e.target.value){day=pdt(e.target.value);keep()}};$('tqs').value=sv;$('tqe').value=ev;mcb.ok=ok;mcb.no=moX;if(pre&&pre.back)mcb.bk=pre.back};
  let sv=pre&&pre.s||'',ev=pre&&pre.e||'';const keep=()=>{sv=$('tqs').value;ev=$('tqe').value;draw()};
  const ok=()=>{const a=$('tqs').value,b=$('tqe').value,er=m=>{$('tqerr').textContent=m};if(!a||!b){er('Enter when it started and finished.');return}sv=a;ev=b;
-  const s=plAt(day,a);let e=plAt(day,b);if(e<=s)e=plAt(nxd(day),b);if(e>n){er('That finishes after now. If you are still working, start your shift on the Today screen instead.');return}if(e-s>18*H){er('That is over 18 hours. Check the times.');return}
+  const s=plAt(day,a);let e=plAt(day,b);if(e<=s)e=plAt(nxd(day),b);if(e>n){er('That finishes after now. If you are still working, start your shift on the Today screen instead.');return}if(e-s>21*H){er('That is over 21 hours. Check the times.');return}
   const ov=all().filter(x=>x.e>s&&x.s<e),ow=ov.filter(x=>x.t!=='r');
   /* start from what is logged in that time (so a fix only needs the changes), else from the plan */
   let init=null;if(ow.length){const sum=t=>ov.filter(x=>x.t===t).reduce((q,x)=>q+Math.min(x.e,e)-Math.max(x.s,s),0)/M,br=[];
    const W=ov.slice().sort((x,y)=>x.s-y.s);W.forEach((x,k)=>{if(x.t==='r'&&x.e-x.s>=15*M)br.push(Math.round((Math.min(x.e,e)-Math.max(x.s,s))/M/15)*15);if(k&&x.s-W[k-1].e>=15*M&&x.t!=='r'&&W[k-1].t!=='r')br.push(Math.round((x.s-W[k-1].e)/M/15)*15)});
-   init={d:sum('d'),p:sum('p'),brk:br.filter(x=>x>=15)}}
+   const fd=W.find(x=>x.t==='d'),fp=W.find(x=>x.t==='p');init={d:sum('d'),p:sum('p'),brk:br.filter(x=>x>=15),mm:ov.some(x=>x.mm||x.cd),pf:!!(fd&&fp&&fp.s<fd.s)}}
   else if(pre&&pre.oid){init={d:(pre.dr||0)*60,brk:pre.br?(pre.br>=45&&e-s>9*H+45*M&&pre.dr>=4.5?[45]:[pre.br]):[]}}
   acctAsk({from:s,to:e,def:'w',quick:true,j:pre&&pre.j,init,title:pre&&pre.oid?'What You Did':'Your Shift',lead:`${new Date(s).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'})}, ${hm(s)} to ${hm(e)}.${ow.length?' It starts from what is already logged in that time, and replaces it.':pre&&pre.oid?' It starts from what was planned.':''}`,ok:'Save this shift',back:draw,cancel:moX,
    done:E=>{const sv2=JSON.stringify(st);tkPut(E,s,e);if(pre&&pre.oid)st.pls=Object.assign({},st.pls,{[pre.oid]:'done'});/* the latest shift, nothing running after it: it has ended at its finish */if(!st.active&&!st.sessions.some(x=>(x.t||'d')!=='r'&&x.s>=e)&&!(st.se&&st.se>=e))st.se=e;tkJ=null;save();moX();render();flash=`Shift saved: ${hm(s)} to ${hm(e)}. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>`;usnap=sv2;snap=sv2;setTimeout(()=>{flash='';live()},12000);live();tkRunCheck()}})};
