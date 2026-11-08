@@ -249,7 +249,8 @@ function tcCheck(){const n=Date.now(),A=all(),l=A[A.length-1];if(!l)return;const
  const sumD=L=>L.filter(x=>x.t==='d').reduce((q,x)=>q+Math.min(x.e,n)-x.s,0),logD=sumD(S),b=dsbFix(cnt(A,45,x=>x.t==='d'),A),fd=S.find(x=>x.t==='d');
  let dsbT=false,st0=ss,drv=true,tot=Math.round(logD/M),dsb=Math.round(b.d/M),dsbK=true,where='now',pre='w',fdT=fd?hm(fd.s):'';
  const step=(k,vals)=>`<div class="tcs">${vals.map(v=>`<button type="button" data-tc="${k}:${v}">${v>0?'+':'−'}${Math.abs(v)}</button>`).join('')}</div>`,hmF=m=>Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m';
- const draw=()=>{const dS=Math.round((ss-st0)/M),dD=drv?tot-Math.round(logD/M)-(st0<ss&&pre==='d'?dS:0):-Math.round(logD/M),ch=[];
+ const draw=()=>{const dS=Math.round((ss-st0)/M),/* driving the log keeps from the new start (a later start cuts some off) */kept=Math.round(S.filter(x=>x.t==='d').reduce((q,x)=>q+Math.max(0,Math.min(x.e,n)-Math.max(x.s,st0)),0)/M),
+  dD=drv?tot-kept-(st0<ss&&pre==='d'?dS:0):-kept,ch=[];
   if(dS>0)ch.push(`Start moves to <b>${hm(st0)}</b>: ${tkF(dS)} of ${pre==='d'?'driving':'other work'} added before ${hm(ss)}.`);else if(dS<0)ch.push(`Start moves to <b>${hm(st0)}</b>: anything before it is taken off.`);
   if(dD>0)ch.push(`<b>${tkF(dD)}</b> of other work or POA becomes driving, ${where==='now'?'working back from now':'from '+(fdT||hm(st0))}.`);else if(dD<0)ch.push(`<b>${tkF(-dD)}</b> of driving becomes other work, starting with the most recent.`);
   /* until you change it, driving since the break follows the total (missing driving goes in most recently) */
@@ -269,6 +270,8 @@ function tcCheck(){const n=Date.now(),A=all(),l=A[A.length-1];if(!l)return;const
   /* the running activity is put into the log up to now and carries on from now, so it can be changed like the rest */
   if(st.active&&st.act&&st.act!=='r'&&now-st.active>=6e4){st.sessions.push(rec(st.active,now));st.active=now}
   const T=x=>x.t||'d',inS=x=>x.e>Math.min(st0,ss)-6e4&&x.s<now+6e4&&T(x)!=='r';
+  /* breaks logged before the shift's first work are tidied away with the old start */
+  st.sessions=st.sessions.filter(x=>!(T(x)==='r'&&x.e>Math.min(st0,ss)-12*H&&x.s<Math.max(st0,ss)&&x.e<=Math.max(st0,ss)+6e4&&!st.sessions.some(y=>T(y)!=='r'&&y.e<=x.s&&y.e>x.s-9*H)));
   if(dS>0)st.sessions.push(Object.assign({s:st0,e:ss,t:pre,chk:1},jobsOn()?{j:st.cj,c:pre==='d'?1:isTc()?1:0}:{}));
   else if(dS<0){st.sessions=st.sessions.filter(x=>!(inS(x)&&x.e<=st0));st.sessions.forEach(x=>{if(inS(x)&&x.s<st0)x.s=st0})}
   /* change kind, minute by minute along the shift: back from now, or forward from when driving started */

@@ -409,23 +409,31 @@ function plLiveBox(q){let t=plLive(q);const H5=x=>plHm(x);
  /* driving now: the 4h 30m limit comes first, even when you have driven more than the plan expected (then the plan's own
     numbers have no driving left in them) */
  if(q.drv&&q.d0>0){const dl=q.n+Math.max(0,270*M-q.d0),R0=q.E-q.n,dlen=q.half?30:45;if(dl<q.E&&(!PLL||PLL.k==='ok'||dl<PLL.b-6e4)){const P0=PLL;PLL=Object.assign({},P0||{n:q.n,E:q.E,R0,tot:q.tot,tkm:Math.round(q.tk/M),dv:1},{k:'by',len:dlen,b:dl,a:undefined,half:q.half,dv:1});
+   /* after that break: more than 6 hours of work left to the finish, or under 45 minutes of breaks for a long day, needs one more */
+   {const end=Math.max(q.n,dl)+dlen*M,wa=q.E-end,TWk=q.tot+Math.max(0,q.E-q.n-dlen*M),tk=Math.round(q.tk/M)+dlen,more=Math.max(wa>6*H+6e4?15:0,TWk>9*H&&tk<45?45-tk:0);
+    if(more>=15){const a2=Math.max(end,q.E-6*H-more*M),b2=Math.max(a2,end+6*H);PLL.then={len:more,a:plR5(a2-q.n,1)+q.n,b:plR5(b2-q.n)+q.n}}else if(P0&&P0.then&&!(wa<=6*H))PLL.then=P0.then;else PLL.then=undefined}
    if(!/4h 30m at/.test(t||''))t=(dl<=q.n+6e4?`⚠ You have driven 4h 30m since your last full break. <b>Stop for your ${dlen} minute break now.</b>`:`☕ If you keep driving you reach 4h 30m at <b>${H5(dl)}</b>, so your ${dlen} minute driving break${q.half?' (it finishes the 15 you had)':''} has to start by then.`)+(t?' '+t.replace(/^☕ /,''):'')}}
  if(!t)return null;const P=PLL;if(!P)return{sum:t,det:''};
- let sum='',bar='';const span=Math.max(P.E-P.n,30*M),pos=x=>Math.max(0,Math.min(100,(x-P.n)/span*100));
- if(P.k==='ok')sum=`<span class="h-ok">✓ Enough breaks for this shift</span>${P.tkm?' ('+P.tkm+' min)':''}`;
- else{const split=P.len>=45&&!P.half?(P.k==='win'?`Or split it: 15 min any time before ${H5(P.b)}, then the other ${P.len-15} between ${H5(P.a)} and ${H5(P.b)}.`:`Or split it: 15 min now or soon, then the other ${P.len-15} by ${H5(P.b)}.`):P.half&&P.len>=30?'In one go: it finishes your split break.':'';
-  let SP=P.tkm===0&&!P.half&&P.len>=30?plSplit({n:q.n,E:q.E,w0:q.w0,d0:q.d0,Dr:q.Dr},P.len):null;
+ let sum='',bar='';const span=Math.max(P.E-P.n,30*M),pos=x=>Math.max(0,Math.min(100,(x-P.n)/span*100)),due=P.k!=='ok'&&P.b<=P.n+6e4;
+ const W=(k,a,b)=>b<=P.n+6e4?'<b class="bkx">now</b>':k==='win'?`${H5(a)}–${H5(b)}`:`by ${H5(b)}`,
+  seg=(a,b,c)=>`<i class="h-tlw${c?' '+c:''}" style="left:${pos(a).toFixed(1)}%;width:${Math.max(2,pos(b)-pos(a)).toFixed(1)}%"></i>`,
+  item=x=>`<div class="bki">${x.pre?`<span class="bkp">${x.pre}</span>`:''}<span class="bkn${x.c?' '+x.c:''}">${x.len}<small>min</small></span><span class="bkt">${x.t}</span>${x.best?`<span class="bkb">best ${x.best}</span>`:''}</div>`,
+  row=(lab,items,segs)=>`<div class="bkr">${lab?`<div class="bkl">${lab}</div>`:''}${items.map(item).join('')}<div class="h-tl" aria-hidden="true">${segs}</div></div>`;
+ if(P.k==='ok')sum=`<div class="bkh"><span>☕ Your breaks</span><span class="bkc ok">✓ Covered</span></div><div class="bkok">Enough breaks for this shift${P.tkm?' ('+P.tkm+' min)':''}. Nothing more needed by law if you finish on time.</div>`;
+ else{let SP=P.tkm===0&&!P.half&&P.len>=30&&!due?plSplit({n:q.n,E:q.E,w0:q.w0,d0:q.d0,Dr:q.Dr},P.len):null;
   /* driving now: the 15 has to come before 4h 30m of driving too, if you keep going */
   if(SP&&q.drv&&q.d0>0){const dl=q.n+Math.round(Math.max(0,270*M-q.d0)/M)*M;if(dl<SP.l1){SP.l1=Math.max(q.n,dl);if(SP.t1>SP.l1){SP.t1=SP.l1}SP.dl=1}
-   /* 4h 30m close (or reached): a 15 does not reset the driving, so the 30 has to be done before you drive on past it */
+   /* 4h 30m close (or past the 30's window): a 15 does not reset the driving, so the 30 has to be done before you drive past it */
    if(dl-q.n<=60*M||dl<SP.a2-6e4){const cap=Math.max(q.n,dl)+15*M;if(SP.a2>cap)SP=null;else{SP.b2=Math.min(SP.b2,cap);SP.t2=Math.min(SP.t2,SP.b2)}}}
-  P.sp=SP;if(SP){const seg=(a,b,c)=>`<i class="h-tlw${c?' '+c:''}" style="left:${pos(a).toFixed(1)}%;width:${Math.max(2,pos(b)-pos(a)).toFixed(1)}%"></i>`,lbl=`<div class="h-tll"><span>Now ${H5(P.n)}</span><span>Finish ${H5(P.E)}</span></div>`;
-   const one=`${P.k==='win'?`between <b>${H5(P.a)}</b> and <b>${H5(P.b)}</b>`:`by <b>${H5(P.b)}</b>`}${P.then?`, then 15 more between ${H5(P.then.a)} and ${H5(P.then.b)}`:''}`;
-   sum=`☕ <b>Your breaks.</b> Either way covers you to your finish:<div class="bo"><div class="bor"><div class="boh">${P.len} in one go${P.then?', then 15':''}</div><div>${one}</div><div class="h-tl" aria-hidden="true">${seg(P.k==='win'?P.a:P.n,P.b,P.k==='win'?'':'by')}${P.then?seg(P.then.a,P.then.b,'b2'):''}</div></div>
-<div class="bor"><div class="boh">15, then ${SP.l2}</div><div><b class="h-b2">15</b> ${SP.now?'now or soon':'about <b>'+H5(SP.t1)+'</b>'} <span class="note">(any time before ${H5(SP.l1)}${SP.dl?', when you reach 4h 30m of driving':''})</span></div><div><b>${SP.l2}</b> between <b>${H5(SP.a2)}</b> and <b>${H5(SP.b2)}</b> <span class="note">(best about ${H5(SP.t2)})</span></div><div class="h-tl" aria-hidden="true">${seg(P.n,SP.l1,'b2 by')}${seg(SP.a2,SP.b2)}</div></div></div>${lbl}`;
-   bar=''}
-  else sum=`☕ <b>${P.len} min break</b> ${P.k==='win'?`between <b>${H5(P.a)}</b> and <b>${H5(P.b)}</b>`:`by <b>${H5(P.b)}</b>`}${P.then?`, then <b class="h-b2">15 min</b> between ${H5(P.then.a)} and ${H5(P.then.b)}`:''}`+(split?`<span class="h-sp">${split}</span>`:'');
-  if(!SP){const a=P.k==='win'?P.a:P.n,b=P.b;bar=`<div class="h-tl" aria-hidden="true"><i class="h-tlw${P.k==='win'?'':' by'}" style="left:${pos(a).toFixed(1)}%;width:${Math.max(2,pos(b)-pos(a)).toFixed(1)}%"></i>${P.then?`<i class="h-tlw b2" style="left:${pos(P.then.a).toFixed(1)}%;width:${Math.max(2,pos(P.then.b)-pos(P.then.a)).toFixed(1)}%"></i>`:''}</div><div class="h-tll"><span>Now ${H5(P.n)}</span><span>Finish ${H5(P.E)}</span></div>`}}
+  P.sp=SP;
+  const one=[{len:P.len,t:W(P.k,P.a,P.b),c:due?'bkx':''}];if(P.then)one.push({pre:'then',len:P.then.len||15,t:W('win',P.then.a,P.then.b),c:'b2'});
+  const s1=seg(P.k==='win'?P.a:P.n,Math.max(P.b,P.n+2*M),P.k==='win'?'':'by')+(P.then?seg(P.then.a,P.then.b,'b2'):'');
+  const nx=SP?Math.min(P.b,SP.l1):P.b;
+  sum=`<div class="bkh"><span>☕ Your breaks</span><span class="bkc${due?' due':''}">${due?'Due now':'Next by '+H5(nx)}</span></div>`+row(SP?'In one go':'',one,s1);
+  if(SP)sum+=row('Or split',[{len:15,t:'by '+H5(SP.l1),best:SP.now?'now':H5(SP.t1),c:'b2'},{pre:'then',len:SP.l2,t:`${H5(SP.a2)}–${H5(SP.b2)}`,best:H5(SP.t2)}],seg(P.n,SP.l1,'b2 by')+seg(SP.a2,SP.b2));
+  else if(!due&&P.len>=45&&!P.half)sum+=`<div class="bkn2">Or split it: 15 ${P.k==='win'?'any time before '+H5(P.b):'now or soon'}, then the other ${P.len-15} ${P.k==='win'?'between '+H5(P.a)+' and '+H5(P.b):'by '+H5(P.b)}.</div>`;
+  else if(P.half&&P.len>=30)sum+=`<div class="bkn2">In one go: it finishes the 15 you had.</div>`;
+  bar=`<div class="h-tll"><span>Now ${H5(P.n)}</span><span>Finish ${H5(P.E)}</span></div>`}
  /* what changes if the day is shorter or longer than planned: total work at the planned finish against 6 and 9 hours */
  const TW=P.tot+Math.max(0,P.R0),L=[],nd=P.dv?45:0,nw=x=>x>9*H?45:x>6*H?30:0,now=Math.max(nw(TW),nd);
  if(P.then)L.push(`<b>Finish sooner:</b> the extra 15 minutes is only because you would work more than 6 hours after your ${P.len} minute break. If you are done by about ${H5(P.b+P.len*M+6*H)}, you do not need it.`);
