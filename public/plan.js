@@ -414,10 +414,12 @@ function plLiveBox(q){let t=plLive(q);const H5=x=>plHm(x);
  let sum='',bar='';const span=Math.max(P.E-P.n,30*M),pos=x=>Math.max(0,Math.min(100,(x-P.n)/span*100));
  if(P.k==='ok')sum=`<span class="h-ok">✓ Enough breaks for this shift</span>${P.tkm?' ('+P.tkm+' min)':''}`;
  else{const split=P.len>=45&&!P.half?(P.k==='win'?`Or split it: 15 min any time before ${H5(P.b)}, then the other ${P.len-15} between ${H5(P.a)} and ${H5(P.b)}.`:`Or split it: 15 min now or soon, then the other ${P.len-15} by ${H5(P.b)}.`):P.half&&P.len>=30?'In one go: it finishes your split break.':'';
-  const SP=P.tkm===0&&!P.half&&P.len>=30?plSplit({n:q.n,E:q.E,w0:q.w0,d0:q.d0,Dr:q.Dr},P.len):null;P.sp=SP;
+  let SP=P.tkm===0&&!P.half&&P.len>=30?plSplit({n:q.n,E:q.E,w0:q.w0,d0:q.d0,Dr:q.Dr},P.len):null;
   /* driving now: the 15 has to come before 4h 30m of driving too, if you keep going */
-  if(SP&&q.drv&&q.d0>0){const dl=q.n+Math.round(Math.max(0,270*M-q.d0)/M)*M;if(dl<SP.l1){SP.l1=Math.max(q.n,dl);if(SP.t1>SP.l1){SP.t1=SP.l1}SP.dl=1}}
-  if(SP){const seg=(a,b,c)=>`<i class="h-tlw${c?' '+c:''}" style="left:${pos(a).toFixed(1)}%;width:${Math.max(2,pos(b)-pos(a)).toFixed(1)}%"></i>`,lbl=`<div class="h-tll"><span>Now ${H5(P.n)}</span><span>Finish ${H5(P.E)}</span></div>`;
+  if(SP&&q.drv&&q.d0>0){const dl=q.n+Math.round(Math.max(0,270*M-q.d0)/M)*M;if(dl<SP.l1){SP.l1=Math.max(q.n,dl);if(SP.t1>SP.l1){SP.t1=SP.l1}SP.dl=1}
+   /* 4h 30m close (or reached): a 15 does not reset the driving, so the 30 has to be done before you drive on past it */
+   if(dl-q.n<=60*M||dl<SP.a2-6e4){const cap=Math.max(q.n,dl)+15*M;if(SP.a2>cap)SP=null;else{SP.b2=Math.min(SP.b2,cap);SP.t2=Math.min(SP.t2,SP.b2)}}}
+  P.sp=SP;if(SP){const seg=(a,b,c)=>`<i class="h-tlw${c?' '+c:''}" style="left:${pos(a).toFixed(1)}%;width:${Math.max(2,pos(b)-pos(a)).toFixed(1)}%"></i>`,lbl=`<div class="h-tll"><span>Now ${H5(P.n)}</span><span>Finish ${H5(P.E)}</span></div>`;
    const one=`${P.k==='win'?`between <b>${H5(P.a)}</b> and <b>${H5(P.b)}</b>`:`by <b>${H5(P.b)}</b>`}${P.then?`, then 15 more between ${H5(P.then.a)} and ${H5(P.then.b)}`:''}`;
    sum=`☕ <b>Your breaks.</b> Either way covers you to your finish:<div class="bo"><div class="bor"><div class="boh">${P.len} in one go${P.then?', then 15':''}</div><div>${one}</div><div class="h-tl" aria-hidden="true">${seg(P.k==='win'?P.a:P.n,P.b,P.k==='win'?'':'by')}${P.then?seg(P.then.a,P.then.b,'b2'):''}</div></div>
 <div class="bor"><div class="boh">15, then ${SP.l2}</div><div><b class="h-b2">15</b> ${SP.now?'now or soon':'about <b>'+H5(SP.t1)+'</b>'} <span class="note">(any time before ${H5(SP.l1)}${SP.dl?', when you reach 4h 30m of driving':''})</span></div><div><b>${SP.l2}</b> between <b>${H5(SP.a2)}</b> and <b>${H5(SP.b2)}</b> <span class="note">(best about ${H5(SP.t2)})</span></div><div class="h-tl" aria-hidden="true">${seg(P.n,SP.l1,'b2 by')}${seg(SP.a2,SP.b2)}</div></div></div>${lbl}`;

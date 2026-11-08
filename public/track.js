@@ -205,8 +205,8 @@ function tkSince(from,act,geo,lead){const n=Date.now();acctAsk({from,to:n,def:ac
 function tkAwayAsk(prev,from,act,geo){const n=Date.now(),moved=geo&&geo.mi>=1.5,still=geo&&geo.mi<1.5&&act==='d'&&n-from>=45*M;
  const hint=moved&&act!=='d'?`<p>You have moved since then, so you may have been driving.</p>`:still?`<p>You have hardly moved, so you may have been on a break or doing other work.</p>`:'';
  const yes=`<button class="tg big${moved&&act!=='d'||still?'':' fpri'}" data-k="y">Yes, ${tkLow(act)} the whole time</button>`,nn=`<button class="tg big${moved&&act!=='d'||still?' fpri':''}" data-k="nn">No, I did other things too</button>`;
- mo(`<h3>Welcome Back</h3><p>You last had TachoGuard open at <b>${hm(prev)}</b>, ${tkF((n-prev)/M)} ago. Since ${hm(from)} it has been counting <b>${TKN[act]}</b>.</p>${geo?`<p>${geo.txt.replace(', so it is filled in below. Change it if it is wrong','')}</p>`:''}${hint}<p>Is that what you were doing all that time?</p>${moved&&act!=='d'||still?nn+yes:yes+nn}<button class="tg big" data-k="no">Ask me later</button>`);
- mcb={no:()=>{try{localStorage.setItem(TKSEEN,String(prev))}catch(e){}moX()},y:moX,nn:()=>tkSince(from,act,geo,`TachoGuard had you on ${tkLow(act)} since ${hm(from)}.`)}}
+ mo(`<h3>Welcome Back</h3><p>You last had TachoGuard open at <b>${hm(prev)}</b>, ${tkF((n-prev)/M)} ago. Since ${hm(from)} it has been counting <b>${TKN[act]}</b>.</p>${geo?`<p>${geo.txt.replace(', so it is filled in below. Change it if it is wrong','')}</p>`:''}${hint}<p>Is that what you were doing all that time?</p>${moved&&act!=='d'||still?nn+yes:yes+nn}${isTc()?'<button class="tg big" data-k="tc">🔍 Check against my tacho instead</button>':''}<button class="tg big" data-k="no">Ask me later</button>`);
+ mcb={no:()=>{try{localStorage.setItem(TKSEEN,String(prev))}catch(e){}moX()},y:moX,tc:()=>{moX();tcCheck()},nn:()=>tkSince(from,act,geo,`TachoGuard had you on ${tkLow(act)} since ${hm(from)}.`)}}
 
 /* A whole shift in a few taps. pre (from a day in the Plan) = {day, s, e ('HH:MM'), j, dr (hours), br (minutes), oid, name}:
    the times start as planned, and what you did starts from what is already logged, else from the plan. */
@@ -240,3 +240,52 @@ setTimeout(()=>{if(st.gloc!==undefined||st.glq||!navigator.geolocation||!$('mo')
  mo(`<h3>Turn On Location Check-ins?</h3><p>Each time you open TachoGuard it notes roughly where you are. If you have moved a fair way while it has you on other work, POA or a break, it asks if you drove, so your driving is not missed.</p><p class="note">Kept on this phone only, for 3 days. It never tracks you while the app is closed. Your phone will ask to allow location.</p><button class="tg big fpri" data-k="ok">Turn on</button><button class="tg big" data-k="no">Not now</button>`);
  mcb={no:()=>{st.glq=1;save();moX()},ok:async()=>{st.glq=1;st.gloc=true;save();moX();live();const c=await tkPos(0,true);if(!c&&tkLocErr==='blocked'){st.gloc=false;save();live();flash='Location is blocked, so check-ins are off. Allow location for this site in Chrome, then turn them on in Settings.';setTimeout(()=>{flash='';live()},9000);live()}}}},6000);
 setTimeout(tkAway,1500);
+
+/* ===== Check against my tacho =====
+   Put in what the tacho shows (start of the day, total driving, driving since the last break) and the log is corrected to
+   match, changing as little as it can: the start moves, other work or POA becomes driving (or the other way) next to what you
+   say, and the driving since your break is remembered as the tacho's figure (dsbFix in index.html). Rough figures still help. */
+function tcCheck(){const n=Date.now(),A=all(),l=A[A.length-1];if(!l)return;const ss=shiftStart(A),S=A.filter(x=>x.s>=ss);
+ const sumD=L=>L.filter(x=>x.t==='d').reduce((q,x)=>q+Math.min(x.e,n)-x.s,0),logD=sumD(S),b=dsbFix(cnt(A,45,x=>x.t==='d'),A),fd=S.find(x=>x.t==='d');
+ let dsbT=false,st0=ss,drv=true,tot=Math.round(logD/M),dsb=Math.round(b.d/M),dsbK=true,where='now',pre='w',fdT=fd?hm(fd.s):'';
+ const step=(k,vals)=>`<div class="tcs">${vals.map(v=>`<button type="button" data-tc="${k}:${v}">${v>0?'+':'−'}${Math.abs(v)}</button>`).join('')}</div>`,hmF=m=>Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m';
+ const draw=()=>{const dS=Math.round((ss-st0)/M),dD=drv?tot-Math.round(logD/M)-(st0<ss&&pre==='d'?dS:0):-Math.round(logD/M),ch=[];
+  if(dS>0)ch.push(`Start moves to <b>${hm(st0)}</b>: ${tkF(dS)} of ${pre==='d'?'driving':'other work'} added before ${hm(ss)}.`);else if(dS<0)ch.push(`Start moves to <b>${hm(st0)}</b>: anything before it is taken off.`);
+  if(dD>0)ch.push(`<b>${tkF(dD)}</b> of other work or POA becomes driving, ${where==='now'?'working back from now':'from '+(fdT||hm(st0))}.`);else if(dD<0)ch.push(`<b>${tkF(-dD)}</b> of driving becomes other work, starting with the most recent.`);
+  /* until you change it, driving since the break follows the total (missing driving goes in most recently) */
+  if(!dsbT)dsb=Math.max(0,Math.min(tot,Math.round(b.d/M)+(where==='now'?Math.max(0,dD):0)+Math.min(0,dD)));
+  if(drv&&dsbK&&dsbT&&Math.abs(dsb-Math.round(b.d/M)-(where==='now'?Math.max(0,dD):0))>=2)ch.push(`Driving since your last break counts from <b>${hmF(dsb)}</b>, your tacho's figure.`);
+  mo(`<h3>Check Against Your Tacho</h3><p class="note">Put in what your tacho shows. To the minute is best, but a good guess still helps. Most tachos show today's driving and the driving since your last break on the main screen, or in the menu under driver 1.</p>
+  <div class="fsec"><div class="flb">When did this shift start?</div><div class="tr"><input type="time" id="tcs0" value="${hm(st0)}"></div>${step('s',[-15,-5,-1,1,5,15])}${st0<ss?`<div class="fsub">From ${hm(st0)} to ${hm(ss)} you were:</div><div class="fchips fsm"><button type="button" class="fchip${pre==='w'?' on':''}" data-tc="p:w">Other work</button><button type="button" class="fchip${pre==='d'?' on':''}" data-tc="p:d">Driving</button></div>`:''}</div>
+  <div class="fsec"><label class="fsw"><span>🚛 Have you driven this shift?</span><span class="swt"><input type="checkbox" data-tc="drv"${drv?' checked':''}><i></i></span></label>
+  ${drv?`<div class="fsub">Total driving today, from your tacho</div><div class="tcv"><b>${hmF(tot)}</b> <span class="note">(your log: ${hmF(Math.round(logD/M))})</span></div>${step('t',[-15,-5,-1,1,5,15])}
+  <div class="fsub">Driving since your last break, from your tacho</div><label class="fsw" style="margin:4px 0"><span>I can see it on my tacho</span><span class="swt"><input type="checkbox" data-tc="dk"${dsbK?' checked':''}><i></i></span></label>${dsbK?`<div class="tcv"><b>${hmF(dsb)}</b> <span class="note">(your log: ${hmF(Math.round(b.d/M))})</span></div>${step('b',[-15,-5,-1,1,5,15])}`:''}
+  ${dD>0?`<div class="fsub">Where was the driving your log is missing?</div><div class="fchips fsm"><button type="button" class="fchip${where==='now'?' on':''}" data-tc="w:now">Most recently</button><button type="button" class="fchip${where==='st'?' on':''}" data-tc="w:st">From when I started driving</button></div>${where==='st'?`<div class="tr" style="margin-top:6px"><label>I started driving at<input type="time" id="tcfd" value="${fdT||hm(st0)}"></label></div>`:''}`:''}`:''}</div>
+  <div class="fsum">${ch.length?ch.map(x=>'• '+x).join('<br>'):'✓ Your log already matches. Nothing to change.'}</div><div class="note bad" id="tcerr"></div>
+  <button class="tg big fpri" data-k="ok">${ch.length?'Correct my log':'Done'}</button><button class="tg big" data-k="no">Cancel</button>`);
+  const i0=$('tcs0');i0.onchange=()=>{if(i0.value){const t=prevT(i0.value,n);if(t>=n){$('tcerr').textContent='That is after now.';return}st0=t;draw()}};if($('tcfd'))$('tcfd').onchange=e=>{fdT=e.target.value};
+  mcb={no:moX,ok:()=>{if(!ch.length){moX();return}apply(dS,dD)}}};
+ const apply=(dS,dD)=>{const sv=JSON.stringify(st),now=Date.now();
+  /* the running activity is put into the log up to now and carries on from now, so it can be changed like the rest */
+  if(st.active&&st.act&&st.act!=='r'&&now-st.active>=6e4){st.sessions.push(rec(st.active,now));st.active=now}
+  const T=x=>x.t||'d',inS=x=>x.e>Math.min(st0,ss)-6e4&&x.s<now+6e4&&T(x)!=='r';
+  if(dS>0)st.sessions.push(Object.assign({s:st0,e:ss,t:pre,chk:1},jobsOn()?{j:st.cj,c:pre==='d'?1:isTc()?1:0}:{}));
+  else if(dS<0){st.sessions=st.sessions.filter(x=>!(inS(x)&&x.e<=st0));st.sessions.forEach(x=>{if(inS(x)&&x.s<st0)x.s=st0})}
+  /* change kind, minute by minute along the shift: back from now, or forward from when driving started */
+  const conv=(from,to,amt,back,at)=>{let left=amt*M;const L=st.sessions.filter(x=>inS(x)&&from.includes(T(x))&&x.s>=st0-6e4).sort((a,b)=>back?b.e-a.e:a.s-b.s);
+   for(const x of L){if(left<=0)break;const o0=Math.max(x.s,at||0),len=x.e-o0;if(len<=0)continue;const take=Math.min(len,left);left-=take;
+    const part=Object.assign({},x,{t:to});if(to!=='p')delete part.cd;
+    if(back){part.s=x.e-take;part.e=x.e;x.e=part.s}else{part.s=o0;part.e=o0+take;if(o0>x.s){const tail=Object.assign({},x,{s:part.e});x.e=o0;st.sessions.push(tail)}else x.s=part.e}
+    st.sessions.push(part)}
+   st.sessions=st.sessions.filter(x=>x.e-x.s>=3e4);return left};
+  let miss=0;if(dD>0){const at=where==='st'&&fdT?prevT(fdT,now):0;miss=conv(['w','x','p'],'d',dD,where==='now',at)}else if(dD<0)conv(['d'],'w',-dD,true);
+  delete st.dsb;if(drv&&dsbK&&dsbT){const A2=all(),b2=cnt(A2,45,x=>x.t==='d');if(Math.abs(dsb*M-b2.d)>=2*M)st.dsb={t:now,v:dsb*M}}
+  st.sessions.sort((a,b)=>a.s-b.s);if(typeof fixOv==='function')fixOv();if(st.rs&&st0<st.rs)st.rs=st0;save();moX();render();
+  usnap=sv;snap=sv;flash=`Log corrected to match your tacho.${miss>6e4?` ${tkF(miss/M)} of driving could not be placed: there was not enough other work or POA. Use Edit shift to add it.`:''} <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>`;setTimeout(()=>{if(usnap===sv){flash='';live()}},15000);live()};
+ const ev=e=>{const t=e.target.closest('[data-tc]');if(!t||!$('mo').contains(t))return;const[k,v]=t.dataset.tc.split(':');
+  if(k==='drv'){drv=t.checked;if(!drv)tot=0}else if(k==='dk')dsbK=t.checked;else if(k==='s')st0=Math.min(n-M,st0+ +v*M);else if(k==='t')tot=Math.max(0,Math.min(15*60,tot+ +v));
+  else if(k==='b'){dsbT=true;dsb=Math.max(0,Math.min(tot||600,dsb+ +v))}else if(k==='p')pre=v;else if(k==='w')where=v;draw()};
+ tcEv=ev;draw()}
+let tcEv=null;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-tc]');if(tcEv&&b&&b.tagName!=='INPUT'&&!$('mo').hidden)tcEv(e)});
+document.addEventListener('change',e=>{if(tcEv&&e.target.closest&&e.target.closest('[data-tc]')&&e.target.tagName==='INPUT'&&!$('mo').hidden)tcEv(e)});
