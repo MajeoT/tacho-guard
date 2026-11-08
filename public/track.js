@@ -232,12 +232,14 @@ function tkFill(o,d,back){if(o){const L=all().filter(x=>!x.live&&x.e>o.S-H&&x.s<
 
 /* The next break when no planned shift is giving advice: for the Today card */
 /* With no planned shift (so no finish time), the next break the rules need, as the same card the planned advice uses */
-function tkNextCard(){if(!st.active||st.act==='r')return '';const n=Date.now(),A=all(),ss=shiftStart(A),S=A.filter(x=>x.s>=ss),b=dsbFix(cnt(A,45,x=>x.t==='d'),A),WT=wtS(S,n),act=st.act==='x'?'w':st.act,tc=isTc();
+function tkNextCard(){if(!st.active||st.act==='r')return '';const n=Date.now(),A=all(),ss=shiftStart(A),
+ /* a planned shift that has reached its finish (you are running over): say so, rather than that nothing is planned */
+ over=typeof plOcc==='function'?plOcc(ss-4*H,n).filter(o=>o.st!=='skip'&&o.S<n&&o.E<=n+15*M&&o.E>ss&&Math.abs(o.S-ss)<4*H).pop():null,S=A.filter(x=>x.s>=ss),b=dsbFix(cnt(A,45,x=>x.t==='d'),A),WT=wtS(S,n),act=st.act==='x'?'w':st.act,tc=isTc();
  /* the same clocks as the top of Today: what you are doing now decides which limit comes next */
  const L=[];if(act==='d'&&tc)L.push({at:n+270*M-b.d,len:b.q?30:45,why:'4h 30m of driving since your last full break',dk:1});if(act==='d'||act==='w')L.push({at:n+6*H-WT.rn,len:15,why:'6 hours of work in a row'});L.sort((x,y)=>x.at-y.at);const x=L[0];
  const item=(len,t,c)=>`<div class="bki"><span class="bkn${c?' '+c:''}">${len}<small>min</small></span><span class="bkt">${t}</span></div>`,need=WT.tot>9*H?45:WT.tot>6*H?30:0,had=Math.round(WT.brk/M);
  const side=[];if(tc&&act!=='d'&&b.d>0)side.push(`Driving: ${fmt(Math.max(0,270*M-b.d))} left before a ${b.q?30:45} minute break.`);if(act==='p')side.push('POA pauses your work clock, so nothing is building up right now.');if(need&&had<need*M/M)side.push(`Over ${need===45?9:6} hours of work you need ${need} minutes of breaks in all; you have had ${had}.`);
- side.push('No planned shift, so this is the next break only. Add the shift to your Plan to see every break up to your finish.');
+ side.push(over?`You are past your planned finish (${hm(Math.max(over.E,ss+(over.E-over.S)))}), so this is your next break only. The 6 hour and 4h 30m limits still apply however long you carry on.`:'No planned shift, so this is the next break only. Add the shift to your Plan to see every break up to your finish.');
  if(!x)return `<div class="bkh"><span>☕ Your breaks</span></div>${side.map(t=>`<div class="bkn2">${t}</div>`).join('')}`;const due=x.at<=n+6e4;
  return `<div class="bkh"><span>☕ Your breaks</span><span class="bkc${due?' due':''}">${due?'Due now':'Next by '+hm(x.at)}</span></div><div class="bkr">${item(x.len,due?'<b class="bkx">now</b>':'by '+hm(x.at),due?'bkx':'')}<div class="bkn2" style="margin-top:4px">${due?'You have reached':'When you reach'} ${x.why}.${x.dk&&!b.q&&!due?` Or 15 now and 30 by ${hm(x.at)}.`:x.dk&&b.q?' In one go: it finishes the 15 you had.':''}</div></div>${side.map(t=>`<div class="bkn2">${t}</div>`).join('')}`}
 
@@ -289,7 +291,7 @@ function tcCheck(){const n=Date.now(),A=all(),l=A[A.length-1];if(!l)return;const
     if(back){part.s=x.e-take;part.e=x.e;x.e=part.s}else{part.s=o0;part.e=o0+take;if(o0>x.s){const tail=Object.assign({},x,{s:part.e});x.e=o0;st.sessions.push(tail)}else x.s=part.e}
     st.sessions.push(part)}
    st.sessions=st.sessions.filter(x=>x.e-x.s>=3e4);return left};
-  let miss=0;if(dD>0){const at=where==='st'&&fdT?prevT(fdT,now):0;miss=conv(['w','x','p'],'d',dD,where==='now',at)}else if(dD<0)conv(['d'],'w',-dD,true);
+  let miss=0;if(dD>0){const at=where==='st'&&fdT?prevT(fdT,now):0;miss=conv(['w','p'],'d',dD,where==='now',at)}else if(dD<0)conv(['d'],'w',-dD,true);
   delete st.dsb;if(drv&&dsbK&&dsbT){const A2=all(),b2=cnt(A2,45,x=>x.t==='d');if(Math.abs(dsb*M-b2.d)>=2*M)st.dsb={t:now,v:dsb*M}}
   st.sessions.sort((a,b)=>a.s-b.s);if(typeof fixOv==='function')fixOv();if(st.rs&&st0<st.rs)st.rs=st0;save();moX();render();
   usnap=sv;snap=sv;flash=`Log corrected to match your tacho.${miss>6e4?` ${tkF(miss/M)} of driving could not be placed: there was not enough other work or POA. Use Edit shift to add it.`:''} <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>`;setTimeout(()=>{if(usnap===sv){flash='';live()}},15000);live()};
