@@ -388,6 +388,14 @@ function plLive(q){const{n,E,mv,br,tk,tot,w0,d0,Dr,half,drv}=q,tkm=Math.round(tk
  let a=n+plR5(X.lo,1),b=n+plR5(X.hi);if(b<a){a=n+Math.ceil(X.lo/M)*M;b=Math.max(a,n+Math.floor(X.hi/M)*M)}const len=rem||(tkm?15:br||30),lead=more?more+'T':tkm&&!rem?`Your breaks add up to enough, but you cannot work more than 6 hours in a row, so you need one more break of at least 15 minutes before ${f}. T`:`For ${f}: t`;
  if(X.lo<5*M)return `☕ ${had}${lead}ake your ${len} minute break by <b>${plHm(b)}</b>${X.hw?`, when you reach ${plWhy(X.hw)}${X.hw==='w'?' in a row':X.hw==='d'?' since your last break':''}`:''}. One break then lasts you to the end.`;
  return `☕ ${had}${lead}ake your ${len} minute break between <b>${plHm(a)}</b> and <b>${plHm(b)}</b>. <b>Not before ${plHm(a)}</b>, or you would still have more than ${plWhy(X.lw)} left and need another one.${X.hw?` Not after ${plHm(b)}, when you reach ${plWhy(X.hw)}${X.hw==='w'?' in a row':X.hw==='d'?' since your last break':''}.`:''}`}
+/* Today, when you are off: is the time off you are on now your weekly rest in the plan? (No other break of 24 hours or more
+   starts before the weekly rest is due.) Then the daily rest being done does not mean you are free to work: a weekly rest is at
+   least 24 hours (reduced) or 45 (full, and needed after a reduced one). Returns what the Today card should say, or null. */
+function plWkNow(){if(st.active&&st.act!=='r')return null;const n=Date.now(),sp=plSpans(),OFF=plOffs(sp),NX=plNext(sp,OFF),I=typeof wrInfo==='function'?wrInfo():null;
+ if(!NX||!NX.now||NX.longRest||!I||I.anc===null)return null;const b=NX.now,due=I.lastEnd+144*H,full=!!I.full45,min=b.s+(full?45:24)*H,f=x=>fmt(x).replace(/ 00m$/,'');
+ if(b.s>due||n>=b.s+45*H)return null;const back=b.open?'':` Your next planned shift is ${dmy(b.e)}.`;
+ if(n<min)return{big:'Resting',cap:'weekly rest',ns:dmy(min),sub:`Your plan makes this your weekly rest. It has to start by ${dmy(due)}, and your plan has no other break of 24 hours or more before then. A weekly rest lasts at least ${full?'45 hours (your last one was reduced, so this one must be full)':'24 hours, or 45 for a full one'}, so do not start work before ${dmy(min)}.${back}`};
+ return{big:'Ready',cap:'with a reduced weekly rest',ns:'Now',sub:`Your weekly rest has reached 24 hours. If you start now it is a reduced weekly rest, and you owe ${f(b.s+45*H-n)} back within 3 weeks. Rest until ${dmy(b.s+45*H)} for a full one.${back}`}}
 /* One line for the Today card before a planned shift starts: the shift and when its break goes. */
 function plHeroPlan(o){const j=jobC(o.j),tc=j.tc!==false,w=o.E-o.S-(o.br||0)*M,dv=tc?(o.dr||0)*H:0,X=plWin(0,0,w,dv);
  let t=`<b>${o.rv?'About ':''}${o.s.slice(0,5)}–${o.e.slice(0,5)}</b> ${esc(j.n)}`;
