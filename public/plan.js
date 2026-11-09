@@ -33,8 +33,9 @@ function plSpans(extra,skipId){const n=Date.now(),sp=[];
  plOcc(n-14*864e5,n+400*864e5).forEach(o=>{if(o.oid===skipId||o.st==='skip')return;
   /* the shift you are working now: it is marked done once it starts, but the rest of it is still to come, so keep its planned end */
   if(o.st==='done'){if(working&&o.S<n&&o.E>n){const j=jobC(o.j),tc=j.tc!==false,w=Math.max(0,o.E-n-(o.br||0)*M);sp.push({s:n,e:o.E,w,dv:tc?Math.min(w,(o.dr||0)*H):0,tc,br:o.br||0,id:o.oid,o})}return}
-  /* a planned shift that has finished with nothing logged and no answer yet counts as worked (for 2 days), until you say what happened */
-  if(o.E<=n){if(o.E<n-2*864e5||logs.some(x=>x.e>o.S-H&&x.s<o.E+H))return;const j=jobC(o.j),tc=j.tc!==false,w=Math.max(0,o.E-o.S-(o.br||0)*M);sp.push({s:o.S,e:o.E,w,dv:tc?Math.min(w,(o.dr||0)*H):0,tc,br:o.br||0,id:o.oid,o,past:1});return}
+  /* a planned shift that has finished with nothing logged and no answer yet counts as worked until you say what happened (back
+     14 days, as far as the reminders go), so a day is never half counted: Today lists them all */
+  if(o.E<=n){if(logs.some(x=>x.e>o.S-H&&x.s<o.E+H))return;const j=jobC(o.j),tc=j.tc!==false,w=Math.max(0,o.E-o.S-(o.br||0)*M);sp.push({s:o.S,e:o.E,w,dv:tc?Math.min(w,(o.dr||0)*H):0,tc,br:o.br||0,id:o.oid,o,past:1});return}
   /* a planned shift that has started with nothing logged for it (you log at the end of the day) counts from its planned start,
      so the rests and limits around it are not made to look longer than they are */
   const unlogged=o.S<n&&!st.active&&lastLog<o.S-H,s=unlogged?o.S:Math.max(o.S,o.S<n?Math.max(n,lastLog):o.S);if(o.E<=s)return;const j=jobC(o.j),tc=j.tc!==false,w=Math.max(0,o.E-s-(o.br||0)*M);
@@ -167,7 +168,10 @@ const plCompTxt=(o,short)=>{const f=fmt(o.owed).replace(/ 00m$/,''),by=new Date(
 function plNext(sp,OFF){const n=Date.now(),I=typeof wrInfo==='function'?wrInfo():null;if(!I||I.anc===null)return null;
  /* while you are working you are not on a rest, even if nothing after now is planned yet */
  let now=st.active&&st.act!=='r'?null:OFF.find(b=>b.s<=n&&(b.e>n||b.open))||null;if(now&&now.open)return{now};
- const lastE=sp.reduce((m,x)=>Math.max(m,x.e),0),tail=lastE>n?[{s:lastE,e:Infinity,len:Infinity,full:true,open:1}]:[];
+ const lastE=sp.reduce((m,x)=>Math.max(m,x.e),0),working=!!st.active&&st.act!=='r',
+  /* the time off after the last shift (logged or planned) has no end yet: it counts from that shift's end, even if that is already
+     past and the rest is not 24 hours old yet (while you are working, only once a planned shift is still to come) */
+  tail=lastE>n||(!working&&lastE)?[{s:lastE,e:Infinity,len:Infinity,full:true,open:1}]:[];
  /* time off now of 24 to 45 hours only has to be your weekly rest if no full one in your plan starts in time after it; otherwise
     it is a long daily rest, nothing is owed, and the 6 days still count from your last weekly rest (as the rule check does) */
  let longRest=false;if(now&&!now.full&&I.lastEnd+144*H>n&&OFF.concat(tail).some(b=>b.s>=now.e&&b.s<=I.lastEnd+144*H)){longRest=true}
@@ -277,7 +281,7 @@ function plRender(){const el=$('plc');if(!el)return;try{plTidy()}catch(e){}const
    const due=(S.sub.find(x=>x[0]==='bad'&&/must start/.test(x[1]))?`<div class="plr bad">Rest due <span>${plHm(NX.due)}</span></div>`:'')+C.CP.map(c=>!c.log&&sod(c.s)===d?`<div class="plr ${c.pay?'warn':'bad'}">↺ −${Math.round(c.owed/H)}h</div>`:c.pay&&sod(c.pay.s)===d?`<div class="plr ok">↺ +${Math.round(c.owed/H)}h</div>`:'').join(''),rs='',re='';
    h+=`<button class="pld pk-${k}${inM?'':' plo'}${S.td?' plt':''}${S.past?' plp':''}" data-pd="${d}"${k==='work'&&S.os[0]?` style="border-left:4px solid ${jobCol(jobC(S.os[0].j).id)}"`:''} aria-label="${new Date(d).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}: ${S.txt.replace(/<[^>]+>/g,'')}"><span class="pln">${new Date(d).getDate()}</span>${re}${k==="work"?chips+rs+due:due+rs+chips}</button>`}
   h+='</div>'+'<div class="bx plkey" style="margin-top:10px"><div class="lbl" style="margin-bottom:4px">Key</div>'+
-   '<div><span class="ki"><span class="pkey pk-work" style="border-left:4px solid '+jobCol(jobs()[0].id)+'">09:00</span></span>Working: when your planned shift starts and finishes. The line down the side is the job\'s own colour (pick it in Settings, Jobs). A dashed line means the times vary. ⚠ on a shift means a warning: red breaks a rule, amber means a reduced rest. Tap the day for why</div>'+
+   '<div><span class="ki"><span class="pkey pk-work" style="border-left:4px solid '+jobCol(jobs()[0].id)+'">09:00</span></span>Working: when your planned shift starts and finishes. The line down the side is the job\'s own colour (pick it in Settings, Jobs). ⚠ on a shift means a warning: red breaks a rule, amber means a reduced rest. Tap the day for why</div>'+
    '<div><span class="ki"><span class="pkey pk-ok">✓</span></span>Available: nothing planned and you could work. A time under it (04:00) is the earliest you can start, after the rest you need from your last shift</div>'+
    '<div><span class="ki"><span class="pkey pk-warn">⚠ reduced</span></span>Available, but working would mean a reduced daily or weekly rest</div>'+
    '<div><span class="ki"><span class="pkey pk-rest">✕</span></span>Rest: the rules mean you cannot work this day</div>'+
