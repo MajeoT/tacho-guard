@@ -589,7 +589,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-204';
+const APPV='tg-2026-10-23-205';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1599,7 +1599,7 @@ function liveRun(){
   BRKS={pll:null,bd:b.d,wc:wc.d,q:!!b.q,tc:isTc()};
   let hpl='';if(typeof plOcc==='function'){try{if(st.active&&busy&&ss){const pc=plOcc(ss-3*H,n+H).filter(o=>o.st!=='skip'&&o.E>n+15*M&&o.S<n+H&&Math.abs(o.S-ss)<4*H).sort((x,y)=>Math.abs(x.S-ss)-Math.abs(y.S-ss)),po=(jobsOn()&&pc.find(o=>o.j===st.cj))||(!jobsOn()&&pc[0])||null;
     if(po){/* start and finish always vary: the finish moves with your real start, keeping the planned length */const fe=Math.max(po.E,ss+(po.E-po.S)),tc=isTc(),bx=plLiveBox({n,E:fe,mv:fe!==po.E,br:po.br||0,tk:WT.brk,tot:WT.tot,w0:wc.d,d0:tc?b.d:0,Dr:tc?Math.max(0,(po.dr||0)*H-day):0,half:tc&&!!b.q,drv:act==='d'});BRKS.pll=bx?PLL:null;if(bx)hpl=xpd('brk',bx.sum,bx.det,'h-pl')}else if(typeof tkNextCard==='function'){const tx=tkNextCard();if(tx)hpl=`<div class="h-pl">${tx}</div>`}}
-   else if(!st.active&&typeof plPending==='function'&&(()=>{const pk=Math.floor(n/3e4)+'|'+st.sessions.length+'|'+JSON.stringify(st.pls||{}).length+'|'+(st.u||0);if(pk!==hplK){hplK=pk;hplP=plPending()}const u=hplP.filter(x=>x.k==='end'&&x.o.E>n-24*H).pop();if(u)hpl=`<div class="h-pl"><span class="h-plk">Not logged yet</span>Your planned shift <b>${u.o.s.slice(0,5)}–${u.o.e.slice(0,5)}</b> ${esc(jobC(u.o.j).n)} (${typeof plDayW==='function'?plDayW(u.o.S):dlong(u.o.S)}) is not in your log, so the times above leave it out. The Plan counts it as worked. Log it with <b>What happened?</b> below.</div>`;return !!u})()){}
+   else if(!st.active&&typeof plPending==='function'&&(()=>{const pk=Math.floor(n/3e4)+'|'+st.sessions.length+'|'+JSON.stringify(st.pls||{}).length+'|'+(st.u||0);if(pk!==hplK){hplK=pk;hplP=plPending()}const U=hplP.filter(x=>x.k==='end'),u=U[U.length-1];if(u)hpl=`<div class="h-pl"><span class="h-plk">Not logged yet</span>${U.length>1?`${U.length} planned shifts are not in your log: <b>${U.map(x=>new Date(x.o.S).toLocaleDateString('en-GB',{weekday:'short',day:'numeric'})).join(', ')}</b>.`:`Your planned shift <b>${u.o.s.slice(0,5)}–${u.o.e.slice(0,5)}</b> ${esc(jobC(u.o.j).n)} (${typeof plDayW==='function'?plDayW(u.o.S):dlong(u.o.S)}) is not in your log.`} The times above leave ${U.length>1?'them':'it'} out, but the Plan counts ${U.length>1?'them':'it'} as worked until you say what happened. Answer with <b>What happened?</b> below.</div>`;return !!u})()){}
    else if(!st.active){const L0=a0.filter(x=>x.t!=='r'),po=plOcc(n-2*H,n+20*H).filter(o=>!o.st&&o.E>n&&!L0.some(x=>x.e>o.S-H&&x.s<o.E))[0];
     if(po){const ph=plHeroPlan(po).split('<span class="h-why">'),pk=`<span class="h-plk">${sod(po.S)===sod(n)?'Planned today':sod(po.S)===nxd(sod(n))?'Planned tomorrow':'Planned '+new Date(po.S).toLocaleDateString('en-GB',{weekday:'long'})}</span>`;hpl=xpd('plan',pk+ph[0],ph[1]?ph[1].replace(/<\/span>$/,''):'','h-pl')}}}catch(e){}}
   /* a break the law needs: now (red), within 30 minutes (amber), or before you drive again (when the driving clock is high) */
