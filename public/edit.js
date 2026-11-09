@@ -24,6 +24,8 @@ function seOpen(t,mode,pre,focus){const c=seShift(t);if(!c){if(mode==='end'&&typ
  const E0=c[0].s+B.reduce((q,b)=>q+b.len,0),W=st.sessions.filter(x=>(x.t||'d')!=='r'&&x.e>x.s),pv=W.filter(x=>x.e<=c[0].s).reduce((m,x)=>Math.max(m,x.e),0),nx=W.filter(x=>x.s>=E0).reduce((m,x)=>Math.min(m,x.s),Infinity);
  /* lo/hi: the shift cannot be stretched over the shift before or after it */
  SE={S:c[0].s,B,open:null,mode:mode||'edit',S0:c[0].s,E0,lo:pv,hi:nx,pre:pre||'',dirty:false};
+ /* the shift's job (the one most of it was for), kept for new entries even if every entry from it is changed */
+ {const cj={};B.forEach(b=>{if(b.o&&b.o.j)cj[b.o.j]=(cj[b.o.j]||0)+b.len});SE.j=Object.keys(cj).sort((a,b)=>cj[b]-cj[a])[0]||st.cj}
  if(focus!=null){let s=SE.S;SE.B.forEach((b,i)=>{if(focus>=s&&focus<s+b.len)SE.open=i;s+=b.len})}
  if(SE.mode==='end'){seToEnd();/* the end time is what you came to set, so its box starts open */SE.bd='end';SE.bd0=seEnd()}
  let el=$('sed');if(!el){el=document.createElement('div');el.id='sed';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');document.body.appendChild(el);el.addEventListener('click',seClick);el.addEventListener('change',seChange);el.addEventListener('pointerdown',seDown)}
@@ -33,7 +35,7 @@ function seClose(){const el=$('sed');if(el)el.hidden=true;document.body.classLis
 /* end mode: the running block stops being "running"; its end is the shift end (now to start with) */
 function seToEnd(){SE.mode='end';const l=SE.B[SE.B.length-1];if(l&&l.run){l.run=false;l.wasRun=true}}
 /* driving in a no-tacho job is 'x' (not counted towards the tacho limits): the choices follow the block's job */
-const seTcOf=b=>{const j=b&&b.o&&b.o.j?b.o.j:st.cj;return jobsOn()?jobC(j).tc!==false:isTc()},seKinds=b=>{const ks=[seTcOf(b)?'d':'x','w','p','r'];if(b&&!ks.includes(b.t))ks.unshift(b.t);return ks};
+const seTcOf=b=>{const j=b&&b.o&&b.o.j?b.o.j:(SE&&SE.j)||st.cj;return jobsOn()?jobC(j).tc!==false:isTc()},seKinds=b=>{const ks=[seTcOf(b)?'d':'x','w','p','r'];if(b&&!ks.includes(b.t))ks.unshift(b.t);return ks};
 const seMaxEnd=()=>Math.min(Date.now(),SE.hi);
 const seStarts=()=>{let s=SE.S;return SE.B.map(b=>{const x=s;s+=b.len;return x})};
 const seEnd=()=>SE.S+SE.B.reduce((q,b)=>q+b.len,0);
@@ -93,7 +95,7 @@ function seSplitCalc(P){const L=seList(),x=L[P.i];if(!x)return null;const used=P
 const seLine=x=>`<div class="sedf"><i class="k-${x.t==='x'?'d':x.t}"></i>${SEI[x.t]} ${SEN[x.t]} <span>${hm(x.s)}–${x.run?'now':hm(x.e)}</span><b>${seF(x.e-x.s)}</b></div>`;
 function seDiff(A,B,s,e){/* the entries touching s..e, before and after */const near=x=>x.e>s-1&&x.s<e+1;const a=A.filter(near),b=B.filter(near);
  return `<div class="sedif"><div><div class="sedh">Before</div>${a.map(seLine).join('')||'<div class="note">Nothing logged then</div>'}</div><div><div class="sedh">After</div>${b.map(seLine).join('')}</div></div>`}
-function sePanel(){const P=SE.pan,typeChips=(cur,k)=>`<div class="fchips fsm">${seKinds(null).map(t=>`<button type="button" class="fchip${t===cur?' on':''}" data-sk="${k}:${t}">${SEI[t]} ${SEN[t]}</button>`).join('')}</div>`;
+function sePanel(){const P=SE.pan,/* the choices follow the job of the entry being changed (no-tacho driving in a no-tacho job) */ref=P.k==='split'?SE.B[P.i]:(()=>{const S=seStarts();let r=SE.B[0];SE.B.forEach((b,i)=>{if(P.s>=S[i])r=b});return r})(),typeChips=(cur,k)=>`<div class="fchips fsm">${seKinds(ref&&ref.t!=='r'?ref:null).map(t=>`<button type="button" class="fchip${t===cur?' on':''}" data-sk="${k}:${t}">${SEI[t]} ${SEN[t]}</button>`).join('')}</div>`;
  if(P.k==='add'){const C=seAddCalc(P);
   return `<div class="sepan"><h3>Add something you forgot</h3><p class="note">It goes in at the time you set and takes the place of whatever was logged then. Nothing else moves.</p>
   <div class="sepl">What was it?</div>${typeChips(P.t,'at')}
@@ -133,7 +135,7 @@ function seClick(e){const b=e.target.closest('[data-sk]');if(!b||!SE)return;SE.r
  else if(k==='bm'){seBdSet(bk,seBdTime(bk)+(+v)*M)}
  else if(k==='t'){SE.B[i].t=v;SE.dirty=true}
  else if(k==='u')seMove(i,i-1);else if(k==='dn')seMove(i,i+1);else if(k==='x')seDel(i);
- else if(k==='sp2'){const x=SE.B[i],oth=x.t==='r'?(seTcOf(x)?'d':'x'):'r';SE.pan={k:'split',i,P:[{t:x.t,len:Math.max(1,Math.min(60,Math.round(x.len/2/M)))},{t:oth,len:15},{t:x.t,len:0}]};if(x.len<=(SE.pan.P[0].len+16)*M)SE.pan.P=[{t:x.t,len:Math.max(1,Math.round(x.len/2/M))},{t:oth,len:0}]}
+ else if(k==='sp2'){const x=SE.B[i],oth=x.t==='r'?(seTcOf(null)?'d':'x'):'r';SE.pan={k:'split',i,P:[{t:x.t,len:Math.max(1,Math.min(60,Math.round(x.len/2/M)))},{t:oth,len:15},{t:x.t,len:0}]};if(x.len<=(SE.pan.P[0].len+16)*M)SE.pan.P=[{t:x.t,len:Math.max(1,Math.round(x.len/2/M))},{t:oth,len:0}]}
  else if(k==='pan'||k==='addin'){const run=seRun(),s0=k==='addin'?seStarts()[i]+Math.min(30*M,Math.round(SE.B[i].len/3/M)*M):(run?Date.now():seEnd())-60*M;SE.pan={k:'add',t:'r',s:Math.max(SE.S,Math.round(s0/M)*M),len:15}}
  else if(P&&k==='at')P.t=a;else if(P&&k==='as')P.s+=(+a)*M;else if(P&&k==='al')P.len=+a;else if(P&&k==='ad')P.len=Math.max(1,P.len+(+a));
  else if(P&&k==='pa'){if(a==='go'){const C=seAddCalc(P);if(!C)return;const R=seFromList(C.L);SE.S=R.S;SE.B=R.B;SE.dirty=true;SE.open=null}SE.pan=null}
@@ -168,7 +170,7 @@ function seUp(e){const D=seDrag;if(!D)return;const h=e.currentTarget;h.removeEve
  D.rows.forEach(r=>{r.style.transform=''});D.row.classList.remove('drag');if(D.to!==D.i)seMove(D.i,D.to);seDraw()}
 
 /* ---- saving ---- */
-function seSave(){const sv=JSON.stringify(st),E=seEntries(),n=Date.now(),from=Math.min(SE.S0,SE.S),endN=seEnd(),to=Math.min(SE.hi,Math.max(SE.E0,endN,SE.mode==='end'||seRun()?n:0)),/* never past the start of the next shift */mainJ=(()=>{const c={};SE.B.forEach(b=>{if(b.o&&b.o.j)c[b.o.j]=(c[b.o.j]||0)+b.len});const k=Object.keys(c).sort((a,b)=>c[b]-c[a])[0];return k||st.cj})();
+function seSave(){const sv=JSON.stringify(st),E=seEntries(),n=Date.now(),from=Math.min(SE.S0,SE.S),endN=seEnd(),to=Math.min(SE.hi,Math.max(SE.E0,endN,SE.mode==='end'||seRun()?n:0)),/* never past the start of the next shift */mainJ=(()=>{const c={};SE.B.forEach(b=>{if(b.o&&b.o.j)c[b.o.j]=(c[b.o.j]||0)+b.len});const k=Object.keys(c).sort((a,b)=>c[b]-c[a])[0];return k||SE.j||st.cj})();
  const out=[];E.forEach((x,i)=>{const b=SE.B[i];if(x.run)return;const o=Object.assign({},b.o||{});['s','e','t','live','run'].forEach(k=>delete o[k]);if(x.t!=='d'){delete o.d;delete o.a;delete o.z}
   const y=Object.assign(o,{s:x.s,e:x.e,t:x.t,chk:1});if(x.t!=='r'&&jobsOn()){y.j=o.j||mainJ;y.c=x.t==='d'?1:x.t==='x'?0:jobC(y.j).tc!==false?1:0}if(x.t==='r'){delete y.j;delete y.c;delete y.cd}if(x.t!=='p')delete y.cd;
   const l=out[out.length-1];if(l&&l.t===y.t&&l.e===y.s&&(l.j||'')===(y.j||'')&&!!l.cd===!!y.cd){l.e=y.e;if(y.d)l.d=(l.d||0)+y.d}else out.push(y)});
