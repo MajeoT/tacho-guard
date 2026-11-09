@@ -589,7 +589,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-205';
+const APPV='tg-2026-10-23-206';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -612,7 +612,7 @@ let hadLocal=false;{let r=null;try{r=localStorage.getItem(K);if(r){const p=san(J
 if(st.active&&!st.act)st.act='d';
 const lay=a=>{a=a.filter(x=>x.e>x.s).sort((x,y)=>x.s-y.s);let m=-Infinity,ov=false;for(const x of a){if(x.s<m){ov=true;break}m=Math.max(m,x.e)}if(!ov)return a;let o=[];a.forEach(x=>{const n=[];o.forEach(y=>{if(y.e<=x.s||y.s>=x.e){n.push(y);return}if(y.s<x.s)n.push(Object.assign({},y,{e:x.s}));if(y.e>x.e)n.push(Object.assign({},y,{s:x.e,d:0,a:null}))});n.push(x);o=n});return o.sort((x,y)=>x.s-y.s)};
 const mrg=l=>{const o=[];l.forEach(x=>{const p=o[o.length-1];if(p&&(p.t||'d')===(x.t||'d')&&(p.j||'')===(x.j||'')&&x.s-p.e<M)o[o.length-1]=Object.assign({},p,{e:Math.max(p.e,x.e),d:((p.d||0)+(x.d||0))||p.d,z:x.z||p.z});else o.push(x)});return o};
-const fixOv=()=>{[x=>(x.t||'d')!=='r',x=>x.t==='r'].forEach(nr=>{const w=st.sessions.filter(nr),l=mrg(lay(w));if(l.length!==w.length||l.some(x=>!w.includes(x)))st.sessions=st.sessions.filter(x=>!nr(x)).concat(l)})};
+const fixOv=()=>{/* an entry with no length (left when something is put in exactly where another ends) is dropped */if(st.sessions.some(x=>!(x.e-x.s>=1000)))st.sessions=st.sessions.filter(x=>x.e-x.s>=1000);[x=>(x.t||'d')!=='r',x=>x.t==='r'].forEach(nr=>{const w=st.sessions.filter(nr),l=mrg(lay(w));if(l.length!==w.length||l.some(x=>!w.includes(x)))st.sessions=st.sessions.filter(x=>!nr(x)).concat(l)})};
 fixOv();
 let lsOk=true,cloud=null,cloudReady=false,pushT=0,pushing=null,pushAgain=false,lastPush=0,lastMain='',syncMsg='';const remW=new Map();
 try{lastMain=localStorage.getItem(K+'.base')||''}catch(e){}
@@ -892,11 +892,15 @@ const nearT=(v,ref)=>tCands(v,ref).reduce((b,x)=>b===null||Math.abs(x-ref)<Math.
 const prevT=(v,n)=>{const c=tCands(v,n).filter(x=>x<=n);return c.length?c[c.length-1]:nearT(v,n)};
 const sameDayT=(ts,v)=>{const c=tCands(v,ts).filter(x=>sod(x)===sod(ts));return c.length?c.reduce((b,x)=>Math.abs(x-ts)<Math.abs(b-ts)?x:b):nearT(v,ts)};
 function commit(n){if(st.active){if(n-st.active>=20000)st.sessions.push(rec(st.active,n));if(st.act==='d')gpsOff();st.active=null;st.act=null;st.ad=0;st.as=st.ae=null}}
-let bd=0,usnap=null;
+let bd=0,usnap=null,swNow=0;
+/* when the app was last opened (or came back to the screen): a switch made a minute or more after that is taken as now */
+window.TGVIS=Date.now();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')window.TGVIS=Date.now()});
+/* Earlier? on the message after a switch: the Edit shift change-over between what you were doing and what you are doing now */
+document.addEventListener('click',e=>{if(!e.target.closest('[data-ear]')||typeof seOpen!=='function')return;flash='';seOpen(null,'edit');if(SE&&SE.B.length>1){SE.bd=SE.B.length-2;SE.bd0=seBdTime(SE.bd);seDraw()}});
 function begin(t,pl){
  /* a new shift started after its planned start time: ask if it really started on time (pl: already asked) */
  if(!pl&&!bd&&t!=='r'&&typeof tkStartAsk==='function'){const A0=all(),l0=A0[A0.length-1],o=typeof plDue==='function'?plDue():null;if(o||!l0||Date.now()-l0.e>=9*H){tkStartAsk(t,o);return}}
- moX();const us=snap;if(us){const msg=NM[t]+' started at '+hm(bd||Date.now())+'. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';flash=msg;usnap=us;setTimeout(()=>{if(flash===msg){flash='';usnap=null;live()}},12000)}st.active=Date.now();st.act=t;st.pcd=t==='p'&&coNext?1:0;coNext=0;if(bd){const x=bd;bd=0;st.sessions=st.sessions.filter(y=>!(y.e>x&&y.s>=x));st.sessions.forEach(y=>{if(y.e>x)y.e=x});st.active=x;if(st.rs&&x<st.rs)st.rs=x}if(t==='d'){gpsOn();wake()}save();render();setTimeout(tcAsk,50)}
+ moX();const us=snap,sw1=swNow;swNow=0;if(us){const msg=NM[t]+' started at '+hm(bd||Date.now())+'. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>'+(sw1?' <button class="tg" data-ear="1" style="margin-left:6px">Earlier?</button>':'');flash=msg;usnap=us;setTimeout(()=>{if(flash===msg){flash='';usnap=null;live()}},12000)}st.active=Date.now();st.act=t;st.pcd=t==='p'&&coNext?1:0;coNext=0;if(bd){const x=bd;bd=0;st.sessions=st.sessions.filter(y=>!(y.e>x&&y.s>=x));st.sessions.forEach(y=>{if(y.e>x)y.e=x});st.active=x;if(st.rs&&x<st.rs)st.rs=x}if(t==='d'){gpsOn();wake()}save();render();setTimeout(tcAsk,50)}
 function undo(){moX();if(snap){const au=st.aud;st=JSON.parse(snap);snap=null;if(au>(st.aud||0))st.aud=au}if(st.act==='d'){gpsOn();wake()}save();render()}
 /* Every rule that can stop you starting (or carrying on). Each entry: [time it allows you, why, 1 = driving only / 2 = work not POA, short name].
    The Today screen and the start check both use this, so they always agree. */
@@ -991,8 +995,8 @@ function audRules(S){const out=[];if(!S.length)return out;
 function auditAsk(z,n,next){const A=all(),ls0=shiftStart(A),S0=A.filter(x=>x.s>=ls0&&x.t!=='r'),cur=S0.reduce((q,x)=>q+x.e-x.s,0);
  let gl=null;for(let i=1;i<S0.length;i++){const g=S0[i].s-S0[i-1].e;if(g>=15*M&&!gl)gl={s:S0[i-1].e,len:g}}
  const dys=[];for(let d=nxd(sod(z.e));d<sod(n)&&dys.length<7;d=nxd(d))if(!A.some(x=>x.e>d&&x.s<d+864e5))dys.push(d);
- let hh=Math.floor(cur/H),mm=Math.round((cur%H)/M),br=gl?'y':'',bt=hm(gl?gl.s:ls0+Math.floor((z.e-ls0)/2)),bl=gl?Math.min(60,Math.round(gl.len/M/5)*5):30;
- const draw=()=>{mo(`<h3>Last Day Check</h3><p>Your last shift was <b>${tt(ls0)} to ${tt(z.e)}</b>. A quick check keeps your records and rest figures right.</p><div class="tr"><label>Hours worked<input type="number" id="auh" min="0" max="24" value="${hh}"></label><label>Minutes<input type="number" id="aum" min="0" max="59" value="${mm}"></label></div><div class="note">Logged: ${fmt(cur)} of driving and other work (not breaks).</div><p style="margin-top:10px">Did you take a break?</p><div class="tr"><button class="tg${br==='y'?' on2':''}" data-k="by">${br==='y'?'✓ ':''}Yes</button><button class="tg${br==='n'?' on2':''}" data-k="bn">${br==='n'?'✓ ':''}No</button></div>${br==='y'?`<div class="tr"><label>Roughly when<input type="time" id="abt" value="${bt}"></label></div><div class="tr" style="gap:6px;flex-wrap:wrap">${[15,20,30,45,60].map(m=>`<button class="tg${bl===m?' on2':''}" data-k="l${m}">${bl===m?'✓ ':''}${m} min</button>`).join('')}</div>${gl?'<div class="note">A break is already logged here. Change it only if it is wrong.</div>':''}`:''}${dys.length?`<div class="note" style="margin-top:10px">Nothing logged on ${dys.map(d=>dshort(d)).join(', ')}. If you worked, add it in the Log before carrying on.</div>`:''}<div class="note bad" id="auerr"></div><button class="tg big" data-k="ok">Save and continue</button>${dys.length?'<button class="tg big" data-k="lg">Open the Log</button>':''}<button class="tg big" data-k="sk">Skip, it is right</button><button class="tg big" data-k="cx">Cancel</button>`);
+ const curM=Math.round(cur/M);/* whole minutes first, so 10h 59m 59s is 11h 0m, never 10h 60m */let hh=Math.floor(curM/60),mm=curM%60,br=gl?'y':'',bt=hm(gl?gl.s:ls0+Math.floor((z.e-ls0)/2)),bl=gl?Math.min(60,Math.round(gl.len/M/5)*5):30;
+ const draw=()=>{mo(`<h3>Last Day Check</h3><p>Your last shift was <b>${tt(ls0)} to ${tt(z.e)}</b>. A quick check keeps your records and rest figures right.</p><div class="tr"><label>Hours worked<input type="number" id="auh" min="0" max="24" value="${hh}"></label><label>Minutes<input type="number" id="aum" min="0" max="59" value="${mm}"></label></div><div class="note">Logged: ${fmt(cur)} of driving and other work (not breaks).</div><p style="margin-top:10px">Did you take a break?</p><div class="tr"><button class="tg${br==='y'?' on2':''}" data-k="by">${br==='y'?'✓ ':''}Yes</button><button class="tg${br==='n'?' on2':''}" data-k="bn">${br==='n'?'✓ ':''}No</button></div>${br==='y'?`<div class="tr"><label>Roughly when<input type="time" id="abt" value="${bt}"></label></div><div class="note" style="margin:6px 0 2px">How long</div><div class="tr" style="gap:6px;flex-wrap:wrap">${[15,20,30,45,60].map(m=>`<button class="tg${bl===m?' on2':''}" data-k="l${m}">${bl===m?'✓ ':''}${m} min</button>`).join('')}</div>${gl?'<div class="note">A break is already logged here. Change it only if it is wrong.</div>':''}`:''}${dys.length?`<div class="note" style="margin-top:10px">Nothing logged on ${dys.map(d=>dshort(d)).join(', ')}. If you worked, add it in the Log before carrying on.</div>`:''}<div class="note bad" id="auerr"></div><button class="tg big" data-k="ok">Save and continue</button>${dys.length?'<button class="tg big" data-k="lg">Open the Log</button>':''}<button class="tg big" data-k="sk">Skip, it is right</button><button class="tg big" data-k="cx">Cancel</button>`);
   const rd=()=>{const h=$('auh'),m=$('aum'),t=$('abt');if(h)hh=+h.value||0;if(m)mm=+m.value||0;if(t&&t.value)bt=t.value};
   mcb={cx:undo,by:()=>{rd();br='y';draw()},bn:()=>{rd();br='n';draw()},sk:()=>{st.aud=z.e;save();moX();next()},lg:()=>{st.aud=z.e;save();moX();openDay(dys[0],'today')},
    ok:()=>{rd();const er=x=>{$('auerr').textContent=x},want=(hh*60+mm)*M;if(hh<0||hh>24||mm<0||mm>59||want<=0){er('Enter the hours and minutes you worked.');return}
@@ -1023,6 +1027,9 @@ function setAct(t){
  const rs=st.rs||0;
  const chk1=()=>{if(t!=='r'){const L=legalStart(t);if(L.R.length){warnAsk(t,L,chk1);return}}begin(t)},chk0=()=>{if(t==='x'&&isTc())t='d';if(t==='d'&&!isTc())t='x';const a1=all(),l1=a1[a1.length-1],n1=Date.now();if(t!=='r'&&st.se&&l1&&!l1.live&&st.se>=l1.e&&n1-l1.e<9*H){resumeAsk(t,l1,chk1);return}chk1()};
  if(t==='r'&&bkPre){/* the break menu already asked when it started (-1: just now) */bd=bkPre>0?bkPre:0;bkPre=0;chk0()}
+ /* switching while you have had the app open: it is now, so no question (the message offers Earlier? to change the time);
+    just after opening the app it may have been a while ago, so ask */
+ else if(was&&ps&&(Date.now()-(window.TGVIS||0)>60000)&&t!=='r'){swNow=1;chk0()}
  else if(was&&ps)swapAsk(t,was,ps,n,chk0);
  else{const zs=st.sessions.filter(x=>x.t!=='r'&&x.e>rs),z=zs.length?zs.reduce((a,b)=>b.e>a.e?b:a):null,gp=()=>{const e2=st.sessions.filter(x=>x.e>rs).map(x=>x.e),l2=e2.length?Math.max(...e2):0;if(l2&&n-l2>=60*M&&(st.gq||0)<l2&&!(st.se&&st.se>=l2&&n-l2<9*H))gapAsk(l2,n,chk);else chk()};
   const nsh=!was&&t!=='r'&&jobsOn()&&(!z||n-z.e>=9*H)&&(st.tmt||0)<(z?z.e:1),chk=()=>{if(nsh&&(st.tmt||0)<(z?z.e:1))startAsk(()=>chk0(),0);else chk0()},shN=!was&&z&&n-z.e>=9*H&&(st.fq||0)<z.e;
@@ -1188,7 +1195,7 @@ function placeBreak(N,t0,t1,pre){
 function longFind(){const n=Date.now(),A=st.sessions.filter(y=>(y.t||'d')!=='r').sort((a,b)=>a.s-b.s);
  let dd=0,ww=0,q=false,rs=null,pe=null;
  for(const x of A){const t=x.t||'d';
-  if(pe!==null){const g=x.s-pe;if(g>=45*M||(q&&g>=30*M)){dd=0;q=false}else if(g>=15*M)q=true;if(g>=30*M){ww=0;rs=null}}
+  if(pe!==null){const g=x.s-pe;if(g>=45*M||(q&&g>=30*M)){dd=0;q=false}else if(g>=15*M)q=true;/* a break of 15 minutes or more restarts the 6 hours of work in a row, as everywhere else */if(g>=15*M){ww=0;if(dd===0)rs=null}}
   if(rs===null)rs=x.s;
   const d0=dd,w0=ww;
   if(t==='d'){dd+=x.e-x.s;ww+=x.e-x.s}else if(t==='x'||t==='w')ww+=x.e-x.s;
