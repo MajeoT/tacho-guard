@@ -465,10 +465,12 @@ function plWkNow(){if(st.active&&st.act!=='r')return null;const n=Date.now(),sp=
  if(n<min)return{big:'Resting',cap:'weekly rest',ns:dmy(min),sub:`Your plan makes this your weekly rest. It has to start by ${dmy(due)}, and your plan has no other break of 24 hours or more before then. A weekly rest lasts at least ${full?'45 hours (your last one was reduced, so this one must be full)':'24 hours, or 45 for a full one'}, so do not start work before ${dmy(min)}.${back}`};
  return{big:'Ready',cap:'with a reduced weekly rest',ns:'Now',sub:`Your weekly rest has reached 24 hours. If you start now it is a reduced weekly rest, and you owe ${f(b.s+45*H-n)} back within 3 weeks. Rest until ${dmy(b.s+45*H)} for a full one.${back}`}}
 /* One line for the Today card before a planned shift starts: the shift and when its break goes. */
-function plHeroPlan(o){const j=jobC(o.j),tc=j.tc!==false;let t=`<b>${o.s.slice(0,5)}–${o.e.slice(0,5)}</b> ${esc(j.n)}`;
+function plHeroPlan(o){const j=jobC(o.j),tc=j.tc!==false,n=Date.now();let t=`<b>${o.s.slice(0,5)}–${o.e.slice(0,5)}</b> ${esc(j.n)}`;
+ /* its start has passed and it has not been started: the times as if you start now, keeping the planned length */
+ let S=o.S,E=o.E;if(n>o.S+10*M){S=Math.round(n/(5*M))*5*M;E=S+(o.E-o.S);t+=` <span class="h-late">· not started yet. If you start now: about ${plHm(S)}–${plHm(E)}</span>`}
  /* the same card and words as the live advice at the start of the shift */
- const cd=plShiftCard(o.S,o.E,o.br||0,o.dr||0,tc);if(!cd)return t+'. No break needed by law.';
- return t+cd+`<span class="h-why">${plShiftWhy(o.S,o.E,o.br||0,o.dr||0,tc)}<p>These times are for a ${o.s.slice(0,5)} start: once you start, the advice follows your real times and breaks.</p></span>`}
+ const cd=plShiftCard(S,E,o.br||0,o.dr||0,tc);if(!cd)return t+'. No break needed by law.';
+ return t+cd+`<span class="h-why">${plShiftWhy(S,E,o.br||0,o.dr||0,tc)}<p>These times are for a ${plHm(S)} start: once you start, the advice follows your real times and breaks.</p></span>`}
 /* The break card for a planned shift (before it starts): the same look as the live one on Today. Breaks in one go (or as
    many as the shift needs), and the 15 then the rest way, with a timeline from the start to the finish. light: for the
    Plan's pop-ups, which use the page colours. null when no break is needed. */
