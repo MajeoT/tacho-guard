@@ -415,10 +415,10 @@ function plSplit(q,len){if(len<30)return null;const n=q.n,R=Math.max(0,q.E-n-len
  return{l2,t1,l1:Math.max(t1,l1),a2,b2,t2,now:x1<15*M}}
 /* The Today card's break advice in two parts: a short summary with a timeline you can take in at a glance, and the full
    explanation (plLive's words, what changes if the shift ends sooner or runs longer) for when you tap More. */
-function plLiveBox(q){let t=plLive(q);const H5=x=>plHm(x);
+function plLiveBox(q){let t=plLive(Object.assign({},q,{drv:false}));const H5=x=>plHm(x);
  /* driving now: the 4h 30m limit comes first, even when you have driven more than the plan expected (then the plan's own
     numbers have no driving left in them) */
- if(q.drv&&q.d0>0){const dl=q.n+Math.max(0,270*M-q.d0),R0=q.E-q.n,dlen=q.half?30:45;if(dl<q.E&&(!PLL||PLL.k==='ok'||dl<PLL.b-6e4)){const P0=PLL;PLL=Object.assign({},P0||{n:q.n,E:q.E,R0,tot:q.tot,tkm:Math.round(q.tk/M),dv:1},{k:'by',len:dlen,b:dl,a:undefined,half:q.half,dv:1});
+ if(q.d0>=270*M-6e4){const dl=q.n,R0=q.E-q.n,dlen=q.half?30:45;if(dl<q.E&&(!PLL||PLL.k==='ok'||dl<PLL.b-6e4)){const P0=PLL;PLL=Object.assign({},P0||{n:q.n,E:q.E,R0,tot:q.tot,tkm:Math.round(q.tk/M),dv:1},{k:'by',len:dlen,b:dl,a:undefined,half:q.half,dv:1});
    /* after that break: more than 6 hours of work left to the finish, or under 45 minutes of breaks for a long day, needs one more */
    {const end=Math.max(q.n,dl)+dlen*M,wa=q.E-end,TWk=q.tot+Math.max(0,q.E-q.n-dlen*M),tk=Math.round(q.tk/M)+dlen,more=Math.max(wa>6*H+6e4?15:0,TWk>9*H&&tk<45?45-tk:0);
     if(more>=15){const a2=Math.max(end,q.E-6*H-more*M),b2=Math.max(a2,end+6*H);PLL.then={len:more,a:plR5(a2-q.n,1)+q.n,b:plR5(b2-q.n)+q.n}}else if(P0&&P0.then&&!(wa<=6*H))PLL.then=P0.then;else PLL.then=undefined}
@@ -431,10 +431,6 @@ function plLiveBox(q){let t=plLive(q);const H5=x=>plHm(x);
   row=(lab,items,segs)=>`<div class="bkr">${lab?`<div class="bkl">${lab}</div>`:''}${items.map(item).join('')}<div class="h-tl" aria-hidden="true">${segs}</div></div>`;
  if(P.k==='ok')sum=`<div class="bkh"><span>☕ Your breaks</span><span class="bkc ok">✓ Covered</span></div><div class="bkok">Enough breaks for this shift${P.tkm?' ('+P.tkm+' min)':''}. Nothing more needed by law if you finish on time.</div>`;
  else{let SP=P.tkm===0&&!P.half&&P.len>=30&&!due?plSplit({n:q.n,E:q.E,w0:q.w0,d0:q.d0,Dr:q.Dr},P.len):null;
-  /* driving now: the 15 has to come before 4h 30m of driving too, if you keep going */
-  if(SP&&q.drv&&q.d0>0){const dl=q.n+Math.round(Math.max(0,270*M-q.d0)/M)*M;if(dl<SP.l1){SP.l1=Math.max(q.n,dl);if(SP.t1>SP.l1){SP.t1=SP.l1}SP.dl=1}
-   /* 4h 30m close (or past the 30's window): a 15 does not reset the driving, so the 30 has to be done before you drive past it */
-   if(dl-q.n<=60*M||dl<SP.a2-6e4){const cap=Math.max(q.n,dl)+15*M;if(SP.a2>cap)SP=null;else{SP.b2=Math.min(SP.b2,cap);SP.t2=Math.min(SP.t2,SP.b2)}}}
   P.sp=SP;
   const one=[{len:P.len,t:W(P.k,P.a,P.b),c:due?'bkx':''}];if(P.then)one.push({pre:'then',len:P.then.len||15,t:W('win',P.then.a,P.then.b),c:'b2'});
   const s1=seg(P.k==='win'?P.a:P.n,Math.max(P.b,P.n+2*M),P.k==='win'?'':'by')+(P.then?seg(P.then.a,P.then.b,'b2'):'');
@@ -445,6 +441,7 @@ function plLiveBox(q){let t=plLive(q);const H5=x=>plHm(x);
   else if(!due&&P.len>=45&&!P.half)sum+=`<div class="bkn2">Or split it: 15 ${P.k==='win'?'any time before '+H5(P.b):'now or soon'}, then the other ${P.len-15} ${P.k==='win'?'between '+H5(P.a)+' and '+H5(P.b):'by '+H5(P.b)}.</div>`;
   else if(P.half&&P.len>=30)sum+=`<div class="bkn2">In one go: it finishes the 15 you had.</div>`;
   bar=`<div class="h-tll"><span>${q.plan?'Start':'Now'} ${H5(P.n)}</span><span>Finish ${H5(P.E)}</span></div>`}
+ if(!q.plan&&q.d0>0&&!due){const dl=Math.max(0,270*M-q.d0),fm2=x=>x<H?Math.round(x/M)+' min':fmt(x);if(P.k!=='ok'||dl<2*H)sum+=`<div class="bkd">🚛 <b>Driving:</b> ${P.k==='ok'?`${fm2(dl)} left before you need a ${q.half?30:45} minute driving break`:`start your ${q.half?'30':'45 (or the 30 of a split)'} before you have driven <b>${fm2(dl)}</b> more`}${q.drv?` · <b>${H5(q.n+dl)}</b> if you keep driving`:''}.</div>`}
  /* what changes if the day is shorter or longer than planned: total work at the planned finish against 6 and 9 hours */
  const TW=P.tot+Math.max(0,P.R0),L=[],nd=P.dv?45:0,nw=x=>x>9*H?45:x>6*H?30:0,now=Math.max(nw(TW),nd);
  if(P.then)L.push(`<b>Finish sooner:</b> the extra 15 minutes is only because you would work more than 6 hours after your ${P.len} minute break. If you are done by about ${H5(P.b+P.len*M+6*H)}, you do not need it.`);
