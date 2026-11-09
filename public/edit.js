@@ -25,7 +25,7 @@ function seOpen(t,mode,pre,focus){const c=seShift(t);if(!c){if(mode==='end'&&typ
  /* lo/hi: the shift cannot be stretched over the shift before or after it */
  SE={S:c[0].s,B,open:null,mode:mode||'edit',S0:c[0].s,E0,lo:pv,hi:nx,pre:pre||'',dirty:false};
  if(focus!=null){let s=SE.S;SE.B.forEach((b,i)=>{if(focus>=s&&focus<s+b.len)SE.open=i;s+=b.len})}
- if(SE.mode==='end')seToEnd();
+ if(SE.mode==='end'){seToEnd();/* the end time is what you came to set, so its box starts open */SE.bd='end';SE.bd0=seEnd()}
  let el=$('sed');if(!el){el=document.createElement('div');el.id='sed';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');document.body.appendChild(el);el.addEventListener('click',seClick);el.addEventListener('change',seChange);el.addEventListener('pointerdown',seDown)}
  el.hidden=false;document.body.classList.add('sedon');seDraw();el.scrollTop=0}
 function seClose(){const el=$('sed');if(el)el.hidden=true;document.body.classList.remove('sedon');SE=null}
@@ -44,12 +44,6 @@ function seEntries(){const S=seStarts();return SE.B.map((b,i)=>({s:S[i],e:S[i]+b
 
 /* ---- the changes ---- */
 const seMin=M;
-function seLen(i,nl){const B=SE.B,b=B[i];nl=Math.max(seMin,Math.round(nl/M)*M);let d=nl-b.len;if(!d)return;
- /* the change is limited by what the neighbour can give, so it never loops and never leaves a block under a minute */
- if(b.run){/* running: its end is now, so the start moves and the block before gives or takes the time */if(i>0){const p=B[i-1];d=Math.min(d,p.len-seMin);p.len-=d}else{d=Math.min(d,SE.S-SE.lo);SE.S-=d}b.len+=d}
- else if(i<B.length-1){/* the next block gives or takes the time, so the rest of the shift stays put */const nx=B[i+1];d=Math.min(d,nx.len-seMin);nx.len-=d;b.len+=d}
- else{/* the last block of a finished shift: the end moves (not past now or the next shift) */d=Math.min(d,seMaxEnd()-seEnd());b.len=Math.max(seMin,b.len+d)}
- SE.dirty=true}
 /* a start time for row i: moves the line between it and the row before */
 function seSetStart(i,ts){const S=seStarts(),B=SE.B,e=S[i]+B[i].len;if(ts>=e-seMin+1)ts=e-seMin;
  if(i===0){if(ts<SE.lo)ts=SE.lo;SE.S=ts;B[0].len=e-ts}else{const ps=S[i-1];if(ts<ps+seMin)ts=ps+seMin;B[i-1].len=ts-ps;B[i].len=e-ts}SE.dirty=true}
@@ -61,74 +55,97 @@ function seSetShiftEnd(ts){const mx=seMaxEnd();if(ts>mx)ts=mx;const B=SE.B,S=seS
  if(ts>e){const l=B[B.length-1];if(l.t==='r'&&!l.o)l.len+=ts-e;else B.push({t:'r',len:ts-e,o:null})}
  else{let k=B.length-1;while(k>0&&S[k]>=ts-seMin+1)k--;B.length=k+1;B[k].len=ts-S[k]}
  SE.dirty=true}
-function seSplit(i){const b=SE.B[i];if(b.len<2*seMin)return;const h=Math.round(b.len/2/M)*M;SE.B.splice(i+1,0,{t:b.t,len:b.len-h,o:b.o?Object.assign({},b.o,{d:0,a:null,z:null}):null,run:b.run});b.len=h;b.run=false;SE.open=i+1;SE.dirty=true}
-/* add a block next to row i, taking the time from row i, so the rest of the shift stays where it is */
-function seAdd(i,t){const B=SE.B,b=B[i];if(b.len<2*seMin)return;const c=Math.min(15*M,Math.round(b.len/2/M)*M);b.len-=c;const nb={t,len:c,o:null};
- if(b.run){B.splice(i,0,nb);SE.open=i}else{B.splice(i+1,0,nb);SE.open=i+1}SE.dirty=true}
+/* delete row i: the row before (or after) takes its time; move a row: the times follow, the shift keeps its length */
 function seDel(i){const B=SE.B;if(B.length<2||B[i].run)return;const b=B[i];if(i>0)B[i-1].len+=b.len;else{B[1].len+=b.len}B.splice(i,1);SE.open=null;SE.dirty=true}
 function seMove(i,j){const B=SE.B,last=seRun()?B.length-2:B.length-1;if(B[i].run)return;j=Math.max(0,Math.min(last,j));if(i===j)return;const[b]=B.splice(i,1);B.splice(j,0,b);if(SE.open===i)SE.open=j;SE.dirty=true}
 
-/* split part of a block off as another activity: SE.sp = {t, len, at ('start' or 'end')} for the open block */
-/* hours and minutes boxes with -15 -5 -1 +1 +5 +15 under them; k is the action key ('l' for a block's length, 'q' for the split part) */
-function seLenUi(k,i,len){const h=Math.floor(Math.round(len/M)/60),m=Math.round(len/M)%60;
- return `<div class="selen"><label><input type="number" inputmode="numeric" min="0" max="23" value="${h}" data-se="${k}h:${i}" aria-label="Hours"> h</label><label><input type="number" inputmode="numeric" min="0" max="59" value="${m}" data-se="${k}m:${i}" aria-label="Minutes"> m</label></div><div class="sesteps">${[-15,-5,-1,1,5,15].map(d=>`<button type="button" data-sk="${k}:${i}:${d}">${d<0?'−'+(-d):'+'+d}</button>`).join('')}</div>`}
-/* SE.sp: t (what the other part was), at ('start'/'end': where that part goes), which ('keep': the length set is for the part that stays
-   as it is, 'new': for the other part), len (that length). For a break, the break part's length is the one to set: breaks come in a few lengths. */
-const seBrkCh=[15,30,45,60],seAnyCh=[15,30,45,60,90,120];
-function seSpDef(b){const t=b.t==='r'?(seTcOf(b)?'d':'x'):b.t==='w'?'p':'w',which=b.t==='r'?'keep':'new',ch=b.t==='r'?seBrkCh:seAnyCh;
- const fit=ch.filter(m=>m*M<=b.len-seMin),len=b.t==='r'?(fit.includes(45)?45:fit.length?fit[fit.length-1]:Math.round(b.len/2/M))*M:Math.max(seMin,Math.round(b.len/2/(5*M))*5*M);return{t,len:Math.min(len,b.len-seMin),at:'end',which}}
-function seSplitUi(b,i,s){const P=SE.sp||(SE.sp=seSpDef(b)),max=b.len-seMin,Lset=Math.max(seMin,Math.min(P.len,max)),L=P.which==='keep'?b.len-Lset:Lset,a=P.at==='start'?[P.t,L,b.t,b.len-L]:[b.t,b.len-L,P.t,L];
- const setT=P.which==='keep'?b.t:P.t,ch=(setT==='r'?seBrkCh:seAnyCh).filter(m=>m*M<=max);
- return `<div class="sesp"><div class="sepl" style="font-size:15px">✂ Split this ${SEN[b.t].toLowerCase()} (${seF(b.len)})</div><div class="note" style="margin:-2px 0 6px">Pick what the other part was, then set one length: the other part takes the rest of the ${seF(b.len)}.</div>
- <div class="fchips fsm">${[seTcOf(b)?'d':'x','w','p','r'].filter(k=>k!==b.t).map(k=>`<button type="button" class="fchip${P.t===k?' on':''}" data-sk="pt:${i}:${k}">${SEI[k]} ${SEN[k]}</button>`).join('')}</div>
- <div class="sepl">Set the length of</div><div class="seseg"><button type="button" class="fchip${P.which==='keep'?' on':''}" data-sk="pw:${i}:keep">${SEI[b.t]} ${SEN[b.t]} part</button><button type="button" class="fchip${P.which==='new'?' on':''}" data-sk="pw:${i}:new">${SEI[P.t]} ${SEN[P.t]} part</button></div>
- <div class="fchips fsm" style="margin-top:8px">${ch.map(m=>`<button type="button" class="fchip${Lset===m*M?' on':''}" data-sk="pl:${i}:${m}">${seF(m*M)}</button>`).join('')}${setT==='r'?'':`<button type="button" class="fchip${Math.abs(Lset-Math.round(b.len/2/M)*M)<M?' on':''}" data-sk="ph:${i}">Half</button>`}</div>
- ${seLenUi('q',i,Lset)}
- <div class="note" style="margin-top:4px">${SEI[b.t]} ${SEN[b.t]} <b>${seF(b.len-L)}</b> and ${SEI[P.t]} ${SEN[P.t]} <b>${seF(L)}</b>, out of ${seF(b.len)}.</div>
- <div class="sepl">Where does the ${SEN[P.t].toLowerCase()} part go?</div><div class="seseg"><button type="button" class="fchip${P.at==='start'?' on':''}" data-sk="pa:${i}:start">↑ At the start</button><button type="button" class="fchip${P.at==='end'?' on':''}" data-sk="pa:${i}:end">↓ At the end</button></div>
- <div class="sepv"><span><i class="k-${a[0]==='x'?'d':a[0]}"></i>${SEI[a[0]]} ${SEN[a[0]]} ${hm(s)}–${hm(s+a[1])}</span><span><i class="k-${a[2]==='x'?'d':a[2]}"></i>${SEI[a[2]]} ${SEN[a[2]]} ${hm(s+a[1])}–${b.run&&P.at==='start'?'now':hm(s+b.len)}</span></div>
- <div class="sesb"><button type="button" class="tg big fpri" data-sk="pg:${i}">Split it</button><button type="button" class="tg big" data-sk="pof:${i}">Cancel</button></div></div>`}
-function seSplitInto(i){const B=SE.B,b=B[i],P=SE.sp;if(!P)return;const Ls=Math.max(seMin,Math.min(P.len,b.len-seMin)),L=P.which==='keep'?b.len-Ls:Ls,bo=b.o||{},no=P.t===b.t?Object.assign({},bo,{d:0,a:null,z:null}):Object.assign({},bo.j?{j:bo.j}:{},bo.mm?{mm:1}:{}),nb={t:P.t,len:L,o:Object.keys(no).length?no:null};b.len-=L;
- if(P.at==='start')B.splice(i,0,nb);else{B.splice(i+1,0,nb);if(b.run){b.run=false;nb.run=true;nb.o={}}}
- SE.sp=null;SE.open=null;SE.dirty=true}
-
-/* ---- drawing ---- */
 function seBar(E){const tot={};E.forEach(x=>{const k=x.t==='x'?'d':x.t;tot[k]=(tot[k]||0)+x.e-x.s});
  return `<div class="sek">${['d','w','p','r'].filter(k=>tot[k]).map(k=>`<span><i class="k-${k}"></i>${k==='d'?'Driving':SEN[k]} ${seF(tot[k])}</span>`).join('')}</div><div class="tkb" aria-hidden="true">${E.map(x=>`<i class="k-${x.t==='x'?'d':x.t}" style="flex:${Math.max(1,Math.round((x.e-x.s)/M))} 0 0"></i>`).join('')}</div>`}
 function seRules(E){const W=E.filter(x=>x.t!=='r').map(x=>({s:x.s,e:x.e,t:x.t}));if(!W.length||typeof audRules!=='function')return '';const R=audRules(W);
  return R.length?`<div class="wn" style="margin-top:10px"><b>⚠ This breaks the rules:</b><br>${R.map(r=>'• '+r[0]).join('<br>')}<br><span class="note">If this is what really happened, save it so your record is honest.</span></div>`:`<div class="note ok" style="margin-top:10px">✓ No rules broken in this shift.</div>`}
-function seDraw(){const el=$('sed');if(SE&&SE.open==null)SE.sp=null;if(!el||!SE)return;const S=seStarts(),E=seEntries(),end=seEnd(),run=seRun(),day=t=>sod(t)===sod(SE.S)?hm(t):hm(t)+' (+'+Math.round((sod(t)-sod(SE.S))/864e5)+')';
- const row=(b,i)=>{const op=SE.open===i,s=S[i],e=s+b.len;return `<div class="ser${op?' op':''}${b.run?' run':''}" data-row="${i}">
-  <div class="serh">${b.run?'<span class="seh off" aria-hidden="true">●</span>':`<span class="seh" data-drag="${i}" aria-label="Drag to move" role="button" tabindex="0">≡</span>`}<button type="button" class="serb" data-sk="o:${i}" aria-expanded="${op}"><i class="k-${b.t==='x'?'d':b.t}"></i><span class="sen">${SEI[b.t]} ${SEN[b.t]}${b.run?' <small>running</small>':''}</span><span class="set">${day(s)}–${b.run?'now':day(e)}</span><span class="sel">${seF(b.len)}</span></button></div>
-  ${op&&SE.sp&&SE.sp.on?`<div class="sep">${seSplitUi(b,i,s)}</div>`:''}${op&&!(SE.sp&&SE.sp.on)?`<div class="sep"><div class="sepl">Type</div><div class="fchips fsm">${seKinds(b).map(k=>`<button type="button" class="fchip${k===b.t?' on':''}" data-sk="t:${i}:${k}">${SEI[k]} ${SEN[k]}</button>`).join('')}</div>
-  <div class="tr" style="margin:10px 0 6px"><label>Start<input type="time" data-se="s:${i}" value="${hm(s)}"></label><label>End${b.run?'<input type="text" value="now" disabled>':`<input type="time" data-se="e:${i}" value="${hm(e)}">`}</label></div>
-  <div class="sepl">Length</div>${seLenUi('l',i,b.len)}
-  <div class="note" style="margin-top:4px">${b.run?'Changing the length moves its start; the block before gives or takes the time.':i<SE.B.length-1?'Changing the length moves the next block; the rest of the shift stays put.':'This is the last block, so changing it moves the end of the shift.'}</div>
-  ${b.len>=2*seMin?`<button type="button" class="tg big sespb" data-sk="pon:${i}">✂ Part of it was something else?</button>`:''}
-  <div class="sea">${b.run?'':`<button type="button" class="tg" data-sk="u:${i}"${i===0?' disabled':''} aria-label="Move up">↑ Up</button><button type="button" class="tg" data-sk="dn:${i}"${i>=SE.B.length-(run?2:1)?' disabled':''} aria-label="Move down">↓ Down</button>`}${b.run||SE.B.length<2?'':`<button type="button" class="tg bad" data-sk="x:${i}">Delete</button>`}</div></div>`:''}</div>`};
- const endRow=SE.mode==='end'||!run?`<div class="tr seend"><label>${SE.mode==='end'?'End the shift at':'Shift ended at'}<input type="time" data-se="end" value="${hm(end)}"></label>${SE.mode==='end'?`<span class="note">Daily rest counts from then.</span>`:''}</div>`:`<div class="note seend">● ${SEN[run.t]} is running now. Tap End shift below to finish the shift.</div>`;
+/* ---- the new editing tools ----
+   Change-overs: the time between two entries is a button; moving it changes the end of one and the start of the next, nothing
+   else. Add: something you forgot (a break, some driving) put in at a time, cutting into what was logged there; nothing else
+   moves. Split into pieces: one entry becomes several, in order, the last one taking what is left. Each shows what changes
+   (before and after) before you apply it. SE.bd: the change-over being moved (row index i = between i and i+1, -1 = shift start,
+   'end' = shift end), SE.bd0 its time when opened. SE.pan: {k:'add', t, s, len} or {k:'split', i, P:[{t,len}]}. */
+const seStepBtns=(k,steps)=>`<div class="sesteps">${steps.map(d=>`<button type="button" data-sk="${k}:${d}">${d<0?'−'+(-d):'+'+d}</button>`).join('')}</div>`;
+const seBdTime=k=>k===-1?SE.S:k==='end'?seEnd():seStarts()[k]+SE.B[k].len;
+function seBdSet(k,ts){if(k===-1)seSetStart(0,ts);else if(k==='end')seSetShiftEnd(ts);else seSetEnd(k,ts)}
+/* entries with their source details, for cutting and rebuilding */
+function seList(){const S=seStarts();return SE.B.map((b,i)=>({s:S[i],e:S[i]+b.len,t:b.t,o:b.o,run:b.run}))}
+function seFromList(L){L.sort((a,b)=>a.s-b.s);const B=[];let pe=null;L.forEach(x=>{if(x.e-x.s<3e4)return;if(pe!==null&&x.s>pe+3e4)B.push({t:'r',len:x.s-pe,o:null});
+  const l=B[B.length-1];if(l&&l.t===x.t&&!l.run&&!x.run&&JSON.stringify(l.o||null)===JSON.stringify(x.o||null)&&pe===x.s)l.len+=x.e-x.s;else B.push({t:x.t,len:x.e-x.s,o:x.o||null,run:!!x.run});pe=x.e});
+ return{S:L.length?L[0].s:SE.S,B}}
+/* put t from s to e into a list of entries, cutting what is there (driving cut in pieces loses its distance) */
+function seCarve(L,s,e,t){const out=[];L.forEach(x=>{if(x.e<=s||x.s>=e){out.push(x);return}
+  const cut=o=>o?Object.assign({},o,{d:0,a:null,z:null}):null;if(x.s<s)out.push(Object.assign({},x,{e:s,run:false,o:cut(x.o)}));if(x.e>e)out.push(Object.assign({},x,{s:e,o:cut(x.o)}))});
+ out.push({s,e,t,o:null});return out}
+/* what the add panel would make: the new list, and the clamped start and end */
+function seAddCalc(P){const L=seList(),lo=Math.max(SE.lo,SE.S-6*H),run=seRun(),hiE=run?Date.now():Math.max(seEnd(),Math.min(seMaxEnd(),seEnd()+6*H));
+ let s=Math.max(lo,P.s),e=Math.min(run?hiE-M:hiE,s+P.len*M);if(e-s<M)return null;const L2=seCarve(L,s,e,P.t);
+ /* a gap left between a new start and the old first entry, or the old end and a new last one, is a break */
+ return{L:L2,s,e}}
+/* what the split panel would make */
+function seSplitCalc(P){const L=seList(),x=L[P.i];if(!x)return null;const used=P.P.slice(0,-1).reduce((q,p)=>q+p.len*M,0);if(used>=x.e-x.s-M+1)return null;let c=x.s;
+ const parts=P.P.map((p,k)=>{const len=k<P.P.length-1?p.len*M:x.e-c,y={s:c,e:c+len,t:p.t,o:p.t===x.t&&k===0?x.o:x.o?Object.assign({},x.o,{d:0,a:null,z:null}):null,run:k===P.P.length-1?x.run:false};c+=len;return y});
+ return{L:L.slice(0,P.i).concat(parts,L.slice(P.i+1)),parts,x}}
+const seLine=x=>`<div class="sedf"><i class="k-${x.t==='x'?'d':x.t}"></i>${SEI[x.t]} ${SEN[x.t]} <span>${hm(x.s)}–${x.run?'now':hm(x.e)}</span><b>${seF(x.e-x.s)}</b></div>`;
+function seDiff(A,B,s,e){/* the entries touching s..e, before and after */const near=x=>x.e>s-1&&x.s<e+1;const a=A.filter(near),b=B.filter(near);
+ return `<div class="sedif"><div><div class="sedh">Before</div>${a.map(seLine).join('')||'<div class="note">Nothing logged then</div>'}</div><div><div class="sedh">After</div>${b.map(seLine).join('')}</div></div>`}
+function sePanel(){const P=SE.pan,typeChips=(cur,k)=>`<div class="fchips fsm">${seKinds(null).map(t=>`<button type="button" class="fchip${t===cur?' on':''}" data-sk="${k}:${t}">${SEI[t]} ${SEN[t]}</button>`).join('')}</div>`;
+ if(P.k==='add'){const C=seAddCalc(P);
+  return `<div class="sepan"><h3>Add something you forgot</h3><p class="note">It goes in at the time you set and takes the place of whatever was logged then. Nothing else moves.</p>
+  <div class="sepl">What was it?</div>${typeChips(P.t,'at')}
+  <div class="sepl">When did it start?</div><div class="tr"><input type="time" data-se="as" value="${hm(P.s)}"></div>${seStepBtns('as',[-15,-5,-1,1,5,15])}
+  <div class="sepl">How long?</div><div class="fchips fsm">${[5,10,15,20,30,45,60,90].map(m=>`<button type="button" class="fchip${P.len===m?' on':''}" data-sk="al:${m}">${seF(m*M)}</button>`).join('')}</div><div class="tcv"><b>${seF(P.len*M)}</b></div>${seStepBtns('ad',[-15,-5,-1,1,5,15])}
+  ${C?seDiff(seList(),C.L.slice().sort((a,b)=>a.s-b.s),C.s,C.e):'<div class="note bad">That does not fit. Change the time.</div>'}
+  <div class="sebtn"><button type="button" class="tg big fpri" data-sk="pa:go"${C?'':' disabled'}>Add it</button><button type="button" class="tg big" data-sk="pa:x">Back</button></div></div>`}
+ const C=seSplitCalc(P),x=seList()[P.i];
+ return `<div class="sepan"><h3>Split into pieces</h3><p class="note">${SEI[x.t]} ${SEN[x.t]} ${hm(x.s)}–${x.run?'now':hm(x.e)} (${seF(x.e-x.s)}). Set each piece in order; the last one takes what is left.</p>
+ ${P.P.map((p,k)=>{const last=k===P.P.length-1,len=C?C.parts[k].e-C.parts[k].s:p.len*M;return `<div class="sepc"><div class="sepch"><b>Piece ${k+1}</b>${C?`<span>${hm(C.parts[k].s)}–${last&&x.run?'now':hm(C.parts[k].e)}</span>`:''}${P.P.length>2?`<button type="button" class="tg" data-sk="pr:${k}" aria-label="Remove piece">✕</button>`:''}</div>${typeChips(p.t,'pt:'+k)}
+  ${last?`<div class="note">The rest: <b>${seF(len)}</b></div>`:`<div class="tcv"><b>${seF(p.len*M)}</b></div>${seStepBtns('pl:'+k,[-15,-5,-1,1,5,15])}`}</div>`}).join('')}
+ <button type="button" class="tg big sespb" data-sk="pp:add">＋ Add another piece</button>
+ ${C?seDiff([x],C.parts,x.s,x.e):'<div class="note bad">The pieces are longer than the entry. Make one shorter.</div>'}
+ <div class="sebtn"><button type="button" class="tg big fpri" data-sk="pp:go"${C?'':' disabled'}>Split it</button><button type="button" class="tg big" data-sk="pp:x">Back</button></div></div>`}
+function seDraw(){const el=$('sed');if(!el||!SE)return;const S=seStarts(),E=seEntries(),end=seEnd(),run=seRun(),day=t=>sod(t)===sod(SE.S)?hm(t):hm(t)+' (+'+Math.round((sod(t)-sod(SE.S))/864e5)+')';
+ const top=`<div class="setop"><button type="button" class="tg" data-sk="close">✕ Close</button><div><b>${SE.mode==='end'?'End Shift':'Edit Shift'}</b><div class="note">${new Date(SE.S).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'})}</div></div></div>`;
+ if(SE.pan){el.innerHTML=`<div class="sew">${top}${sePanel()}</div>`;return}
+ /* a change-over: the time between two entries (or the start or end of the shift), and the box to move it */
+ const bd=(k,lab)=>{const t=seBdTime(k),op=SE.bd===k,was=op&&SE.bd0!=null&&Math.abs(SE.bd0-t)>=M?` (was ${hm(SE.bd0)})`:'';
+  const what=k===-1?`The shift starts at <b>${hm(t)}</b>${was}. The first entry follows; nothing else moves.`:k==='end'?`The shift ends at <b>${hm(t)}</b>${was}. The last entry follows; nothing else moves.`:`${SEI[SE.B[k].t]} ${SEN[SE.B[k].t]} ends and ${SEI[SE.B[k+1].t]} ${SEN[SE.B[k+1].t]} starts at <b>${hm(t)}</b>${was}. Nothing else moves.`;
+  return `<button type="button" class="sebd${op?' op':''}" data-sk="bd:${k}" aria-expanded="${op}"><span>${lab||''}</span><b>${day(t)}</b><span class="sebdi">${op?'▴':'✎'}</span></button>${op?`<div class="sebs">${seStepBtns('bm:'+k,[-15,-5,-1,1,5,15])}<div class="tr"><label>Or type the time<input type="time" data-se="bd:${k}" value="${hm(t)}"></label></div><div class="note">${what}</div></div>`:''}`};
+ const row=(b,i)=>{const op=SE.open===i,s=S[i],e=s+b.len;return `<div class="ser${op?' op':''}${b.run?' run':''}" data-row="${i}"><div class="serh">${b.run?'<span class="seh off" aria-hidden="true">●</span>':`<span class="seh" data-drag="${i}" aria-label="Drag to move" role="button" tabindex="0">≡</span>`}<button type="button" class="serb" data-sk="o:${i}" aria-expanded="${op}"><i class="k-${b.t==='x'?'d':b.t}"></i><span class="sen">${SEI[b.t]} ${SEN[b.t]}${b.run?' <small>running</small>':''}</span><span class="set">${day(s)}–${b.run?'now':day(e)}</span><span class="sel">${seF(b.len)}</span></button></div>
+  ${op?`<div class="sep"><div class="fchips fsm">${seKinds(b).map(k=>`<button type="button" class="fchip${k===b.t?' on':''}" data-sk="t:${i}:${k}">${SEI[k]} ${SEN[k]}</button>`).join('')}</div>
+  <div class="sea">${b.len>=2*seMin?`<button type="button" class="tg" data-sk="sp2:${i}">✂ Split into pieces</button>`:''}<button type="button" class="tg" data-sk="addin:${i}">＋ Add something in it</button>${b.run?'':`<button type="button" class="tg" data-sk="u:${i}"${i===0?' disabled':''} aria-label="Move up">↑</button><button type="button" class="tg" data-sk="dn:${i}"${i>=SE.B.length-(run?2:1)?' disabled':''} aria-label="Move down">↓</button>`}${b.run||SE.B.length<2?'':`<button type="button" class="tg bad" data-sk="x:${i}" aria-label="Delete">🗑</button>`}</div></div>`:''}</div>`};
+ const list=bd(-1,'Started')+SE.B.map((b,i)=>row(b,i)+(i<SE.B.length-1?bd(i):'')).join('')+(run?`<div class="note seend">● ${SEN[run.t]} is running now. Tap End shift below to finish the shift.</div>`:bd('end',SE.mode==='end'?'End the shift at':'Ended'));
  const rest=SE.mode==='end'?`<div class="note" style="margin-top:6px">After ending at ${hm(end)} you can start again at ${tt(end+11*H)} (an 11 hour rest), or ${tt(end+9*H)} with a reduced 9 hour rest.</div>`:'';
- el.innerHTML=`<div class="sew"><div class="setop"><button type="button" class="tg" data-sk="close">✕ Close</button><div><b>${SE.mode==='end'?'End Shift':'Edit Shift'}</b><div class="note">${new Date(SE.S).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'})}</div></div></div>
- ${SE.pre?`<div class="note warn" style="margin-bottom:8px">${SE.pre}</div>`:''}
- <p class="note" style="margin:0 0 10px">Drag ≡ to change the order: the times follow and the shift keeps its length. Tap a block to change it.</p>
- <div class="tr sestart"><label>Shift started at<input type="time" data-se="start" value="${hm(SE.S)}"></label><span class="note">${seF(end-SE.S)} in all</span></div>
- ${seBar(E)}<div id="sel">${SE.B.map(row).join('')}</div>${endRow}${rest}${seRules(E)}
+ el.innerHTML=`<div class="sew">${top}${SE.pre?`<div class="note warn" style="margin-bottom:8px">${SE.pre}</div>`:''}
+ <p class="note" style="margin:0 0 8px">Tap a time to move it. Tap an entry to change what it was, split it into pieces, or add something in it. Drag ≡ to reorder.</p>
+ ${seBar(E)}<button type="button" class="tg big seadd" data-sk="pan:add">＋ Add something I forgot</button><div id="sel">${list}</div>${rest}${seRules(E)}
  <div class="sebtn"><button type="button" class="tg big fpri" data-sk="save">${SE.mode==='end'?'End shift at '+hm(end):'Save changes'}</button>${SE.mode!=='end'&&run?`<button type="button" class="tg big" data-sk="toend">End shift…</button>`:''}<button type="button" class="tg big" data-sk="close">Cancel</button>${SE.mode==='end'?'':`<button type="button" class="tg big bad" data-sk="clr">Clear this shift</button>`}</div></div>`}
 
-/* ---- events ---- */
-function seClick(e){const b=e.target.closest('[data-sk]');if(!b||!SE)return;SE.redraw=false;const[k,a,v]=b.dataset.sk.split(':'),i=+a;
+function seClick(e){const b=e.target.closest('[data-sk]');if(!b||!SE)return;SE.redraw=false;const[k,a,v]=b.dataset.sk.split(':'),i=+a,P=SE.pan;
  if(k==='close'){if(SE.dirty){mo(`<h3>Leave Without Saving?</h3><p>Your changes to this shift will be lost.</p><button class="tg big bad" data-k="ok">Leave without saving</button><button class="tg big" data-k="no">Keep editing</button>`);mcb={no:moX,ok:()=>{moX();seClose()}};return}seClose();return}
- if(k==='o'){SE.open=SE.open===i?null:i;SE.sp=null}
- else if(k==='pon'){SE.sp=seSpDef(SE.B[i]);SE.sp.on=true}else if(k==='pof'){SE.sp=null}else if(k==='pt'){SE.sp.t=v}else if(k==='pw'){if(SE.sp.which!==v){SE.sp.which=v;SE.sp.len=SE.B[i].len-SE.sp.len}}else if(k==='pl'){SE.sp.len=+v*M}else if(k==='ph'){SE.sp.len=Math.round(SE.B[i].len/2/M)*M}else if(k==='q'){SE.sp.len=Math.max(seMin,Math.min(SE.B[i].len-seMin,SE.sp.len+(+v)*M))}else if(k==='pa'){SE.sp.at=v}else if(k==='pg')seSplitInto(i);else if(k==='t'){SE.B[i].t=v;SE.dirty=true}else if(k==='l')seLen(i,SE.B[i].len+(+v)*M);else if(k==='a')seAdd(i,v);else if(k==='sp')seSplit(i);
- else if(k==='u')seMove(i,i-1);else if(k==='dn')seMove(i,i+1);else if(k==='x')seDel(i);else if(k==='toend'){seToEnd();SE.dirty=true}
+ const bk=a==='end'?'end':i;
+ if(k==='o'){SE.open=SE.open===i?null:i;SE.bd=null}
+ else if(k==='bd'){SE.bd=SE.bd===bk?null:bk;SE.bd0=SE.bd===null?null:seBdTime(bk);SE.open=null}
+ else if(k==='bm'){seBdSet(bk,seBdTime(bk)+(+v)*M)}
+ else if(k==='t'){SE.B[i].t=v;SE.dirty=true}
+ else if(k==='u')seMove(i,i-1);else if(k==='dn')seMove(i,i+1);else if(k==='x')seDel(i);
+ else if(k==='sp2'){const x=SE.B[i],oth=x.t==='r'?(seTcOf(x)?'d':'x'):'r';SE.pan={k:'split',i,P:[{t:x.t,len:Math.max(1,Math.min(60,Math.round(x.len/2/M)))},{t:oth,len:15},{t:x.t,len:0}]};if(x.len<=(SE.pan.P[0].len+16)*M)SE.pan.P=[{t:x.t,len:Math.max(1,Math.round(x.len/2/M))},{t:oth,len:0}]}
+ else if(k==='pan'||k==='addin'){const run=seRun(),s0=k==='addin'?seStarts()[i]+Math.min(30*M,Math.round(SE.B[i].len/3/M)*M):(run?Date.now():seEnd())-60*M;SE.pan={k:'add',t:'r',s:Math.max(SE.S,Math.round(s0/M)*M),len:15}}
+ else if(P&&k==='at')P.t=a;else if(P&&k==='as')P.s+=(+a)*M;else if(P&&k==='al')P.len=+a;else if(P&&k==='ad')P.len=Math.max(1,P.len+(+a));
+ else if(P&&k==='pa'){if(a==='go'){const C=seAddCalc(P);if(!C)return;const R=seFromList(C.L);SE.S=R.S;SE.B=R.B;SE.dirty=true;SE.open=null}SE.pan=null}
+ else if(P&&k==='pt')P.P[i].t=v;else if(P&&k==='pl')P.P[i].len=Math.max(1,P.P[i].len+(+v));else if(P&&k==='pr')P.P.splice(i,1);
+ else if(P&&k==='pp'){if(a==='add')P.P.splice(P.P.length-1,0,{t:'r',len:15});else{if(a==='go'){const C=seSplitCalc(P);if(!C)return;const R=seFromList(C.L);SE.S=R.S;SE.B=R.B;SE.dirty=true;SE.open=null}SE.pan=null}}
+ else if(k==='toend'){seToEnd();SE.dirty=true}
  else if(k==='save'){seSave();return}else if(k==='clr'){const ss=SE.S;seClose();clearShift(ss,all());return}
- seDraw()}
-function seChange(e){const x=e.target.closest('[data-se]');if(!x||!SE||(x.value===''&&x.type!=='number'))return;const[k,a]=x.dataset.se.split(':'),i=+a,S=seStarts();
- const near=(v,ref)=>nearT(v,ref);
- if(k==='start')seSetStart(0,near(x.value,SE.S));
- else if(k==='end')seSetShiftEnd(near(x.value,seEnd()));
- else if(k==='lh'||k==='lm'||k==='qh'||k==='qm'){const r=x.closest('.selen'),hv=+r.querySelector('[data-se$="h:'+i+'"]').value||0,mv=+r.querySelector('[data-se$="m:'+i+'"]').value||0,ln=(Math.max(0,hv)*60+Math.max(0,mv))*M;if(k[0]==='l')seLen(i,ln);else SE.sp.len=Math.max(seMin,Math.min(SE.B[i].len-seMin,ln))}
- else if(k==='s')seSetStart(i,near(x.value,S[i]));else if(k==='e')seSetEnd(i,near(x.value,S[i]+SE.B[i].len));
+ seDraw();if(k==='sp2'||k==='pan'||k==='addin'||(P&&(k==='pa'||(k==='pp'&&a!=='add')))){const el=$('sed');if(el)el.scrollTop=0}}
+
+function seChange(e){const x=e.target.closest('[data-se]');if(!x||!SE||x.value==='')return;const[k,a]=x.dataset.se.split(':');
+ if(k==='as'&&SE.pan)SE.pan.s=nearT(x.value,SE.pan.s);
+ else if(k==='bd'){const bk=a==='end'?'end':+a;seBdSet(bk,nearT(x.value,seBdTime(bk)))}
  /* redraw after the box has finished losing focus; if a finger is down (you tapped a button straight after typing), wait until
     the tap is done, so the button you tapped is still there to take it */
  if(sePtr)SE.redraw=true;else setTimeout(seDraw,0)}
