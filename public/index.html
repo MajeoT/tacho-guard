@@ -589,7 +589,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-207';
+const APPV='tg-2026-10-23-208';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1700,11 +1700,17 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.g?L
 document.addEventListener('click',e=>{const b=e.target.closest('[data-t2]');if(b){showTab(b.dataset.t2);window.scrollTo(0,0)}});
 $('subtabs').onclick=e=>{const b=e.target.closest('.stab');if(!b)return;if(b.dataset.t==='ent'){showTab('tacho');if(typeof tpShow==='function'){tpShow('ent');subUi('tacho')}}else{showTab(b.dataset.t);if(b.dataset.t==='tacho'&&tpSel==='ent')tpShow('dl')}};
 /* one tap for double manning: two drivers on (if not already) and you riding as the co-driver, POA, whose first 45 minutes is your driving break */
-$('cdb').onclick=()=>{if(st.act==='p'&&st.pcd&&st.active)return;if(!mmOn()){st.mm=Date.now();save()}coNext=1;setAct('p')};
+$('cdb').onclick=()=>{if(st.act==='p'&&st.pcd&&st.active)return;if(!mmOn()){st.mm=Date.now();save()}
+ /* already on POA (waiting): ask whether the co-driver has been driving all that time */
+ if(st.act==='p'&&st.active&&Date.now()-st.active>=60000){const a0=st.active;mo(`<h3>Since When?</h3><p>You have been on POA (waiting) since ${hm(a0)}. Has your co-driver been driving since then?</p><button class="tg big fpri" data-k="all">Yes, since ${hm(a0)}</button><button class="tg big" data-k="now">No, from now</button><button class="tg big" data-k="no">Cancel</button>`);
+  mcb={no:moX,now:()=>coGo(1),all:()=>{moX();if(st.act!=='p'||st.active!==a0)return;snap=JSON.stringify(st);st.pcd=1;save();render();flash='Riding as co-driver since '+hm(a0)+'. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';usnap=snap;setTimeout(()=>{flash='';live()},10000);live()}};return}
+ coGo(1)};
+/* POA as co-driver (v=1) or waiting (v=0); already on POA just changes which, never asks to end the shift */
+function coGo(v){moX();if(st.act==='p'&&st.active){if(!!st.pcd===!!v)return;const n=Date.now();snap=JSON.stringify(st);if(n-st.active>=20000)st.sessions.push(rec(st.active,n));st.active=n;st.pcd=v?1:0;save();render();return}coNext=v?1:0;setAct('p')}
 document.querySelectorAll('.act').forEach(b=>b.onclick=()=>{if(b.dataset.a==='p'&&mmOn()){coAsk();return}setAct(b.dataset.a)});
 /* two drivers: is this POA riding as co-driver while the other drives, or waiting? */
 function coAsk(){mo(`<h3>Co-driver or Waiting?</h3><p>With two drivers, time riding as co-driver while the other driver drives is POA on the tacho, and the first 45 minutes of it counts as your driving break, as long as you do no work. It does not count as a working time break.</p><button class="tg big fpri" data-k="co">👥 Riding as co-driver</button><button class="tg big" data-k="wt">◪ Waiting (POA)</button><button class="tg big" data-k="no">Cancel</button>`);
- const go=v=>{moX();if(st.act==='p'&&st.active){if(!!st.pcd===!!v)return;const n=Date.now();snap=JSON.stringify(st);if(n-st.active>=20000)st.sessions.push(rec(st.active,n));st.active=n;st.pcd=v?1:0;save();render();return}coNext=v?1:0;setAct('p')};mcb={no:moX,co:()=>go(1),wt:()=>go(0)}}
+ mcb={no:moX,co:()=>coGo(1),wt:()=>coGo(0)}}
 $('hero').addEventListener('click',e=>{if(e.target.closest('[data-hb]')){setAct('r');return}if(e.target.closest('[data-tcc]')&&typeof tcCheck==='function')tcCheck()});
 $('s1').addEventListener('click',e=>{if(e.target.closest('[data-wr]')){wrSetup();return}if(e.target.closest('[data-wrd]')&&!e.target.closest('[data-i]')){wrDetail();return}const b=e.target.closest('[data-m]');if(b&&!b.disabled)breakAsk(+b.dataset.m);else if(e.target.closest('[data-ub]'))unBreak()});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-i]'),s=$('sheet');if(b){const k=b.dataset.i;if(infoK===k){infoK=null;s.hidden=true}else{infoK=k;s.innerHTML=(k.startsWith('c:')?infoCk(k.slice(2)):boxify(INFO[k]))+(ISRC[k]?'<div class="srcs">'+srcH(ISRC[k])+'</div>':'')+'<div class="note" style="margin-top:6px">Tap to close.</div>';s.hidden=false}}else if(!s.hidden){infoK=null;s.hidden=true}});
