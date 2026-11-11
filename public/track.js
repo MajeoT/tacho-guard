@@ -311,11 +311,11 @@ document.addEventListener('change',e=>{if(tcEv&&e.target.closest&&e.target.close
 let dwEv=null;
 function tkDrops(){const n0=Date.now(),td=sod(n0),run=!!(st.active&&st.act),
  ss=run?shiftStart(all().filter(x=>x.t!=='r')):0,tc=isTc();
- const R={step:1,live:run,day:td,sv:run?hm(ss):'',ev:'',dr:tc,wk:true,br:true,mm:tc&&mmOn(),nd:2,L:null,B:null,P:{}};
+ const R={step:1,live:run,fin:run&&n0-ss>12*H,day:td,sv:run?hm(ss):'',ev:'',dr:tc,wk:true,br:true,mm:tc&&mmOn(),nd:2,L:null,B:null,P:{}};
  let from=0,to=0;
  const T=()=>(to-from)/M,r5=m=>Math.max(0,Math.round(m/5)*5);
- /* enough break in all (30 over 6 hours of work, 45 over 9) and enough stops that no stretch passes 6 hours of work: a long day gets 15 + 30 */
- const wantB=()=>{if(!R.br)return [];const w=T(),need=w>9*60+45?45:w>6*60+30?30:15,stops=Math.max(1,Math.ceil((w-need)/360)-1);
+ /* enough break in all (30 over 6 hours of work, 45 over 9, and 45 on a driving day long enough to pass 4h 30m of driving) and enough stops that no stretch passes 6 hours of work: a long day gets 15 + 30 */
+ const wantB=()=>{if(!R.br)return [];const w=T(),need=w>9*60+45?45:w>6*60+30?(R.dr?45:30):15,stops=Math.max(1,Math.ceil((w-need)/360)-1);
   if(stops<=1&&w<=9*60+45)return [need];const B=[15,30];while(B.length<stops)B.push(15);return B};
  /* the parts of the day for nd drops; durations fill the time, drives a bit longer than drops */
  const mkLegs=()=>{const nd=R.nd,B=R.B||wantB(),bt=B.reduce((q,x)=>q+x,0),s0=R.wk?30:0,e0=R.wk?15:0,av=Math.max(0,T()-bt-s0-e0),u=av/((nd+1)+(R.wk?0.7:0.4)*nd),L=[];
@@ -339,31 +339,33 @@ function tkDrops(){const n0=Date.now(),td=sod(n0),run=!!(st.active&&st.act),
   if(c>to+3e4)return null;if(to-c>=1000)add('w',(to-c)/M);return E};
  const times=()=>{const B=R.B||[],P=autoPos(),out=[];let c=from;R.L.forEach((x,i)=>{B.forEach((b,k)=>{if(P[k]===i)c+=b*M});out.push(c);c+=legT(x)*M});return out};
  const dwSave=E=>{const sv=JSON.stringify(st);
-  if(R.live){const n=Date.now();tkPut(E.map(x=>Object.assign({},x,{e:Math.min(x.e,n)})).filter(x=>x.e>x.s),from,n);st.active=n}
+  if(R.live&&R.fin){const n=Date.now();tkPut(E,from,n);if(st.act==='d'&&typeof gpsOff==='function')gpsOff();st.active=null;st.act=null;st.ad=0;st.as=st.ae=null;st.se=to}
+  else if(R.live){const n=Date.now();tkPut(E.map(x=>Object.assign({},x,{e:Math.min(x.e,n)})).filter(x=>x.e>x.s),from,n);st.active=n}
   else{tkPut(E,from,to);if(!st.active&&!st.sessions.some(x=>(x.t||'d')!=='r'&&x.s>=to)&&!(st.se&&st.se>=to))st.se=to}
   st.sessions.sort((a,b)=>a.s-b.s);if(typeof fixOv==='function')fixOv();save();moX();render();usnap=sv;snap=sv;
-  flash=(R.live?`Your day so far is filled in, ${hm(from)} to now. ${TKN[st.act]||NM[st.act]} carries on from now: if you are doing something else, tap it below.`:`Shift filled in: ${hm(from)} to ${hm(to)}.`)+' <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';
+  flash=(R.live&&R.fin?`Shift filled in and ended: ${hm(from)} to ${hm(to)}. Daily rest is counting from ${hm(to)}.`:R.live?`Your day so far is filled in, ${hm(from)} to now. ${TKN[st.act]||NM[st.act]} carries on from now: if you are doing something else, tap it below.`:`Shift filled in: ${hm(from)} to ${hm(to)}.`)+' <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';
   setTimeout(()=>{if(usnap===sv){flash='';live()}},14000);live();if(!R.live&&typeof tkRunCheck==='function')tkRunCheck()};
  const yn=(k,q,v)=>`<div class="dwq"><span>${q}</span><span class="fchips fsm"><button type="button" class="fchip${v?' on':''}" data-dw="y:${k}:1">Yes</button><button type="button" class="fchip${v?'':' on'}" data-dw="y:${k}:0">No</button></span></div>`;
  const keepSc=f=>{const b=MO.querySelector('.mb'),y=b?b.scrollTop:0;f();const b2=MO.querySelector('.mb');if(b2)b2.scrollTop=y};
  const page1=()=>{const days=[0,1,2].map(k=>sod(td-k*864e5));
   mo(`<h3>Fill In My Day</h3><p>Did not log as you went? Answer a few questions and it builds a rough guide of your shift, drop by drop. You can change every part before saving.</p>
   ${run?`<div class="fchips"><button type="button" class="fchip${R.live?' on':''}" data-dw="l:1">This shift (still going)</button><button type="button" class="fchip${R.live?'':' on'}" data-dw="l:0">An earlier shift</button></div>`:''}
-  ${R.live?`<div class="tr" style="margin-top:10px"><label>Your shift started at<input type="time" id="dws" value="${R.sv}"></label></div><p class="note">It fills in up to now (${hm(n0)}). What you are doing now carries on afterwards.</p>`
+  ${R.live?`<div class="tr" style="margin-top:10px"><label>Your shift started at<input type="time" id="dws" value="${R.sv}"></label></div><div class="fsub">Have you finished?</div><div class="fchips"><button type="button" class="fchip${R.fin?' on':''}" data-dw="f:1">Yes, I finished at…</button><button type="button" class="fchip${R.fin?'':' on'}" data-dw="f:0">No, still working</button></div>${R.fin?`<div class="tr" style="margin-top:8px"><label>You finished at<input type="time" id="dwe" value="${R.ev}"></label></div><p class="note">Your shift ends at that time and your daily rest counts from then. Anything logged after it is replaced.</p>`:`<p class="note">It fills in up to now (${hm(n0)}). What you are doing now carries on afterwards.</p>`}`
    :`<div class="fchips" style="margin-top:8px">${days.map((d,k)=>`<button type="button" class="fchip${d===R.day?' on':''}" data-dw="d:${d}">${k===0?'Today':k===1?'Yesterday':new Date(d).toLocaleDateString('en-GB',{weekday:'long'})}</button>`).join('')}</div><label class="fother">Or another day<input type="date" id="dwd" value="${ymd(R.day)}"></label><div class="tr" style="margin-top:10px"><label>Started<input type="time" id="dws" value="${R.sv}"></label><label>Finished<input type="time" id="dwe" value="${R.ev}"></label></div>`}
   <div class="acq" style="margin-top:10px">${tc?yn('dr','🚛 Did you drive?',R.dr):''}${yn('wk','⚒ Did you do other work (loading, drops, checks)?',R.wk)}${yn('br','🛏 Did you have breaks?',R.br)}${tc?yn('mm','👥 Two drivers (double manning)?',R.mm):''}</div>
   <div class="note bad" id="dwerr"></div><button class="tg big fpri" data-k="ok">Next</button><button class="tg big" data-k="no">Cancel</button>`);
   const keep=()=>{const a=$('dws'),b=$('dwe');if(a)R.sv=a.value;if(b)R.ev=b.value};if($('dwd'))$('dwd').onchange=e=>{keep();if(e.target.value){R.day=pdt(e.target.value);page1()}};
   ['dws','dwe'].forEach(id=>{if($(id))$(id).onchange=keep});
-  mcb={no:moX,ok:()=>{keep();const er=m=>{$('dwerr').textContent=m},n=Date.now();if(!R.sv||(!R.live&&!R.ev)){er(R.live?'Enter when your shift started.':'Enter when it started and finished.');return}
-   if(R.live){to=n;from=nearT(R.sv,n);if(from>=n)from-=864e5;if(n-from>21*H){er('That is over 21 hours ago. Check the time.');return}}
+  mcb={no:moX,ok:()=>{keep();const er=m=>{$('dwerr').textContent=m},n=Date.now();if(!R.sv||((!R.live||R.fin)&&!R.ev)){er(R.live&&!R.fin?'Enter when your shift started.':'Enter when it started and finished.');return}
+   if(R.live){to=n;from=nearT(R.sv,n);if(from>=n)from-=864e5;if(n-from>21*H&&!R.fin){er('That is over 21 hours ago. Check the time.');return}
+    if(R.fin){to=plAt(sod(from),R.ev);if(to<=from)to=plAt(nxd(sod(from)),R.ev);if(to>n){er('That is later than now. If you are still working, pick No, still working.');return}if(to-from>21*H){er('That is over 21 hours. Check the times.');return}}}
    else{from=plAt(R.day,R.sv);to=plAt(R.day,R.ev);if(to<=from)to=plAt(nxd(R.day),R.ev);if(to>n){er(run?'That finishes after now. If you are still on this shift, pick This shift (still going).':'That finishes after now. If you are still working, start your shift on the Today screen first.');return}if(to-from>21*H){er('That is over 21 hours. Check the times.');return}}
    if(to-from<30*M){er('That is under 30 minutes. Check the times.');return}
-   if(!R.dr){/* no driving: the simple screen, with the time split into work, POA and breaks */acctAsk({from,to,def:'w',quick:!R.live,mid:R.live,title:'Your Day',lead:`${hm(from)} to ${R.live?'now':hm(to)}.`,ok:'Save',back:page1,cancel:moX,done:dwSave});return}
+   if(!R.dr){/* no driving: the simple screen, with the time split into work, POA and breaks */acctAsk({from,to,def:'w',quick:!R.live||R.fin,mid:R.live&&!R.fin,title:'Your Day',lead:`${hm(from)} to ${R.live&&!R.fin?'now':hm(to)}.`,ok:'Save',back:page1,cancel:moX,done:dwSave});return}
    R.B=wantB();mkLegs();R.step=2;page2()}};
-  dwEv=e=>{const b=e.target.closest('[data-dw]');const[k,a,v]=b.dataset.dw.split(':');keep();if(k==='l')R.live=a==='1';else if(k==='d')R.day=+a;else if(k==='y')R[a]=v==='1';page1()}};
+  dwEv=e=>{const b=e.target.closest('[data-dw]');const[k,a,v]=b.dataset.dw.split(':');keep();if(k==='l')R.live=a==='1';else if(k==='f')R.fin=a==='1';else if(k==='d')R.day=+a;else if(k==='y')R[a]=v==='1';page1()}};
  const stp=(i,f,m,lab)=>`<span class="dws"><button type="button" data-dw="m:${i}:${f}:-15" aria-label="15 minutes less">−15</button><button type="button" data-dw="m:${i}:${f}:-5" aria-label="5 minutes less">−5</button><b aria-label="${lab}">${tkF(m)}</b><button type="button" data-dw="m:${i}:${f}:5" aria-label="5 minutes more">+5</button><button type="button" data-dw="m:${i}:${f}:15" aria-label="15 minutes more">+15</button></span>`;
- const page2=()=>{const tm=times(),B=R.B||[],P=autoPos(),u=used(),left=T()-u,E=left>=0?build():null,J=E?tkJudge(E,from,to,R.live):null;
+ const page2=()=>{const tm=times(),B=R.B||[],P=autoPos(),u=used(),left=T()-u,E=left>=0?build():null,J=E?tkJudge(E,from,to,R.live&&!R.fin):null;
   const ico={s:'⚒',d:'🚛',x:'📦',e:'⚒'};
   const rows=R.L.map((x,i)=>{const bs=B.map((b,k)=>P[k]===i?`<div class="dwb">🛏 ${b} minute break${R.L.length>1?` <select data-dwp="${k}" aria-label="Move this break">${R.L.map((y,j)=>j?`<option value="${j}"${j===P[k]?' selected':''}>before ${esc(y.lbl.toLowerCase())}</option>`:'').join('')}</select>`:''}</div>`:'').join('');
    const st0=tm[i],en=st0+legT(x)*M;
@@ -371,7 +373,7 @@ function tkDrops(){const n0=Date.now(),td=sod(n0),run=!!(st.active&&st.act),
    ${stp(i,'m',x.m,x.lbl)}
    ${x.k==='d'&&R.mm?`<div class="fchips fsm" style="margin-top:6px"><button type="button" class="fchip${x.co?'':' on'}" data-dw="c:${i}:0">I drove</button><button type="button" class="fchip${x.co?' on':''}" data-dw="c:${i}:1">My co-driver drove</button></div>`:''}
    ${x.k==='x'?(x.w?`<div class="fsub">Waiting first (POA)</div>${stp(i,'w',x.w,'Waiting')}`:`<button type="button" class="dwa" data-dw="w:${i}">+ I was kept waiting here (POA)</button>`):''}</div>`}).join('');
-  mo(`<h3>Your Drops</h3><p>${new Date(from).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'})}, ${hm(from)} to ${R.live?'now ('+hm(to)+')':hm(to)}: <b>${tkF(T())}</b> to fill. Set roughly how long each part took. Set a part to 0 if you did not do it.</p>
+  mo(`<h3>Your Drops</h3><p>${new Date(from).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'})}, ${hm(from)} to ${R.live&&!R.fin?'now ('+hm(to)+')':hm(to)}: <b>${tkF(T())}</b> to fill. Set roughly how long each part took. Set a part to 0 if you did not do it.</p>
   <div class="dwq"><span>📦 How many drops or collections?</span><span class="dws"><button type="button" data-dw="n:-1" aria-label="One fewer drop">−</button><b>${R.nd}</b><button type="button" data-dw="n:1" aria-label="One more drop">+</button></span></div>
   ${R.br?`<div class="fsub">Your breaks</div><div class="fchips fsm">${[[15],[30],[45],[15,30],[15,15],[60]].map(b=>`<button type="button" class="fchip${B.join('+')===b.join('+')?' on':''}" data-dw="b:${b.join('+')}">${b.map(x=>x+' min').join(' + ')}</button>`).join('')}</div>`:''}
   <div class="dwlist">${rows}</div>
