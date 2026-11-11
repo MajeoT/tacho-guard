@@ -470,6 +470,10 @@ function plHeroPlan(o){const j=jobC(o.j),tc=j.tc!==false,n=Date.now();let t=`<b>
  /* its start has passed and it has not been started: the times as if you start now, keeping the planned length */
  let S=o.S,E=o.E;if(n>o.S+10*M){S=Math.round(n/(5*M))*5*M;E=S+(o.E-o.S);t+=` <span class="h-late">· not started yet. If you start now: about ${plHm(S)}–${plHm(E)}</span>`}
  /* the same card and words as the live advice at the start of the shift */
+ /* night work: any of the shift between 00:00 and 04:00 caps working time at 10 hours */
+ const ngt=(()=>{for(let d=sod(S);d<E;d=nxd(d)){if(S<plAt(d,'04:00')&&E>d)return true}return false})(),wk=E-S-(o.br||0)*M;
+ if(ngt){const st4=plAt(sod(S),'04:00'),lf=S+10*H+(o.br||0)*M;t+=wk>10*H?`<span class="h-need pre" style="display:block;margin-top:6px">🌙 <b>Night work: 10 hour limit.</b> ${S<st4?`This shift starts at ${plHm(S)}, before 04:00`:'Part of this shift is between 00:00 and 04:00'}, so your working time is limited to <b>10 hours</b>. It is planned as ${fmt(wk)} of work. POA (riding as co-driver or waiting) does not count, so if enough of it is POA you can stay within 10 hours. Otherwise finish by <b>${plHm(lf)}</b>${S<st4&&S>=sod(S)?', start at 04:00 or later,':''} or check with your transport office that a workforce or collective agreement allows more. ${ib('night')}</span>`
+  :`<span class="h-nt" style="display:block;margin-top:6px">🌙 Night work (before 04:00): working time is limited to 10 hours. This shift is ${fmt(wk)} of work, so it is within it. ${ib('night')}</span>`}
  const cd=plShiftCard(S,E,o.br||0,o.dr||0,tc);if(!cd)return t+'. No break needed by law.';
  return t+cd+`<span class="h-why">${plShiftWhy(S,E,o.br||0,o.dr||0,tc)}<p>These times are for a ${plHm(S)} start: once you start, the advice follows your real times and breaks.</p></span>`}
 /* The break card for a planned shift (before it starts): the same look as the live one on Today. Breaks in one go (or as
