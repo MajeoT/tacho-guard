@@ -63,7 +63,11 @@ function seMove(i,j){const B=SE.B,last=seRun()?B.length-2:B.length-1;if(B[i].run
 
 function seBar(E){const tot={};E.forEach(x=>{const k=x.t==='x'?'d':x.t;tot[k]=(tot[k]||0)+x.e-x.s});
  return `<div class="sek">${['d','w','p','r'].filter(k=>tot[k]).map(k=>`<span><i class="k-${k}"></i>${k==='d'?'Driving':SEN[k]} ${seF(tot[k])}</span>`).join('')}</div><div class="tkb" aria-hidden="true">${E.map(x=>`<i class="k-${x.t==='x'?'d':x.t}" style="flex:${Math.max(1,Math.round((x.e-x.s)/M))} 0 0"></i>`).join('')}</div>`}
-function seRules(E){const W=E.filter(x=>x.t!=='r').map(x=>({s:x.s,e:x.e,t:x.t}));if(!W.length||typeof audRules!=='function')return '';const R=audRules(W);
+/* the rules on the shift as it stands while you edit: the breaks and limits box (what each break covered, and advice where one was missing), then anything else the full check finds */
+function seRules(E){const W=E.filter(x=>x.t!=='r').map(x=>({s:x.s,e:x.e,t:x.t}));if(!W.length||typeof audRules!=='function')return '';
+ let box='';try{if(typeof tkRules==='function')box=tkRulesHtml(tkRules(E.filter(x=>x.t!=='r').map(x=>({s:x.s,e:x.e,t:x.t,cd:(x.o&&x.o.cd)||(x.run&&st.act==='p'&&st.pcd)?1:0,mm:x.o&&x.o.mm?1:0}))),'Breaks and limits')}catch(e){}
+ return box+seRules0(W)}
+function seRules0(W){const R=audRules(W);
  return R.length?`<div class="wn" style="margin-top:10px"><b>⚠ This breaks the rules:</b><br>${R.map(r=>'• '+r[0]).join('<br>')}<br><span class="note">If this is what really happened, save it so your record is honest.</span></div>`:`<div class="note ok" style="margin-top:10px">✓ No rules broken in this shift.</div>`}
 /* ---- the new editing tools ----
    Change-overs: the time between two entries is a button; moving it changes the end of one and the start of the next, nothing
@@ -158,16 +162,16 @@ document.addEventListener('pointercancel',()=>{sePtr=false},true);
 
 /* drag by the handle: the row follows the finger, the others make room, and it drops where it is let go */
 let seDrag=null;
-function seDown(e){const h=e.target.closest('[data-drag]');if(!h||!SE)return;e.preventDefault();const i=+h.dataset.drag,list=$('sel'),rows=[...list.children],row=rows[i];
+function seDown(e){const h=e.target.closest('[data-drag]');if(!h||!SE)return;e.preventDefault();const i=+h.dataset.drag,list=$('sel'),rows=[...list.querySelectorAll('.ser')],row=rows[i];if(!row)return;/* only the entries: the time buttons between them are not rows */list.classList.add('dragging');
  const R=rows.map(r=>{const b=r.getBoundingClientRect();return{top:b.top,h:b.height}});const lim=seRun()?SE.B.length-2:SE.B.length-1;
  seDrag={i,to:i,y0:e.clientY,sc0:$('sed').scrollTop,rows,R,row,lim,id:e.pointerId};row.classList.add('drag');try{h.setPointerCapture(e.pointerId)}catch(er){}
  h.addEventListener('pointermove',seMoveEv);h.addEventListener('pointerup',seUp);h.addEventListener('pointercancel',seUp)}
 function seMoveEv(e){const D=seDrag;if(!D)return;const sed=$('sed');if(e.clientY<90)sed.scrollTop-=12;else if(e.clientY>innerHeight-90)sed.scrollTop+=12;
  const dy=e.clientY-D.y0+(sed.scrollTop-D.sc0);D.row.style.transform=`translateY(${dy}px)`;const c=D.R[D.i].top+D.R[D.i].h/2+dy;
  let to=D.i;for(let k=0;k<=D.lim;k++){const m=D.R[k].top+D.R[k].h/2;if(k<D.i&&c<m){to=k;break}if(k>D.i&&c>m)to=k}D.to=to;
- D.rows.forEach((r,k)=>{if(k===D.i)return;let t=0;if(D.i<to&&k>D.i&&k<=to)t=-D.R[D.i].h;else if(D.i>to&&k>=to&&k<D.i)t=D.R[D.i].h;r.style.transform=t?`translateY(${t}px)`:''})}
+ /* the others slide into the next slot (the time buttons between rows stay put, faded) */D.rows.forEach((r,k)=>{if(k===D.i)return;let t=0;if(D.i<to&&k>D.i&&k<=to)t=D.R[k-1].top-D.R[k].top;else if(D.i>to&&k>=to&&k<D.i)t=D.R[k+1].top-D.R[k].top;r.style.transform=t?`translateY(${t}px)`:''})}
 function seUp(e){const D=seDrag;if(!D)return;const h=e.currentTarget;h.removeEventListener('pointermove',seMoveEv);h.removeEventListener('pointerup',seUp);h.removeEventListener('pointercancel',seUp);seDrag=null;
- D.rows.forEach(r=>{r.style.transform=''});D.row.classList.remove('drag');if(D.to!==D.i)seMove(D.i,D.to);seDraw()}
+ D.rows.forEach(r=>{r.style.transform=''});D.row.classList.remove('drag');{const l=$('sel');if(l)l.classList.remove('dragging')}if(D.to!==D.i)seMove(D.i,D.to);seDraw()}
 
 /* ---- saving ---- */
 function seSave(){const sv=JSON.stringify(st),E=seEntries(),n=Date.now(),from=Math.min(SE.S0,SE.S),endN=seEnd(),to=Math.min(SE.hi,Math.max(SE.E0,endN,SE.mode==='end'||seRun()?n:0)),/* never past the start of the next shift */mainJ=(()=>{const c={};SE.B.forEach(b=>{if(b.o&&b.o.j)c[b.o.j]=(c[b.o.j]||0)+b.len});const k=Object.keys(c).sort((a,b)=>c[b]-c[a])[0];return k||SE.j||st.cj})();

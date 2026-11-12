@@ -452,8 +452,8 @@ function tkRules(S){const L=S.filter(x=>x.e>x.s).slice().sort((a,b)=>a.s-b.s),se
  while(G.length&&G[0].t==='r')G.shift();while(G.length&&G[G.length-1].t==='r')G.pop();
  let d=0,half=false,rn=0,wk=0,brk=0,drv=0,dW=false,rW=false,night=false,probs=0;const N=G.map(()=>null),sum=[],mm=G.some(x=>x.mm||x.cd),tc0=G.some(x=>x.t==='d');
  const drvBrk=g=>{if(d<=0)return '';if(g>=45*M){d=0;half=false;dW=false;return 'full'}if(half&&g>=30*M){d=0;half=false;dW=false;return 'second'}if(half&&g>=15*M)return 'short2';if(g>=15*M){half=true;return 'first'}return ''};
- const work=(x,i,len,isDrv)=>{const r0=rn;rn+=len;wk+=len;if(!rW&&rn>6*H){rW=true;probs++;N[i]={k:'bad',t:`⚠ Passed 6 hours of work in a row at ${hm(x.s+(6*H-r0))} with no break of 15 minutes or more`}}
-  if(isDrv){const d0=d;d+=len;drv+=len;if(!dW&&d>270*M){dW=true;probs++;N[i]={k:'bad',t:`⚠ Passed 4h 30m of driving at ${hm(x.s+(270*M-d0))} without a full break (45 minutes, or 15 then 30)`}}}
+ let t6=0,t9=0;const work=(x,i,len,isDrv)=>{const r0=rn,w0=wk;rn+=len;wk+=len;if(!t6&&wk>6*H)t6=x.s+(6*H-w0);if(!t9&&wk>9*H)t9=x.s+(9*H-w0);if(!rW&&rn>6*H){rW=true;probs++;N[i]={k:'bad',t:`⚠ Passed 6 hours of work in a row at ${hm(x.s+(6*H-r0))} with no break of 15 minutes or more. A break of at least 15 minutes was needed by ${hm(x.s+(6*H-r0))}.`}}
+  if(isDrv){const d0=d;d+=len;drv+=len;if(!dW&&d>270*M){dW=true;probs++;N[i]={k:'bad',t:`⚠ Passed 4h 30m of driving at ${hm(x.s+(270*M-d0))} without a full break. ${half?`You had the first 15 of a split, so a 30 minute break was needed by ${hm(x.s+(270*M-d0))}.`:`A 45 minute break was needed by ${hm(x.s+(270*M-d0))}, or a 15 earlier and a 30 by then.`}`}}}
   for(let q=sod(x.s);q<x.e;q=nxd(q)){if(x.s<at4(q)&&x.e>q)night=true}};
  G.forEach((x,i)=>{const len=x.e-x.s;
   if(x.t==='r'){if(len<15*M){N[i]={k:'info',t:'Under 15 minutes, so it does not count as a break.'};return}
@@ -467,12 +467,16 @@ function tkRules(S){const L=S.filter(x=>x.e>x.s).slice().sort((a,b)=>a.s-b.s),se
   if(x.t==='d'&&mm&&!N[i])N[i]={k:'info',t:'👥 While you drive, your co-driver can take their 45 minute driving break riding with you.'}});
  /* the same plain note on every co-driver stretch says nothing new: keep the first */{const seen=new Set();N.forEach((q,i)=>{if(q&&q.k==='info'){if(seen.has(q.t))N[i]=null;else seen.add(q.t)}})}
  const need=wk>9*H?45:wk>6*H?30:0,bm=Math.round(brk/M);
- if(need)sum.push(bm>=need?{k:'ok',t:`✓ Breaks: ${bm} minutes in all, ${need} needed for ${fmt(wk)} of work.`}:(probs++,{k:'bad',t:`⚠ Breaks: only ${bm} minutes in all. ${fmt(wk)} of work needs ${need}.`}));
+ if(need)sum.push(bm>=need?{k:'ok',t:`✓ Breaks: ${bm} minutes in all, ${need} needed for ${fmt(wk)} of work.`}:(probs++,{k:'bad',t:`⚠ Breaks: only ${bm} minutes in all. ${fmt(wk)} of work needs ${need}: another ${need-bm} minutes of break were needed${need===45&&t9?` by ${hm(t9)}, when you passed 9 hours of work`:t6?` by ${hm(t6)}, when you passed 6 hours of work`:''}.`}));
  else if(wk>0)sum.push({k:'ok',t:`✓ ${fmt(wk)} of work: no total break needed for 6 hours or less.`});
  if(tc0){if(drv>10*H){probs++;sum.push({k:'bad',t:`⚠ ${fmt(drv)} of driving: over the 10 hour daily limit.`})}else if(drv>9*H)sum.push({k:'info',t:`${fmt(drv)} of driving: over 9 hours, so this uses one of your two 10 hour days this week.`})}
  if(night&&wk>10*H){probs++;sum.push({k:'bad',t:`⚠ Night work (00:00 to 04:00) with ${fmt(wk)} of work: over the 10 hour limit, unless a workforce or collective agreement allows more.`})}
- if(!dW&&!rW&&!G.some((x,i)=>N[i]&&N[i].k==='bad'))sum.push({k:'ok',t:`✓ Never over ${tc0?'4h 30m of driving or ':''}6 hours of work without the break it needed.`});
+ if(!dW&&!rW&&!G.some((x,i)=>N[i]&&N[i].k==='bad'))sum.push({k:'ok',t:`✓ No stretch went over ${tc0?'4h 30m of driving or ':''}6 hours of work in a row.`});
  return{G,N,sum,probs}}
+/* The shifts that started on a day, each read by tkRules (entries as saved, plus what is running now) */
+function tkDayRules(day){const SS=st.sessions.concat(st.active&&st.act?[{s:st.active,e:Date.now(),t:st.act,cd:st.act==='p'&&st.pcd?1:0,mm:mmOn()?1:0}]:[]).filter(x=>x.e>x.s).sort((a,b)=>a.s-b.s),W=SS.filter(x=>x.t!=='r'),sh=[];
+ W.forEach(x=>{const l=sh[sh.length-1];if(l&&x.s-l.e<9*H)l.e=Math.max(l.e,x.e);else sh.push({s:x.s,e:x.e})});
+ return sh.filter(z=>z.s>=day&&z.s<nxd(day)).map(z=>({z,R:tkRules(SS.filter(x=>x.s>=z.s&&x.e<=z.e))}))}
 /* The rules box: the parts that have something to say, then the summary */
 function tkRulesHtml(R,head){if(!R||!R.G.length)return '';const rows=R.G.map((x,i)=>R.N[i]?`<div class="rln ${R.N[i].k}"><span class="rlt">${hm(x.s)}–${hm(x.e)} ${TKI[x.t]||''} ${x.t==='p'&&x.cd?'Riding as co-driver':TKN[x.t]||''}</span><span>${R.N[i].t}</span></div>`:'').join('');
  return `<div class="rlx">${head?`<div class="rlh">${head}</div>`:''}${R.sum.map(s=>`<div class="rls ${s.k}">${s.t}</div>`).join('')}${rows}</div>`}
