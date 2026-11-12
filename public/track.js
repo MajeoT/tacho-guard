@@ -146,7 +146,8 @@ function tkLogView(E,from,to){const L=E.slice().sort((a,b)=>a.s-b.s),seg=[];let 
  const tot=k=>seg.filter(x=>x.t===k).reduce((q,x)=>q+x.e-x.s,0);
  return `<div class="tkl"><div class="tkh"><b>How it goes in your log</b><span>${['d','x','w','p','r'].filter(k=>tot(k)>0).map(k=>`<span class="tkk"><i class="k-${k}"></i>${TKN[k]} ${tkF(tot(k)/M)}</span>`).join('')}</span></div>
  <div class="tkb" aria-hidden="true">${seg.map(x=>`<i class="k-${x.t}" style="flex:${Math.max(1,Math.round((x.e-x.s)/M))} 0 0"></i>`).join('')}</div><div class="tkt"><span>${hm(from)}</span><span>${hm(to)}</span></div>
- ${seg.map(x=>`<div class="tkr${x.t==='r'?' br':''}"><i class="k-${x.t}"></i><span>${TKI[x.t]} ${TKN[x.t]}</span><span class="tm">${hm(x.s)}–${hm(x.e)}<small>${tkF((x.e-x.s)/M)}</small></span></div>`).join('')}
+ ${(()=>{/* what the rules make of it: a note under each part that matters, and the summary first */const R=tkRules(E),Nm=new Map(R.G.map((x,i)=>[Math.round(x.s/1000),R.N[i]]));
+  return R.sum.map(q=>`<div class="rls ${q.k}">${q.t}</div>`).join('')+seg.map(x=>{const nt=Nm.get(Math.round(x.s/1000));return `<div class="tkr${x.t==='r'?' br':''}"><i class="k-${x.t}"></i><span>${TKI[x.t]} ${x.t==='p'&&x.cd?'Riding as co-driver':TKN[x.t]}</span><span class="tm">${hm(x.s)}–${hm(x.e)}<small>${tkF((x.e-x.s)/M)}</small></span></div>${nt?`<div class="rln ${nt.k}">${nt.t}</div>`:''}`}).join('')})()}
  <div class="tkn">The order is a best guess. Once saved, tap the shift on Today, or the day in the Plan, to drag the blocks into the order you really did them.</div></div>`}
 
 /* Put the entries in: everything logged in that stretch is replaced */
@@ -367,13 +368,13 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
   const add=(t,m,cd)=>{if(m<=0)return;const l=E[E.length-1];if(l&&l.t===t&&l.e===c&&!!l.cd===!!cd)l.e+=m*M;else{const o=job({s:c,e:c+m*M,t});if(cd)o.cd=1;E.push(o)}c+=m*M};
   R.L.forEach((x,i)=>{B.forEach((b,k)=>{if(P[k]===i){E.push({s:c,e:c+b*M,t:'r'});c+=b*M}});if(x.k==='d')add(x.as==='c'?'p':x.as,x.m,x.as==='c');else{add('p',x.w||0);add('w',x.m)}});
   if(c>to+3e4)return null;if(to-c>=1000)add('w',(to-c)/M);E.forEach(x=>{if(x.e>to)x.e=to});/* a break at the very end is just the start of your rest */while(E.length&&E[E.length-1].t==='r')E.pop();return E.filter(x=>x.e>x.s)};
- const times=()=>{const B=R.B||[],P=autoPos(),out=[];let c=from;R.L.forEach((x,i)=>{B.forEach((b,k)=>{if(P[k]===i)c+=b*M});out.push(c);c+=legT(x)*M});return out};
+ const times=()=>{const B=R.B||[],P=autoPos(),out=[];let c=from;out.bk=[];R.L.forEach((x,i)=>{B.forEach((b,k)=>{if(P[k]===i){out.bk[k]=c;c+=b*M}});out.push(c);c+=legT(x)*M});return out};
  const dwSave=E=>{const sv=JSON.stringify(st);
   const endAt=E.length?E[E.length-1].e:to;
   if(R.live&&R.fin){const n=Date.now();tkPut(E,from,n);if(st.act==='d'&&typeof gpsOff==='function')gpsOff();st.active=null;st.act=null;st.ad=0;st.as=st.ae=null;st.se=endAt}
   /* still working: what you are doing now carries on from where the answers end */
   else if(R.live){tkPut(E,from,to);st.active=to}
-  else{tkPut(E,from,to);/* the latest shift, nothing after it: it ended at this finish (also when the finish moved earlier) */if(!st.active&&!st.sessions.some(x=>(x.t||'d')!=='r'&&x.s>=to))st.se=endAt}
+  else{/* a finish moved earlier (or a start moved later) leaves nothing of the old times behind */const c0=Math.min(from,R.c0),c1=Math.max(to,R.c1);tkPut(E,c0,c1);/* the latest shift, nothing after it: it ended at this finish (also when the finish moved earlier) */if(!st.active&&!st.sessions.some(x=>(x.t||'d')!=='r'&&x.s>=c1))st.se=endAt}
   if(pre&&pre.oid)st.pls=Object.assign({},st.pls,{[pre.oid]:'done'});
   st.sessions.sort((a,b)=>a.s-b.s);if(typeof fixOv==='function')fixOv();save();moX();render();usnap=sv;snap=sv;
   flash=(R.live&&R.fin?`Shift filled in and ended: ${hm(from)} to ${hm(to)}. Daily rest is counting from ${hm(to)}.`:R.live?`Your day so far is filled in, ${hm(from)} to now. ${TKN[st.act]||NM[st.act]} carries on from now: if you are doing something else, tap it below.`:`Shift filled in: ${hm(from)} to ${hm(to)}. To change it, open it again with Fill in my day.`)+' <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';
@@ -397,13 +398,13 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
    if(to-from<30*M){er('That is under 30 minutes. Check the times.');return}
    /* a time that runs into the shift still going in the app finishes that shift, so the two never overlap */
    if(!R.live&&actOn&&to>st.active){R.live=true;R.fin=true;R.ov=1}
-   const f0=from;R.log=fromLog();if(!R.log){from=f0;R.nd=!R.dr&&!R.mm?0:2;R.B=wantB();mkLegs()}page2()}};
+   /* the time to replace on saving: what you asked for here, widened by any change on the next page */R.c0=from;R.c1=to;const f0=from;R.log=fromLog();if(!R.log){from=f0;R.nd=!R.dr&&!R.mm?0:2;R.B=wantB();mkLegs()}page2()}};
   dwEv=e=>{const b=e.target.closest('[data-dw]');const[k,a,v]=b.dataset.dw.split(':');keep();if(k==='l')R.live=a==='1';else if(k==='f')R.fin=a==='1';else if(k==='d')R.day=+a;else if(k==='y')R[a]=v==='1';page1()}};
  const stp=(i,f,m,lab)=>`<span class="dws"><button type="button" data-dw="m:${i}:${f}:-15" aria-label="15 minutes less">−15</button><button type="button" data-dw="m:${i}:${f}:-5" aria-label="5 minutes less">−5</button><b aria-label="${esc(lab)}">${tkF(m)}</b><button type="button" data-dw="m:${i}:${f}:5" aria-label="5 minutes more">+5</button><button type="button" data-dw="m:${i}:${f}:15" aria-label="15 minutes more">+15</button></span>`;
  const page2=()=>{const tm=times(),B=R.B||[],P=autoPos(),u=used(),left=T()-u,E=left>-0.5?build():null,J=E?tkJudge(E,from,to,R.live&&!R.fin):null;
   const ico={s:'⚒',d:'🚛',x:'📦',e:'⚒'},asN={d:'I drove',c:'My co-driver drove',p:'I was a passenger (POA)'};
   /* you drove, or you did not: then with two drivers your co-driver drove, else you were a passenger (both are POA for you) */const opts=['d',R.mm?'c':'p'];
-  const rows=R.L.map((x,i)=>{const bs=B.map((b,k)=>P[k]===i?`<div class="dwb">🛏 ${Math.round(b)} minute break${R.L.length>1?` <select data-dwp="${k}" aria-label="Move this break">${R.L.map((y,j)=>j?`<option value="${j}"${j===P[k]?' selected':''}>before ${esc(lbl(j).toLowerCase())}</option>`:'').join('')}</select>`:''}</div>`:'').join('');
+  const rows=R.L.map((x,i)=>{const bs=B.map((b,k)=>P[k]===i?`<div class="dwb"><span>🛏 <b>${Math.round(b)} minute break</b> · ${hm(tm.bk[k])}–${hm(tm.bk[k]+b*M)}</span><span class="dwmv"><button type="button" data-dw="bp:${k}:-1"${i<=1?' disabled':''} aria-label="Move this break earlier">▲ Earlier</button><button type="button" data-dw="bp:${k}:1"${i>=R.L.length-1?' disabled':''} aria-label="Move this break later">▼ Later</button></span></div>`:'').join('');
    const st0=tm[i],en=st0+legT(x)*M,stopW=x.k!=='d';
    return bs+`<div class="dwl dw-${x.k}"><div class="dwh"><span>${ico[x.k]} ${esc(lbl(i))}</span><small>${legT(x)?hm(st0)+'–'+hm(en):'none'}</small></div>
    ${x.k==='d'||x.m||!x.w?`${stopW&&x.w?'<div class="fsub">Other work</div>':''}${stp(i,'m',x.m,lbl(i))}`:''}
@@ -421,11 +422,10 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
   ${J&&J.next?`<div class="note" style="margin-top:8px">${J.next}</div>`:''}
   <p class="note">This is a rough guide built from your answers. Your tacho is the real record: check it against your printout if you can.</p>
   <button class="tg big fpri" data-k="ok"${E?'':' disabled'}>Save my day</button><button class="tg big" data-k="bk">← Back</button><button class="tg big" data-k="no">Cancel</button>`);
-  MO.querySelectorAll('[data-dwp]').forEach(s=>s.onchange=()=>{R.P[+s.dataset.dwp]=+s.value;keepSc(page2)});
   /* change the start or finish here: the parts stay as they are, so a part you forgot can make the day longer */
   const tch=()=>{const a=$('dw2s').value,b=$('dw2e').value,er=m=>{$('dw2err').textContent=m};if(!a||!b)return;const d0=sod(from);let f=plAt(d0,a),t=plAt(d0,b);if(t<=f)t=plAt(nxd(d0),b);
    if(t>Date.now()){er('That finish is later than now.');return}if(t-f>21*H){er('That is over 21 hours. Check the times.');return}if(t-f<30*M){er('That is under 30 minutes.');return}
-   from=f;to=t;R.sv=a;R.ev=b;keepSc(page2)};['dw2s','dw2e'].forEach(id=>{if($(id))$(id).onchange=tch});
+   from=f;to=t;R.sv=a;R.ev=b;R.c0=Math.min(R.c0,f);R.c1=Math.max(R.c1,t);keepSc(page2)};['dw2s','dw2e'].forEach(id=>{if($(id))$(id).onchange=tch});
   mcb={no:moX,bk:page1,ok:()=>{const E2=build();if(E2)dwSave(E2)}};
   dwEv=e=>{const b=e.target.closest('[data-dw]');const p=b.dataset.dw.split(':'),k=p[0];
    if(k==='m'){const x=R.L[+p[1]];x[p[2]]=Math.max(0,Math.min(16*60,(x[p[2]]||0)+ +p[3]))}
@@ -433,10 +433,46 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
    else if(k==='c'){R.L[+p[1]].as=p[2]}
    else if(k==='n'){const nd=Math.max(0,Math.min(20,R.nd+ +p[1]));if(nd!==R.nd){R.nd=nd;R.log=false;R.B=R.B||wantB();mkLegs()}}
    else if(k==='b'){R.B=p[1].split('+').map(Number);R.P={}}
-   else if(k==='fe'){to=from+Math.round(used())*M;R.ev=hm(to)}
+   else if(k==='bp'){/* move a break one part earlier or later, past parts with no time; the other breaks stay where they are */const P0=autoPos(),q=+p[1],dir=+p[2];P0.forEach((v,j)=>R.P[j]=v);let j=P0[q];
+    do{j+=dir}while(j>1&&j<R.L.length-1&&legT(R.L[dir>0?j-1:j])===0);R.P[q]=Math.max(1,Math.min(R.L.length-1,j))}
+   else if(k==='fe'){to=from+Math.round(used())*M;R.ev=hm(to);R.c1=Math.max(R.c1,to)}
    else if(k==='fit'){/* share the difference over the drives and drops (then the depot parts), in proportion, until it adds up */const fk=x=>x.k!=='d'&&!x.m&&x.w?'w':'m';
     for(let pass=0;pass<6;pass++){const lf=T()-used();if(Math.abs(lf)<0.5)break;let D=R.L.filter(x=>(x.k==='d'||x.k==='x')&&(lf>0||x[fk(x)]>0));if(!D.length)D=R.L.filter(x=>lf>0||x[fk(x)]>0);if(!D.length)break;
      const tot=D.reduce((q,x)=>q+x[fk(x)],0)||D.length;let rem=lf;D.forEach((x,j)=>{const f=fk(x),ch=j===D.length-1?rem:Math.round(lf*(tot===D.length&&!x[f]?1:x[f])/tot);const nm=Math.max(0,x[f]+ch);rem-=nm-x[f];x[f]=nm})}}
    keepSc(page2)}};
  page1()}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-dw]');if(dwEv&&b&&!$('mo').hidden&&$('mo').contains(b))dwEv(e)});
+
+/* The rules on one shift, part by part: what each break covered (the 4h 30m driving clock, the 6 hours of work in a row),
+   when riding as co-driver covered a driving break, and where a limit was passed. S: the shift's entries in order (gaps and
+   break entries are breaks). Returns the parts (G), a note for each (N: {k: ok, info, bad}) and summary lines. */
+function tkRules(S){const L=S.filter(x=>x.e>x.s).slice().sort((a,b)=>a.s-b.s),seg=[];let c=null;
+ L.forEach(x=>{if(c!==null&&x.s>c+M/2)seg.push({s:c,e:x.s,t:'r',gap:1});seg.push(x);c=c===null?x.e:Math.max(c,x.e)});
+ const G=[];seg.forEach(x=>{const l=G[G.length-1];if(l&&l.t==='r'&&x.t==='r'&&x.s<=l.e+M/2)l.e=Math.max(l.e,x.e);else G.push(Object.assign({},x))});
+ while(G.length&&G[0].t==='r')G.shift();while(G.length&&G[G.length-1].t==='r')G.pop();
+ let d=0,half=false,rn=0,wk=0,brk=0,drv=0,dW=false,rW=false,night=false,probs=0;const N=G.map(()=>null),sum=[],mm=G.some(x=>x.mm||x.cd),tc0=G.some(x=>x.t==='d');
+ const drvBrk=g=>{if(d<=0)return '';if(g>=45*M){d=0;half=false;dW=false;return 'full'}if(half&&g>=30*M){d=0;half=false;dW=false;return 'second'}if(half&&g>=15*M)return 'short2';if(g>=15*M){half=true;return 'first'}return ''};
+ const work=(x,i,len,isDrv)=>{const r0=rn;rn+=len;wk+=len;if(!rW&&rn>6*H){rW=true;probs++;N[i]={k:'bad',t:`⚠ Passed 6 hours of work in a row at ${hm(x.s+(6*H-r0))} with no break of 15 minutes or more`}}
+  if(isDrv){const d0=d;d+=len;drv+=len;if(!dW&&d>270*M){dW=true;probs++;N[i]={k:'bad',t:`⚠ Passed 4h 30m of driving at ${hm(x.s+(270*M-d0))} without a full break (45 minutes, or 15 then 30)`}}}
+  for(let q=sod(x.s);q<x.e;q=nxd(q)){if(x.s<at4(q)&&x.e>q)night=true}};
+ G.forEach((x,i)=>{const len=x.e-x.s;
+  if(x.t==='r'){if(len<15*M){N[i]={k:'info',t:'Under 15 minutes, so it does not count as a break.'};return}
+   const had=rn>0,dv=drvBrk(len),P=[];if(had){rn=0;rW=false;P.push('starts your 6 hours of work again')}brk+=len;
+   if(dv==='full')P.push('covers your 45 minute driving break, so 4h 30m starts again');else if(dv==='second')P.push('finishes your split break (15 then 30), so 4h 30m starts again');else if(dv==='first')P.push('is the first part of a split driving break: a 30 later finishes it');else if(dv==='short2')P.push('does not finish your split driving break: after the first 15, the second part has to be 30 minutes or more');
+   N[i]=P.length?{k:'ok',t:'✓ This break '+P.join(', and ')+'.'}:{k:'info',t:'A break before any work, so there was nothing for it to cover.'};return}
+  if(x.t==='p'&&x.cd){const dv=drvBrk(Math.min(len,45*M));
+   N[i]={k:dv?'ok':'info',t:dv==='full'?'👥 ✓ Riding as co-driver: the first 45 minutes is your driving break, so 4h 30m starts again. It is not a working time break.':dv==='second'?'👥 ✓ Riding as co-driver finishes your split driving break, so 4h 30m starts again.':dv==='first'?'👥 ✓ Riding as co-driver for under 45 minutes: it counts as the first part of a split driving break.':dv==='short2'?'👥 Riding as co-driver for under 30 minutes: not long enough to finish your split driving break.':'👥 Riding as co-driver: POA, so it is not working time.'};return}
+  if(x.t==='p')return;
+  work(x,i,len,x.t==='d');
+  if(x.t==='d'&&mm&&!N[i])N[i]={k:'info',t:'👥 While you drive, your co-driver can take their 45 minute driving break riding with you.'}});
+ /* the same plain note on every co-driver stretch says nothing new: keep the first */{const seen=new Set();N.forEach((q,i)=>{if(q&&q.k==='info'){if(seen.has(q.t))N[i]=null;else seen.add(q.t)}})}
+ const need=wk>9*H?45:wk>6*H?30:0,bm=Math.round(brk/M);
+ if(need)sum.push(bm>=need?{k:'ok',t:`✓ Breaks: ${bm} minutes in all, ${need} needed for ${fmt(wk)} of work.`}:(probs++,{k:'bad',t:`⚠ Breaks: only ${bm} minutes in all. ${fmt(wk)} of work needs ${need}.`}));
+ else if(wk>0)sum.push({k:'ok',t:`✓ ${fmt(wk)} of work: no total break needed for 6 hours or less.`});
+ if(tc0){if(drv>10*H){probs++;sum.push({k:'bad',t:`⚠ ${fmt(drv)} of driving: over the 10 hour daily limit.`})}else if(drv>9*H)sum.push({k:'info',t:`${fmt(drv)} of driving: over 9 hours, so this uses one of your two 10 hour days this week.`})}
+ if(night&&wk>10*H){probs++;sum.push({k:'bad',t:`⚠ Night work (00:00 to 04:00) with ${fmt(wk)} of work: over the 10 hour limit, unless a workforce or collective agreement allows more.`})}
+ if(!dW&&!rW&&!G.some((x,i)=>N[i]&&N[i].k==='bad'))sum.push({k:'ok',t:`✓ Never over ${tc0?'4h 30m of driving or ':''}6 hours of work without the break it needed.`});
+ return{G,N,sum,probs}}
+/* The rules box: the parts that have something to say, then the summary */
+function tkRulesHtml(R,head){if(!R||!R.G.length)return '';const rows=R.G.map((x,i)=>R.N[i]?`<div class="rln ${R.N[i].k}"><span class="rlt">${hm(x.s)}–${hm(x.e)} ${TKI[x.t]||''} ${x.t==='p'&&x.cd?'Riding as co-driver':TKN[x.t]||''}</span><span>${R.N[i].t}</span></div>`:'').join('');
+ return `<div class="rlx">${head?`<div class="rlh">${head}</div>`:''}${R.sum.map(s=>`<div class="rls ${s.k}">${s.t}</div>`).join('')}${rows}</div>`}
