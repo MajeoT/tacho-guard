@@ -347,6 +347,8 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .rls{font-size:13.5px;padding:3px 0;font-weight:600}.rls.ok{color:var(--ok)}.rls.bad{color:var(--bad)}.rls.info{color:var(--mut)}
 .rln{font-size:12.5px;line-height:1.35;padding:2px 0 7px 20px;color:var(--mut)}.rln.ok{color:var(--ok)}.rln.bad{color:var(--bad);font-weight:600}.rlx .rln{display:flex;flex-direction:column;gap:2px;padding:6px 0;border-top:1px solid var(--bd)}.rlx .rlt{font-weight:600;color:var(--tx)}
 .h-lr{display:block;width:100%;margin-top:8px;padding:8px 10px;border-radius:10px;font:inherit;font-size:13px;font-weight:600;text-align:left;cursor:pointer;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:#cfe0f5}.h-lr.bad{border-color:#ff6b6b;color:#ffb3b3}.h-lr.ok{color:#9be7b8}
+#sel.dragging .sebd,#sel.dragging .sebs{opacity:.25;transition:opacity .15s}
+.lgv{display:block;margin-top:3px;font-size:12.5px;font-weight:600}.lgv.ok{color:var(--ok)}.lgv.bad{color:var(--bad)}
 .plok{margin:-2px 0 8px;padding:8px 12px;border-radius:10px;background:rgba(34,197,94,.14);color:var(--tx);font-weight:600;font-size:14px}
 .dwq{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)}.dwq>span:first-child{font-weight:600;flex:1}.dwq .fchips{flex-wrap:nowrap}
 .dws{display:inline-flex;align-items:center;gap:4px}.dws button{font:600 13px var(--body);color:var(--tx);background:var(--card);border:1.5px solid var(--bd2);border-radius:10px;min-width:38px;height:36px;padding:0 6px;cursor:pointer}.dws b{min-width:64px;text-align:center;font-size:15px}
@@ -600,7 +602,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-214';
+const APPV='tg-2026-10-23-215';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1700,17 +1702,15 @@ function list(){
  const D=buildD();
  const ks=Object.keys(D).map(Number).sort((a,b)=>b-a);
  if(!ks.length)$('list').innerHTML='<div class="g note">Nothing logged yet. Tap an activity on the Today tab, or add one above.</div>';
- else $('list').innerHTML=ks.slice(0,lim).map(w=>{const o=D[w],T=o.T,op=!!od[w],rows=op?rowsOf(o):'';
-  return `<div class="g" style="margin-top:10px"><button class="dh" data-od="${w}" aria-expanded="${op}"><span><span class="lbl">${dd(w)}</span><span class="note">${fmt(T.d+T.w)} worked, ${fmt(T.d)} driving${o.m?', '+mi(o.m):''}</span></span><span class="chev">${op?'&#9650;':'&#9660;'}</span></button>${op?`<div class="note" style="margin:8px 0 6px">${fmt(T.d)} driving, ${fmt(T.w)} work, ${fmt(T.p)} POA, ${fmt(T.r)} break</div>${rows}<button class="del" data-add="${ymd(w)}" style="margin-top:6px">Add Entry</button>`:''}</div>`}).join('')+(ks.length>lim?'<button class="tg" data-more="1" style="margin-top:10px">Show More Days</button>':'');}
+ else $('list').innerHTML=ks.slice(0,lim).map(w=>{const o=D[w],T=o.T,op=!!od[w],rows=op?rowsOf(o):'';let RV=[];try{RV=typeof tkDayRules==='function'?tkDayRules(w):[]}catch(e){}const pr=RV.reduce((q,v)=>q+v.R.probs,0);
+  return `<div class="g" style="margin-top:10px"><button class="dh" data-od="${w}" aria-expanded="${op}"><span><span class="lbl">${dd(w)}</span><span class="note">${fmt(T.d+T.w)} worked, ${fmt(T.d)} driving${o.m?', '+mi(o.m):''}</span>${RV.length?`<span class="lgv ${pr?'bad':'ok'}">${pr?`⚠ ${pr} rule problem${pr>1?'s':''}`:'✓ Breaks in the right places'}</span>`:''}</span><span class="chev">${op?'&#9650;':'&#9660;'}</span></button>${op?`<div class="note" style="margin:8px 0 6px">${fmt(T.d)} driving, ${fmt(T.w)} work, ${fmt(T.p)} POA, ${fmt(T.r)} break</div>${RV.map(({z,R})=>tkRulesHtml(R,`Breaks and limits · shift ${hm(z.s)}–${hm(z.e)}`)).join('')}${rows}<button class="del" data-add="${ymd(w)}" style="margin-top:6px">Add Entry</button>`:''}</div>`}).join('')+(ks.length>lim?'<button class="tg" data-more="1" style="margin-top:10px">Show More Days</button>':'');}
  dayPage()}
 function dayPage(){if(dayView==null)return;const o=buildD()[dayView]||emptyD(),T=o.T;
  $('dtitle').textContent=dd(dayView);
  $('dsum').innerHTML=`${fmt(T.d+T.w)} worked. ${fmt(T.d)} driving, ${fmt(T.w)} work, ${fmt(T.p)} POA, ${fmt(T.r)} break${o.m?', '+mi(o.m):''}`;
  $('dayc').innerHTML=rowsOf(o)||'<div class="g note">Nothing logged this day.</div>';
  /* breaks and limits for each shift that started this day (as saved, so riding as co-driver shows as itself) */
- const dr=$('drules');if(dr){try{const SS=st.sessions.concat(st.active&&st.act?[{s:st.active,e:Date.now(),t:st.act,cd:st.act==='p'&&st.pcd?1:0,mm:mmOn()?1:0}]:[]).filter(x=>x.e>x.s).sort((a,b)=>a.s-b.s),W=SS.filter(x=>x.t!=='r'),sh=[];
-  W.forEach(x=>{const l=sh[sh.length-1];if(l&&x.s-l.e<9*H)l.e=Math.max(l.e,x.e);else sh.push({s:x.s,e:x.e})});
-  dr.innerHTML=sh.filter(z=>z.s>=dayView&&z.s<nxd(dayView)).map(z=>tkRulesHtml(tkRules(SS.filter(x=>x.s>=z.s&&x.e<=z.e)),`Breaks and limits · shift ${hm(z.s)}–${hm(z.e)}`)).join('')}catch(e){dr.innerHTML=''}}}
+ const dr=$('drules');if(dr){try{dr.innerHTML=tkDayRules(dayView).map(({z,R})=>tkRulesHtml(R,`Breaks and limits · shift ${hm(z.s)}–${hm(z.e)}`)).join('')}catch(e){dr.innerHTML=''}}}
 let dayFrom='hours';function openDay(ts,from){dayFrom=from||'hours';dayView=ts;['today','check','log','hours','plan','tacho','signs','set'].forEach(x=>$('t-'+x).hidden=true);$('t-day').hidden=false;ed=null;dayPage();window.scrollTo(0,0)}
 const render=()=>{live();list();if(typeof jobsUi==='function'){jobsUi();rpUi()}setTimeout(chkLong,60)};
 /* Seven screens in four tabs: Today, Plan, Records (Hours, Log, Tacho) and More (Walkaround, Learn) */
@@ -1845,7 +1845,14 @@ const listClick=e=>{
   const s2=f(x.s,$('e1').value),e2=f(x.e,$('e2').value);
   if(!(e2>s2)){$('eerr').textContent='The end time must be after the start time.';return}
   const nt=$('e3').value,oe=x.e;st.sessions=st.sessions.filter(y=>y!==x);clear(s2,e2,1);x.s=s2;x.e=e2;x.t=nt;x.chk=1;delete x.bq;st.sessions.push(x);/* if the shift was ended at this entry, it stays ended at its new finish */if(st.se&&st.se>=oe&&e2>st.se)st.se=e2;ed=null;save();render();return}
- if(d.s){if(dArm!==d.s){dArm=d.s;clearTimeout(dT);dT=setTimeout(()=>{dArm=null;render()},4000);render();return}dArm=null;clearTimeout(dT);st.sessions=st.sessions.filter(x=>String(x.s)!==d.s);save();render()}
+ if(d.s){if(dArm!==d.s){dArm=d.s;clearTimeout(dT);dT=setTimeout(()=>{dArm=null;render()},4000);render();return}dArm=null;clearTimeout(dT);const x=st.sessions.find(y=>String(y.s)===d.s);if(!x)return;
+  /* inside a shift, empty time counts as a break: so ask what the time was instead, unless it sits on its own */
+  const pv=st.sessions.filter(y=>y!==x&&Math.abs(y.e-x.s)<M).sort((a,b)=>b.e-a.e)[0],nx=st.sessions.filter(y=>y!==x&&Math.abs(y.s-x.e)<M).sort((a,b)=>a.s-b.s)[0];
+  const del=f=>{const sv=JSON.stringify(st);if(f)f();st.sessions=st.sessions.filter(y=>y!==x);st.sessions.sort((a,b)=>a.s-b.s);save();moX();render();usnap=sv;snap=sv;flash='Deleted. <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';setTimeout(()=>{if(usnap===sv){flash='';live()}},10000);live()};
+  if(!pv&&!nx){del();return}
+  const nm=y=>(y.t==='p'&&y.cd?'Riding as co-driver':NM[y.t||'d']);
+  mo(`<h3>What Was This Time Instead?</h3><p>You are deleting <b>${NM[x.t||'d']}</b> from ${hm(x.s)} to ${hm(x.e)}. If the time is left empty, it counts as a break in your shift.</p>${pv?`<button class="tg big fpri" data-k="pv">${nm(pv)}: join it to the one before (${hm(pv.s)}–${hm(x.e)})</button>`:''}${nx?`<button class="tg big${pv?'':' fpri'}" data-k="nx">${nm(nx)}: join it to the one after (${hm(x.s)}–${hm(nx.e)})</button>`:''}<button class="tg big" data-k="em">Leave it empty${x.t==='r'?' (it still counts as a break)':' (a break)'}</button><button class="tg big" data-k="no">Cancel</button>`);
+  mcb={no:moX,pv:()=>del(()=>{pv.e=x.e}),nx:()=>del(()=>{nx.s=x.s}),em:()=>del()}}
 };
 $('list').onclick=listClick;$('dayc').onclick=listClick;
 $('dback').onclick=()=>showTab(dayFrom);$('tlog').onclick=()=>{if(typeof seOpen==='function'&&seShift(null))seOpen(null,'edit');else openDay(sod(Date.now()),'today')};
