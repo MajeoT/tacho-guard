@@ -602,7 +602,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-215';
+const APPV='tg-2026-10-23-216';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1407,7 +1407,13 @@ function wrInfo(){const W=st.wr;if(!W)return null;const n=Date.now(),A=all();let
  const split=g=>{let k=S.findIndex(y=>y.e===g.s);if(k<0)return false;for(;k>0;k--){const q=S[k].s-S[k-1].e;if(q>=9*H)return false;if(q>=3*H)return true}return false},
   redD=G.filter(g=>g.s>=lastEnd&&g.len>=9*H&&g.len<11*H&&!split(g)).length;
  const reds=[];if(!W.fresh&&W.red)reds.push({s:W.e-(W.len||24*H),e:W.e,len:W.len||24*H});R.forEach(r=>{if(r.red)reds.push(r)});
- const allG=G.concat(ong?[{s:last.e,e:n,len:ong,ong:1}]:[]),C=reds.map(r=>{const owed=45*H-r.len,isP=pair&&(r.e===l1.e||r.e===l2.e),dl=isP?lastEnd+144*H:add7(wkS(r.s),4),paid=(st.wrp||[]).includes(r.e)||allG.some(g=>g.s>=r.e&&!g.ong&&g.e<=dl&&(R.includes(g)?!g.red&&g.len-45*H>=owed:g.len>=9*H+owed));return{r,owed,dl,paid,pair:isP,left:dl-n}}).filter(c=>!c.paid&&c.owed>0);
+ const allG=G.concat(ong?[{s:last.e,e:n,len:ong,ong:1}]:[]),C=reds.map(r=>{const owed=45*H-r.len,isP=pair&&(r.e===l1.e||r.e===l2.e),dl=isP?lastEnd+144*H:add7(wkS(r.s),4),/* the rest you are on now counts as soon as it is long enough: owed hours on top of a 9 hour rest, or on top of 45 once it has
+     gone past 24 hours (then it is a weekly rest) */
+  need=g=>(g.len>=24*H?45*H:9*H)+owed,
+  paid=(st.wrp||[]).includes(r.e)||allG.some(g=>g.s>=r.e&&g.e<=dl+6e4&&(g.ong?g.len>=need(g):R.includes(g)?!g.red&&g.len-45*H>=owed:g.len>=9*H+owed)),
+  /* not long enough yet, but it is paying it back now: done once the rest reaches this */
+  og=!paid&&ong&&last.e>=r.e&&last.e<dl?last.e+(9*H+owed<24*H?9*H+owed:45*H+owed):0;
+  return{r,owed,dl,paid,pair:isP,left:dl-n,now:og&&og<=dl+6e4?og:0}}).filter(c=>!c.paid&&c.owed>0);
  const mis=!W.fresh?A.find(x=>x.e>W.e-(W.len||45*H)&&x.s<W.e):null;
  const rc=!!last&&ong>0&&ong<24*H&&!st.active&&!!st.se&&st.se>=last.e&&last.e<=lastEnd+144*H&&(lastEnd+144*H-n<24*H||n>lastEnd+144*H);/* resting since End Shift, and the rest began before the deadline */
  return{W,anc,lastEnd,rc,due:lastEnd+144*H,prevRed,redD,C,ong,R,inWr:ong>=24*H,S,mis,RH,intlOk,pair,pairBad,full45,w4,wk4,owedTot:C.reduce((q,x)=>q+x.owed,0),owedDl:C.reduce((m,x)=>Math.min(m,x.dl),Infinity)}}
@@ -1440,7 +1446,7 @@ function wrBar(I,big){const n=Date.now(),od=n>I.due;
 function wrOwe(I,detail){const n=Date.now();if(!I||!I.C||!I.C.length)return '';
  return I.C.map(c=>{const late=c.left<0,soon=c.left<7*864e5,k=late?'bad':soon?'warn':'warn',when=c.pair?'before your next weekly rest starts (latest '+dmy(c.dl)+')':'by the end of '+dshort(c.dl-6e4);
   const wk=detail&&!c.pair?`<div class="wrw">${[0,1,2,3].map(j=>{const w=add7(wkS(c.r.s),j),cur=n>=w&&n<nwk(w);return `<div class="${cur?'cur':''}${j===3?' dl':''}${j===0?' sr':''}"><small>w/c ${new Date(w).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</small><b>${j===0?'Short rest':j===3?'Pay back by the end of this week':'Week '+j}</b></div>`}).join('')}</div>`:'';
-  return `<div class="owe ${k}"><div class="owh"><span class="owb">${fmt(c.owed)}</span><span><b>of weekly rest owed</b><br><span class="${late?'bad':''}">${dleft(c.left)}</span></span></div><div class="note">You took a reduced weekly rest of ${fmt(c.r.len)} that ended ${dmy(c.r.e)}. Take the missing ${fmt(c.owed)} in one block, attached to a rest of 9 hours or more, ${when}.${detail?' It cannot be split up, and it only counts if it is time clear of every job.':''}</div>${owePlanTxt(c)?`<div class="note" style="margin-top:6px">${owePlanTxt(c)}</div>`:''}${wk}${detail?`<button class="tg" data-k="p${c.r.e}" style="margin-top:8px">I have taken it, mark as paid back</button>`:''}</div>`}).join('')}
+  return `<div class="owe ${k}"><div class="owh"><span class="owb">${fmt(c.owed)}</span><span><b>of weekly rest owed</b><br><span class="${late?'bad':''}">${dleft(c.left)}</span></span></div><div class="note">You took a reduced weekly rest of ${fmt(c.r.len)} that ended ${dmy(c.r.e)}. Take the missing ${fmt(c.owed)} in one block, attached to a rest of 9 hours or more, ${when}.${detail?' It cannot be split up, and it only counts if it is time clear of every job.':''}</div>${c.now?`<div class="note" style="margin-top:6px">🛏 <b>You are paying it back now.</b> The rest you are on counts once it reaches <b>${dmy(c.now)}</b>. Keep resting until then and it is cleared by itself.</div>`:owePlanTxt(c)?`<div class="note" style="margin-top:6px">${owePlanTxt(c)}</div>`:''}${wk}${detail?`<button class="tg" data-k="p${c.r.e}" style="margin-top:8px">I have taken it, mark as paid back</button>`:''}</div>`}).join('')}
 /* how the plan pays back owed weekly rest: plComp finds the first planned rest long enough for it (worked out at most every 30 seconds) */
 let owpK='',owpV=null;function owePlan(c){if(typeof plComp!=='function')return null;const k=Math.floor(Date.now()/3e4)+'|'+(st.u||0);if(k!==owpK){owpK=k;try{const sp=plSpans();owpV=plComp(sp,plOffs(sp))}catch(e){owpV=null}}
  return owpV?owpV.find(o=>o.log&&Math.abs(o.e-c.r.e)<H)||null:null}
@@ -1448,7 +1454,7 @@ function owePlanTxt(c,short){const o=owePlan(c);if(!o)return '';const wk=o.pay&&
  if(o.pay)return short?`📅 Your plan makes it up: the rest from ${dmy(o.pay.s)}.`:`📅 <b>Your plan makes it up.</b> Your rest from <b>${dmy(o.pay.s)}</b> is long enough: rest until at least <b>${dmy(o.at+o.owed)}</b> (${wk?'45 hours for your weekly rest':'9 hours'} plus the ${fmt(o.owed)} owed, in one go).`;
  return short?`📅 Not made up in your plan yet.`:`📅 <b>Not in your plan yet.</b> No planned rest before the deadline is long enough to take it${o.near?`: the rest from ${dmy(o.near.g.s)} would need ${fmt(o.near.more)} more`:''}. Add or move time off in the Plan to make room for it.`}
 function oweBanner(I){if(!I||!I.C||!I.C.length)return '';const late=I.owedDl<Date.now();
- return `<button class="wkb ${late?'nb':'wn'}" data-owe="1"><b>You owe ${fmt(I.owedTot)} of weekly rest${late?' (overdue)':''}</b><span>Take it ${I.C.some(c=>c.pair)?'before your next weekly rest':'by '+dshort(I.owedDl-6e4)} (${dleft(I.owedDl-Date.now())}), in one block attached to a rest of 9h or more.${I.C.map(c=>owePlanTxt(c,1)).filter(Boolean).map(t=>' '+t).join('')} Tap to see how.</span></button>`}
+ return `<button class="wkb ${late?'nb':'wn'}" data-owe="1"><b>You owe ${fmt(I.owedTot)} of weekly rest${late?' (overdue)':''}</b><span>Take it ${I.C.some(c=>c.pair)?'before your next weekly rest':'by '+dshort(I.owedDl-6e4)} (${dleft(I.owedDl-Date.now())}), in one block attached to a rest of 9h or more.${I.C.map(c=>c.now?` 🛏 You are paying it back now: keep resting until ${dmy(c.now)}.`:owePlanTxt(c,1)).filter(Boolean).map(t=>' '+t).join('')} Tap to see how.</span></button>`}
 /* dropdowns on Today: open in the normal view while resting, closed in Compact and while a shift is running; your own tap sticks until one of those changes */
 const DD={};const ddCtx=()=>(cp?'c':'n')+(st.active&&st.act&&st.act!=='r'?'b':'i');
 const ddOpen=k=>DD[k]&&DD[k].c===ddCtx()?DD[k].o:!cp&&!(st.active&&st.act&&st.act!=='r');
@@ -1523,6 +1529,10 @@ function liveRun(){
  const w1=add7(w,-1),day=ss?sum(dr,ss,n+1):0,wkd=sum(dr0,w,n+1),fn=sum(dr0,w1,n+1),sw=ss?sum(a.filter(x=>x.t!=='p'),ss,n+1):0;
  const b=dsbFix(cnt(a,45,x=>x.t==='d'),a),wc0=cnt(a,sw>9*H?45:30,x=>x.t!=='p'),WT=wtS(ss?a.filter(x=>x.s>=ss):[],n),wc={d:WT.eff,L:wc0.L,q:WT.brk>0};
  const LS=legalStart(isTc()?'d':'w'),WI=wrInfo(),MM=mmOn(),DW=MM?30*H:24*H,need11=LS.need11&&!MM,rd9=need11?11:9;
+ /* owed weekly rest that the rest you are on has just paid back: say so once (the owed list is remembered on this phone) */
+ try{const ok=(WI&&WI.C||[]).map(c=>String(c.r.e)),pv=JSON.parse(localStorage.getItem('tg.owe')||'[]'),gone=pv.filter(k=>!ok.includes(k)&&!(st.wrp||[]).includes(+k));
+  if(gone.length&&!st.active&&!flash){flash='✓ Your owed weekly rest has been paid back by the rest you are on now. Nothing more to do.';setTimeout(()=>{if(/owed weekly rest has been paid/.test(flash)){flash='';live()}},15000)}
+  if(JSON.stringify(ok)!==JSON.stringify(pv))localStorage.setItem('tg.owe',JSON.stringify(ok))}catch(e){}
  {const jsg=(L,f,t)=>{const m={};L.forEach(x=>{const o=Math.max(0,Math.min(x.e,t)-Math.max(x.s,f));if(o>0){const j=jobC(x.j).id;m[j]=(m[j]||0)+o}});return jobs().filter(j=>m[j.id]).map(j=>[jobCol(j.id),m[j.id]])};
   JS.brk=jsg(b.L,0,n+1);JS.wrk=jsg(wc.L,0,n+1);JS.day=ss?jsg(dr,ss,n+1):[];JS.wk=jsg(dr0,w,n+1);JS.fn=jsg(dr0,w1,n+1)}
  const RPS=refSets(),RP=RPS[0],S=shifts(a0),cur=ss?S[S.length-1]:null,isx=z=>z.s>=w&&z.d>9*H+M,used=S.filter(isx).length,prev=used-(cur&&isx(cur)?1:0),extLeft=prev<2;
