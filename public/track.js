@@ -174,7 +174,7 @@ function tkStartAsk(t,o){const n=Date.now(),A=all(),pe=A.length?A[A.length-1].e:
 
 /* Back in the app after a while, in the middle of a shift: was it all what the app has been counting? With location on, it
    also says how far you have moved since you last had the app open. */
-function tkAway(){const prev=tkSeen(),n=Date.now(),thr=tkAwy();tkMark();if($('mo').hidden&&tkRunCheck())return;
+function tkAway(){if(st.paq)return;/* a shift the app started for you asks its own question first */const prev=tkSeen(),n=Date.now(),thr=tkAwy();tkMark();if($('mo').hidden&&tkRunCheck())return;
  if(!thr||!prev||!st.active||!$('mo').hidden||n-prev<thr*M||n-prev>18*H){tkGeoCheck();return}
  const from=Math.max(prev,st.active),act=st.act==='x'?'d':st.act;if(n-from<thr*M)return;
  const a=tkLocOn()?tkLocAt(prev):null;

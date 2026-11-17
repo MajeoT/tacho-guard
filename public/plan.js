@@ -752,3 +752,35 @@ $('plc').addEventListener('click',e=>{if(e.target.closest('[data-owe]'))wrDetail
 if(typeof KEEP!=='undefined')['plan','pat','plx','pls','rota','plxc'].forEach(k=>{if(!KEEP.includes(k))KEEP.push(k)});
 
 setTimeout(()=>{try{if(plTidy()&&typeof render==='function')render()}catch(e){}},2500);
+
+/* Planned shifts start by themselves: when a planned shift's start has passed, nothing is running and nothing is logged in it,
+   it is started on Other work at the planned time (with its job and tacho setting). The next time the app is in front of you
+   it asks if that is right: yes, a different start time, fill in what you have done so far, or not working it. Each planned
+   shift is only started this way once (st.pao), and it can be turned off in Settings (st.pauto false). */
+function plAuto(){if(st.pauto===false||st.active||st.act||typeof plOcc!=='function')return;const n=Date.now(),L=all().filter(x=>x.t!=='r'),P=st.pao||{};
+ const o=plOcc(n-20*H,n+1).filter(o=>!o.st&&o.S<=n&&o.E>n&&!P[o.oid]&&!L.some(x=>x.e>o.S-H&&x.s<o.E)&&!(st.se&&st.se>o.S)).sort((a,b)=>b.S-a.S)[0];if(!o)return;
+ const keep={};Object.keys(P).forEach(k=>{if(P[k]>n-35*864e5)keep[k]=P[k]});keep[o.oid]=o.S;st.pao=keep;
+ st.cj=o.j;st.tm=jobC(o.j).tc!==false;st.tmt=n;st.act='w';st.active=o.S;st.pcd=0;st.ad=0;st.as=st.ae=null;
+ st.paq={oid:o.oid,S:o.S,j:o.j,s:o.s.slice(0,5),e:o.e.slice(0,5)};save();render()}
+function plAutoAsk(){const q=st.paq;if(!q||document.hidden||!$('mo').hidden)return;if(typeof tkMark==='function')tkMark();
+ /* still the shift it started (not ended, changed or replaced since) */
+ if(!st.active){delete st.paq;save();return}
+ const n=Date.now(),since=n-q.S,A=all().filter(x=>x.t!=='r'&&x.e<=q.S),pe=A.length?A[A.length-1].e:0;
+ const done=(msg)=>{delete st.paq;save();moX();render();if(msg){flash=msg;setTimeout(()=>{if(flash===msg){flash='';live()}},10000);live()}};
+ mo(`<h3>Shift Started for You</h3><p>Your planned shift <b>${esc(jobC(q.j).n)} ${q.s}–${q.e}</b> was due to start at <b>${q.s}</b>, so TachoGuard started it on <b>Other work</b> at ${hm(q.S)}${jobC(q.j).tc===false?' (no tacho)':''}.</p><p>Is that right?</p>
+ <button class="tg big fpri" data-k="ok">Yes, I started at ${hm(q.S)}</button>
+ ${since>=30*M?`<button class="tg big" data-k="fill">Yes, and fill in what I have done since</button>`:''}
+ <div class="tr" style="margin-top:10px"><label>I started at a different time<input type="time" id="pat" value="${hm(q.S)}"></label><button class="tg" data-k="at">Use time</button></div><div class="note bad" id="paerr"></div>
+ <button class="tg big" data-k="nw">I am not working this shift</button>
+ <p class="note" style="margin-top:8px">Doing something else now, like driving? Tap it on the Today screen after this. You can turn this off in Settings (Start Planned Shifts for Me).</p>`);
+ mcb={ok:()=>done('Shift running from '+hm(q.S)+'. Tap Driving, POA or Break when you change.'),
+  fill:()=>{done();if(typeof tkDrops==='function')tkDrops()},
+  at:()=>{const v=$('pat').value,er=t=>{$('paerr').textContent=t};if(!v){er('Enter the time you started.');return}const x=prevT(v,n);
+   if(x<pe){er('That is before your last activity ended ('+hm(pe)+').');return}if(n-x>16*H){er('That is more than 16 hours ago. Check the time.');return}
+   /* the start of the shift moves: still on that first Other work, or already on to something else */if(st.active===q.S)st.active=x;else{const f=st.sessions.find(y=>y.s===q.S);if(f&&x<f.e)f.s=x}done('Shift start changed to '+hm(x)+'.')},
+  nw:()=>{const oid=q.oid;st.sessions=st.sessions.filter(y=>y.s<q.S);if(st.act==='d'&&typeof gpsOff==='function')gpsOff();st.active=null;st.act=null;st.pls=Object.assign({},st.pls,{[oid]:'skip'});done('OK, not working it. The planned shift is marked as not worked.')}}}
+
+/* run it when the app opens, when you come back to it, and every 20 seconds while it is open */
+setTimeout(()=>{try{plAuto();plAutoAsk()}catch(e){}},1200);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(()=>{try{plAuto();plAutoAsk()}catch(e){}},250)});
+setInterval(()=>{if(!document.hidden){try{plAuto();plAutoAsk()}catch(e){}}},20000);

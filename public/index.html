@@ -567,7 +567,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 </section>
 <section id="t-set" hidden>
 <h2>GPS</h2>
-<div class="g"><div class="tr"><span><span class="lbl">Distance Tracking</span><br><span class="note">Off by default. When on, it uses your location only while Driving is on, and the screen stays awake.</span></span><button class="tg" id="gp"></button></div><div class="row" style="margin-top:14px"><span class="lbl">Distance This Drive</span><span class="num" id="gd"></span></div><div class="note" id="gs"></div></div>
+<div class="g"><div class="tr"><span><span class="lbl">Start Planned Shifts for Me</span><br><span class="note">When a planned shift's start time comes and nothing is running, it starts on Other work at that time, and asks you to check when you next open the app.</span></span><button class="tg" id="pau"></button></div></div><div class="g"><div class="tr"><span><span class="lbl">Distance Tracking</span><br><span class="note">Off by default. When on, it uses your location only while Driving is on, and the screen stays awake.</span></span><button class="tg" id="gp"></button></div><div class="row" style="margin-top:14px"><span class="lbl">Distance This Drive</span><span class="num" id="gd"></span></div><div class="note" id="gs"></div></div>
 <p class="note">Distance only updates while this page is open, so keep your phone unlocked. If location is blocked, allow it for this site in Chrome.</p>
 <div class="g" style="margin-top:12px"><div class="tr"><span><span class="lbl">Location Check-ins</span><br><span class="note">Off unless you turn it on. TachoGuard then checks roughly where you are when you open it, and every 10 minutes while it is open. This stays on this phone for 3 days. If you have moved a fair way during a shift while on other work, POA or a break, it asks if you drove. It never tracks you while the app is closed.</span></span><button class="tg" id="gl"></button></div><div class="note bad" id="gle"></div>
 <div class="lbl" style="margin-top:14px">Saved Places</div><div class="note">Tap one when you start a shift to say where you started, for example your depot.</div><div id="gpl" style="margin-top:8px"></div><button class="tg" id="gla" style="margin-top:8px">⭐ Save where I am now</button></div>
@@ -602,7 +602,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-216';
+const APPV='tg-2026-10-23-217';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1317,7 +1317,7 @@ async function pushRem(force){if(!sess||!cloudReady||!pushOk()||!pushOn()||Notif
   await rest('DELETE','tg_reminders?sent_at=is.null'+(L.length?'&key=not.in.'+encodeURIComponent('('+L.map(r=>'"'+r.key+'"').join(',')+')'):''),null,'return=minimal');prSig=sig;
   /* tidy: reminders already handled and over a day old */
   rest('DELETE','tg_reminders?sent_at=not.is.null&fire_at=lt.'+encodeURIComponent(new Date(n-864e5).toISOString()),null,'return=minimal').catch(()=>{})}catch(e){prSig=''}}
-$('rmb').onclick=e=>{const b=e.target.closest('[data-rm]');if(!b)return;const a=b.dataset.rm,k=b.dataset.rk;if(a==='snz'){snz[k]=Date.now()+5*M;fired[k]=false}rmq.delete(k);rmDraw();if(a==='brk')setAct('r');else if(a==='start'){if(!MO.hidden)return;setAct('w')}};
+$('rmb').onclick=e=>{const b=e.target.closest('[data-rm]');if(!b)return;const a=b.dataset.rm,k=b.dataset.rk;if(a==='snz'){snz[k]=Date.now()+5*M;fired[k]=false}rmq.delete(k);rmDraw();if(a==='brk')setAct('r');else if(a==='start'){if(!MO.hidden||st.active)return;setAct('w')}};
 $('rml').innerHTML=[5,10,15,20,30,45].map(m=>`<option value="${m}">${m} minutes before</option>`).join('');
 $('rms').innerHTML=[[-1,'Off'],[0,'At the start time'],[5,'5 minutes before'],[10,'10 minutes before'],[15,'15 minutes before'],[30,'30 minutes before']].map(([m,t])=>`<option value="${m}">${t}</option>`).join('');
 $('rml').onchange=()=>{st.rml=+$('rml').value;save();live()};$('rms').onchange=()=>{st.rms=+$('rms').value;save();live()};
@@ -1585,7 +1585,7 @@ function liveRun(){
  {const alc={};al.forEach(([k,c,m])=>{alc[k]=c;if(c){if(!fired[k]&&!(snz[k]>n)){fired[k]=true;fire(m,k)}else if(rmq.has(k)&&rmq.get(k).m!==m){rmq.get(k).m=m;rmDraw()}}else fired[k]=false});
   [...rmq.keys()].forEach(k=>{if(!alc[k]){rmq.delete(k);rmDraw()}})}
  const L=[];
- $('gp').textContent=st.gps?'GPS On':'GPS Off';if($('gl')){$('gl').textContent=st.gloc?'On':'Off';const P=st.places||[],h=P.map(p=>`<div class="row" style="padding:6px 0"><span>📍 ${esc(p.n)}</span><button class="tg" data-pd="${p.id}" aria-label="Remove ${esc(p.n)}">✕</button></div>`).join('')||'<div class="note">None yet.</div>';if($('gpl').dataset.h!==h){$('gpl').innerHTML=h;$('gpl').dataset.h=h}}$('gd').textContent=act==='d'&&st.gps?mi(st.ad):'Not tracking';$('gs').textContent=!st.gps?'GPS is off. Turn it on above to track distance.':act==='d'?(gmsg||'Starting GPS...'):'GPS is on and starts when you start driving.';
+ $('gp').textContent=st.gps?'GPS On':'GPS Off';if($('pau'))$('pau').textContent=st.pauto===false?'Off':'On';if($('gl')){$('gl').textContent=st.gloc?'On':'Off';const P=st.places||[],h=P.map(p=>`<div class="row" style="padding:6px 0"><span>📍 ${esc(p.n)}</span><button class="tg" data-pd="${p.id}" aria-label="Remove ${esc(p.n)}">✕</button></div>`).join('')||'<div class="note">None yet.</div>';if($('gpl').dataset.h!==h){$('gpl').innerHTML=h;$('gpl').dataset.h=h}}$('gd').textContent=act==='d'&&st.gps?mi(st.ad):'Not tracking';$('gs').textContent=!st.gps?'GPS is off. Turn it on above to track distance.':act==='d'?(gmsg||'Starting GPS...'):'GPS is on and starts when you start driving.';
  if(act==='p'&&st.pcd)L.push('👥 Riding as co-driver. The first 45 minutes counts as your <b>driving</b> break, as long as you do no work. For <b>working time</b> it is not a break: it only pauses your 6 hours. Write any other work (navigating, paperwork) on a printout. <button class="tg" data-lrg="poa">What counts?</button>');
  else if(act==='p')L.push('POA pauses your working time: it is not work, and not a break either.'+(isTc()&&!mmOn()?' Riding as the passenger with another driver? Turn on two drivers.':'')+' <button class="tg" data-lrg="poa">What counts?</button>');
  else if(act==='w'&&isTc())L.push('Counting as working time only, not driving.');
@@ -1838,6 +1838,7 @@ const endAskOld=same=>{const n=Date.now(),a=all(),z=a[a.length-1],fresh0=!z||(!z
 $('esh').onclick=()=>endAsk();
 $('gl').onclick=async()=>{st.gloc=!st.gloc;$('gle').textContent='';save();live();if(st.gloc){const c=await tkPos(0,true);if(!c){$('gle').textContent=tkLocErr==='blocked'?'Location is blocked. Allow location for this site in Chrome, then turn this on again.':'Could not get a location fix yet. It will try again when you next open the app.';if(tkLocErr==='blocked'){st.gloc=false;save();live()}}}};
 $('gla').onclick=()=>tkPlaceAdd();$('gpl').onclick=e=>{const b=e.target.closest('[data-pd]');if(!b)return;const p=(st.places||[]).find(x=>x.id===b.dataset.pd);if(!p)return;mo(`<h3>Remove ${esc(p.n)}?</h3><p>It will no longer be offered when you start a shift. Your log is not changed.</p><button class="tg big fpri" data-k="ok">Remove</button><button class="tg big" data-k="no">Cancel</button>`);mcb={no:moX,ok:()=>{st.places=(st.places||[]).filter(x=>x.id!==p.id);save();moX();live()}}};
+$('pau').onclick=()=>{st.pauto=st.pauto===false?true:false;save();live()};
 $('gp').onclick=()=>{st.gps=!st.gps;if(st.gps){if(st.act==='d'){gpsOn();wake()}}else gpsOff();save();live()};
 $('snd').onchange=e=>{st.snd=e.target.checked;save();if(st.snd)beep()};
 $('al').onclick=()=>{st.alerts=!st.alerts;if(st.alerts){try{'Notification' in window&&Notification.permission==='default'&&Notification.requestPermission().then(ntUi)}catch(e){}beep();try{navigator.vibrate&&navigator.vibrate(200)}catch(e){}}save();live()};
