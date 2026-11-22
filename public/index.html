@@ -494,7 +494,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="list"></div>
 
 </section>
-<section id="t-day" hidden><button class="tg" id="dback">&#8592; Back</button><h2 id="dtitle" style="margin-top:12px"></h2><div class="note" id="dsum"></div><div id="drules"></div><div id="dayc" style="margin-top:8px"></div>
+<section id="t-day" hidden><button class="tg" id="dback">&#8592; Back</button><h2 id="dtitle" style="margin-top:12px"></h2><div class="note" id="dsum"></div><button type="button" class="tg" id="dfill" style="margin-top:8px">🧭 Fill in or redo this day, drop by drop</button><div id="drules"></div><div id="dayc" style="margin-top:8px"></div>
 <h2>Add Entry</h2><div class="g"><form id="dform"><div><label for="dt">Type</label><select id="dt"><option value="d">Driving</option><option value="w">Other work</option><option value="p">POA</option><option value="r">Break</option></select></div><div><label for="ds">Start</label><input type="time" id="ds" required></div><div><label for="de">End</label><input type="time" id="de" required></div><div class="err" id="derr" role="alert"></div><button class="add" type="submit">Add Activity</button></form></div></section>
 <section id="t-signs" hidden>
 <h2>Learn</h2>
@@ -602,7 +602,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-217';
+const APPV='tg-2026-10-23-218';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1325,6 +1325,7 @@ $('rsl').innerHTML=[[0,'Off'],[15,'15 minutes after the start'],[30,'30 minutes 
 $('awy').innerHTML=[[0,'Off'],[30,'After 30 minutes away'],[45,'After 45 minutes away'],[60,'After 1 hour away'],[90,'After 1 hour 30 away'],[120,'After 2 hours away']].map(([m,t])=>`<option value="${m}">${t}</option>`).join('');
 $('rsl').onchange=()=>{st.rsl=+$('rsl').value;save();live()};$('awy').onchange=()=>{st.awy=+$('awy').value;save();live()};
 $('tdw').onclick=()=>{if(typeof tkDrops==='function')tkDrops()};
+$('dfill').onclick=()=>{if(dayView!=null&&typeof tkFill==='function')tkFill(null,dayView,()=>{moX();dayPage()})};
 const DA=[0,30,60,90,120,150,180,210,240,255,270];$('da').innerHTML=DA.map(m=>`<option value="${m}">${m?fmt(m*M):'Off'}</option>`).join('');
 $('da').onchange=()=>{st.da=+$('da').value;fired.da=false;save();live()};
 function tcs(v,days,el){const e=$(el);if(!v){e.textContent='Enter the date to track it.';e.className='note';return}
@@ -1713,7 +1714,7 @@ function list(){
  const ks=Object.keys(D).map(Number).sort((a,b)=>b-a);
  if(!ks.length)$('list').innerHTML='<div class="g note">Nothing logged yet. Tap an activity on the Today tab, or add one above.</div>';
  else $('list').innerHTML=ks.slice(0,lim).map(w=>{const o=D[w],T=o.T,op=!!od[w],rows=op?rowsOf(o):'';let RV=[];try{RV=typeof tkDayRules==='function'?tkDayRules(w):[]}catch(e){}const pr=RV.reduce((q,v)=>q+v.R.probs,0);
-  return `<div class="g" style="margin-top:10px"><button class="dh" data-od="${w}" aria-expanded="${op}"><span><span class="lbl">${dd(w)}</span><span class="note">${fmt(T.d+T.w)} worked, ${fmt(T.d)} driving${o.m?', '+mi(o.m):''}</span>${RV.length?`<span class="lgv ${pr?'bad':'ok'}">${pr?`⚠ ${pr} rule problem${pr>1?'s':''}`:'✓ Breaks in the right places'}</span>`:''}</span><span class="chev">${op?'&#9650;':'&#9660;'}</span></button>${op?`<div class="note" style="margin:8px 0 6px">${fmt(T.d)} driving, ${fmt(T.w)} work, ${fmt(T.p)} POA, ${fmt(T.r)} break</div>${RV.map(({z,R})=>tkRulesHtml(R,`Breaks and limits · shift ${hm(z.s)}–${hm(z.e)}`)).join('')}${rows}<button class="del" data-add="${ymd(w)}" style="margin-top:6px">Add Entry</button>`:''}</div>`}).join('')+(ks.length>lim?'<button class="tg" data-more="1" style="margin-top:10px">Show More Days</button>':'');}
+  return `<div class="g" style="margin-top:10px"><button class="dh" data-od="${w}" aria-expanded="${op}"><span><span class="lbl">${dd(w)}</span><span class="note">${fmt(T.d+T.w)} worked, ${fmt(T.d)} driving${o.m?', '+mi(o.m):''}</span>${RV.length?`<span class="lgv ${pr?'bad':'ok'}">${pr?`⚠ ${pr} rule problem${pr>1?'s':''}`:'✓ Breaks in the right places'}</span>`:''}</span><span class="chev">${op?'&#9650;':'&#9660;'}</span></button>${op?`<div class="note" style="margin:8px 0 6px">${fmt(T.d)} driving, ${fmt(T.w)} work, ${fmt(T.p)} POA, ${fmt(T.r)} break</div>${RV.map(({z,R})=>tkRulesHtml(R,`Breaks and limits · shift ${hm(z.s)}–${hm(z.e)}`)).join('')}${rows}<button class="del" data-add="${ymd(w)}" style="margin-top:6px">Add Entry</button> <button class="del" data-fill="${w}" style="margin-top:6px">🧭 Fill in or redo, drop by drop</button>`:''}</div>`}).join('')+(ks.length>lim?'<button class="tg" data-more="1" style="margin-top:10px">Show More Days</button>':'');}
  dayPage()}
 function dayPage(){if(dayView==null)return;const o=buildD()[dayView]||emptyD(),T=o.T;
  $('dtitle').textContent=dd(dayView);
@@ -1846,6 +1847,7 @@ $('tc').value=st.tc.c;$('tu').value=st.tc.u;
 $('tc').onchange=()=>{st.tc.c=$('tc').value;save();live()};$('tu').onchange=()=>{st.tc.u=$('tu').value;save();live()};
 const listClick=e=>{
  const bt=e.target.closest('[data-od]');if(bt){od[bt.dataset.od]=!od[bt.dataset.od];list();return}
+ {const fl=e.target.closest('[data-fill]');if(fl&&typeof tkFill==='function'){tkFill(null,+fl.dataset.fill,()=>moX());return}}
  const d=e.target.dataset;
  if(d.add){$('d').value=d.add;$('f').scrollIntoView({behavior:'smooth'});return}
  if(d.more){lim+=14;list();return}
