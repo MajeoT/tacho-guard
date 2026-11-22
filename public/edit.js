@@ -65,7 +65,7 @@ function seBar(E){const tot={};E.forEach(x=>{const k=x.t==='x'?'d':x.t;tot[k]=(t
  return `<div class="sek">${['d','w','p','r'].filter(k=>tot[k]).map(k=>`<span><i class="k-${k}"></i>${k==='d'?'Driving':SEN[k]} ${seF(tot[k])}</span>`).join('')}</div><div class="tkb" aria-hidden="true">${E.map(x=>`<i class="k-${x.t==='x'?'d':x.t}" style="flex:${Math.max(1,Math.round((x.e-x.s)/M))} 0 0"></i>`).join('')}</div>`}
 /* the rules on the shift as it stands while you edit: the breaks and limits box (what each break covered, and advice where one was missing), then anything else the full check finds */
 function seRules(E){const W=E.filter(x=>x.t!=='r').map(x=>({s:x.s,e:x.e,t:x.t}));if(!W.length||typeof audRules!=='function')return '';
- let box='';try{if(typeof tkRules==='function')box=tkRulesHtml(tkRules(E.filter(x=>x.t!=='r').map(x=>({s:x.s,e:x.e,t:x.t,cd:(x.o&&x.o.cd)||(x.run&&st.act==='p'&&st.pcd)?1:0,mm:x.o&&x.o.mm?1:0}))),'Breaks and limits')}catch(e){}
+ let box='';try{if(typeof tkRules==='function')box=tkRulesHtml(tkRules(E.filter(x=>x.t!=='r').map(x=>({s:x.s,e:x.e,t:x.t,cd:(x.o&&x.o.cd)||(x.run&&st.act==='p'&&st.pcd)?1:0,mm:x.o&&x.o.mm?1:0}))),'Breaks and limits',{ed:1})}catch(e){}
  return box+seRules0(W)}
 function seRules0(W){const R=audRules(W);
  return R.length?`<div class="wn" style="margin-top:10px"><b>⚠ This breaks the rules:</b><br>${R.map(r=>'• '+r[0]).join('<br>')}<br><span class="note">If this is what really happened, save it so your record is honest.</span></div>`:`<div class="note ok" style="margin-top:10px">✓ No rules broken in this shift.</div>`}
@@ -145,10 +145,11 @@ function seClick(e){const b=e.target.closest('[data-sk]');if(!b||!SE)return;SE.r
  else if(P&&k==='pa'){if(a==='go'){const C=seAddCalc(P);if(!C)return;const R=seFromList(C.L);SE.S=R.S;SE.B=R.B;SE.dirty=true;SE.open=null}SE.pan=null}
  else if(P&&k==='pt')P.P[i].t=v;else if(P&&k==='pl')P.P[i].len=Math.max(1,P.P[i].len+(+v));else if(P&&k==='pr')P.P.splice(i,1);
  else if(P&&k==='pp'){if(a==='add')P.P.splice(P.P.length-1,0,{t:'r',len:15});else{if(a==='go'){const C=seSplitCalc(P);if(!C)return;const R=seFromList(C.L);SE.S=R.S;SE.B=R.B;SE.dirty=true;SE.open=null}SE.pan=null}}
+ else if(k==='rfb'){/* add the break the rules needed, ending when the limit was passed: the add panel opens with it set, to check and add */const at=+a,len=+v;SE.pan={k:'add',t:'r',s:Math.max(SE.S,Math.round((at-len*M)/M)*M),len};SE.open=null}
  else if(k==='toend'){seToEnd();SE.dirty=true}
  else if(k==='wiz'){const d=sod(SE.S);if(SE.dirty){mo(`<h3>Leave Without Saving?</h3><p>Your changes here will be lost.</p><button class="tg big bad" data-k="ok">Leave and open Fill in my day</button><button class="tg big" data-k="no">Keep editing</button>`);mcb={no:moX,ok:()=>{moX();seClose();tkFill(null,d)}};return}seClose();tkFill(null,d);return}
  else if(k==='save'){seSave();return}else if(k==='clr'){const ss=SE.S;seClose();clearShift(ss,all());return}
- seDraw();if(k==='sp2'||k==='pan'||k==='addin'||(P&&(k==='pa'||(k==='pp'&&a!=='add')))){const el=$('sed');if(el)el.scrollTop=0}}
+ seDraw();if(k==='sp2'||k==='pan'||k==='addin'||k==='rfb'||(P&&(k==='pa'||(k==='pp'&&a!=='add')))){const el=$('sed');if(el)el.scrollTop=0}}
 
 function seChange(e){const x=e.target.closest('[data-se]');if(!x||!SE||x.value==='')return;const[k,a]=x.dataset.se.split(':');
  if(k==='as'&&SE.pan)SE.pan.s=nearT(x.value,SE.pan.s);
