@@ -402,7 +402,9 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
   flash=(R.live&&R.fin?`Shift filled in and ended: ${hm(from)} to ${hm(to)}. Daily rest is counting from ${hm(to)}.`:R.live?`Your day so far is filled in, ${hm(from)} to now. ${TKN[st.act]||NM[st.act]} carries on from now: if you are doing something else, tap it below.`:`Shift filled in: ${hm(from)} to ${hm(to)}. To change it, open it again with Fill in my day.`)+' <button class="tg" data-ua="1" style="margin-left:6px">Undo</button>';
   setTimeout(()=>{if(usnap===sv){flash='';live()}},14000);live();if(!R.live&&typeof tkRunCheck==='function')tkRunCheck()};
  const yn=(k,q,v)=>`<div class="dwq"><span>${q}</span><span class="fchips fsm"><button type="button" class="fchip${v?' on':''}" data-dw="y:${k}:1">Yes</button><button type="button" class="fchip${v?'':' on'}" data-dw="y:${k}:0">No</button></span></div>`;
- const keepSc=f=>{const b=MO.querySelector('.mb'),y=b?b.scrollTop:0;f();const b2=MO.querySelector('.mb');if(b2)b2.scrollTop=y};
+ /* redraw without moving the page: keep the scroll, and if the button you tapped moved (a break moved later, say), follow it so it stays under your finger */
+ const keepSc=f=>{const b=MO.querySelector('.mb'),y=b?b.scrollTop:0,k=dwTap,el=k&&MO.querySelector('[data-dw="'+k+'"]'),t0=el?el.getBoundingClientRect().top:null;f();const b2=MO.querySelector('.mb');if(!b2)return;b2.scrollTop=y;
+  const e2=t0!==null&&MO.querySelector('[data-dw="'+k+'"]');if(e2)b2.scrollTop+=e2.getBoundingClientRect().top-t0};
  /* rough amounts: a stepper in 30 minute steps, starting from a usual amount, with Not sure to clear it */
  const amt=(k,lab,start)=>{const v=R[k];return `<div class="dwq"><span>${lab}</span><span class="dws"><button type="button" data-dw="a:${k}:-30:${start}" aria-label="30 minutes less">−30</button><b>${v===null?'Not sure':tkF(v)}</b><button type="button" data-dw="a:${k}:30:${start}" aria-label="30 minutes more">+30</button>${v!==null?`<button type="button" data-dw="a:${k}:x:0" aria-label="Not sure">✕</button>`:''}</span></div>`};
  const cnt=(k,lab,mx)=>`<div class="dwq"><span>${lab}</span><span class="dws"><button type="button" data-dw="e:${k}:-1" aria-label="One fewer">−</button><b>${R[k]}</b><button type="button" data-dw="e:${k}:1" aria-label="One more">+</button></span></div>`;
@@ -448,7 +450,7 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
    else if(k==='lh'){R.lh=a;R.tt=true}else if(k==='b1'){R.tB=a==='n'?null:+a;R.tt=true;R.gq=null}else if(k==='bh'){R.bh=a;R.tt=true}
    else if(k==='g'&&R.gq){const g=R.gq.g;if(a==='F'){R.ev=hm(from+R.gq.K*M)}else if(a==='S'){const cs=[['tD',R.dr||R.mm],['tW',R.wk],['tP',R.pa],['tB',R.br]].filter(c=>c[1]&&R[c[0]]),K=cs.reduce((q,c)=>q+R[c[0]],0);let left=g;cs.forEach((c,i)=>{const add=i===cs.length-1?left:Math.round(g*R[c[0]]/K/5)*5;R[c[0]]+=add;left-=add})}
     else{if(a==='tP'&&!R.pa){R.pa=true;R.tP=0}if(a==='tB'&&!R.br){R.br=true;R.tB=0}R[a]=(R[a]||0)+g}R.gq=null;page1();mcb.ok();return}
-   page1()}};
+   /* redraw where you are, not back at the top */keepSc(page1)}};
  const stp=(i,f,m,lab)=>`<span class="dws"><button type="button" data-dw="m:${i}:${f}:-15" aria-label="15 minutes less">−15</button><button type="button" data-dw="m:${i}:${f}:-5" aria-label="5 minutes less">−5</button><b aria-label="${esc(lab)}">${tkF(m)}</b><button type="button" data-dw="m:${i}:${f}:5" aria-label="5 minutes more">+5</button><button type="button" data-dw="m:${i}:${f}:15" aria-label="15 minutes more">+15</button></span>`;
  const page2=()=>{const tm=times(),B=R.B||[],P=autoPos(),u=used(),left=T()-u,E=left>-0.5?build():null,J=E?tkJudge(E,from,to,R.live&&!R.fin):null;
   const ico={s:'⚒',d:'🚛',x:'📦',e:'⚒',v:'🔄',l:'📥'},asN={d:'I drove',c:'My co-driver drove',p:'I was a passenger (POA)'};
@@ -500,7 +502,7 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
      const tot=D.reduce((q,x)=>q+x[fk(x)],0)||D.length;let rem=lf;D.forEach((x,j)=>{const f=fk(x),ch=j===D.length-1?rem:Math.round(lf*(tot===D.length&&!x[f]?1:x[f])/tot);const nm=Math.max(0,x[f]+ch);rem-=nm-x[f];x[f]=nm})}}
    keepSc(page2)}};
  page1()}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-dw]');if(dwEv&&b&&!$('mo').hidden&&$('mo').contains(b)){try{dwEv(e)}catch(er){moStuck(er)}}});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-dw]');if(dwEv&&b&&!$('mo').hidden&&$('mo').contains(b)){dwTap=b.dataset.dw;try{dwEv(e)}catch(er){moStuck(er)}}});let dwTap=null;
 /* if something goes wrong while a pop-up is open, it must never be left stuck: say so and offer a way out */
 function moStuck(er){try{const mb=$('mo').querySelector('.mb');if(!mb||$('mo').hidden||mb.querySelector('.moerr'))return;mb.insertAdjacentHTML('afterbegin','<div class="moerr wn" role="alert" style="margin-bottom:8px">Something went wrong on this screen. <button type="button" class="tg" data-k="no">Close it</button></div>');mcb=Object.assign({},mcb,{no:moX});console.error(er)}catch(e){}}
 window.addEventListener('error',e=>{if(!$('mo').hidden)moStuck(e.error||e.message)});
