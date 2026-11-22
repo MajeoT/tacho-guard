@@ -349,6 +349,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 .h-lr{display:block;width:100%;margin-top:8px;padding:8px 10px;border-radius:10px;font:inherit;font-size:13px;font-weight:600;text-align:left;cursor:pointer;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:#cfe0f5}.h-lr.bad{border-color:#ff6b6b;color:#ffb3b3}.h-lr.ok{color:#9be7b8}
 #sel.dragging .sebd,#sel.dragging .sebs{opacity:.25;transition:opacity .15s}
 .lgv{display:block;margin-top:3px;font-size:12.5px;font-weight:600}.lgv.ok{color:var(--ok)}.lgv.bad{color:var(--bad)}
+.rfx{margin-top:4px;font-size:13px;padding:6px 10px;align-self:flex-start}
 .plok{margin:-2px 0 8px;padding:8px 12px;border-radius:10px;background:rgba(34,197,94,.14);color:var(--tx);font-weight:600;font-size:14px}
 .dwq{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)}.dwq>span:first-child{font-weight:600;flex:1}.dwq .fchips{flex-wrap:nowrap}
 .dws{display:inline-flex;align-items:center;gap:4px}.dws button{font:600 13px var(--body);color:var(--tx);background:var(--card);border:1.5px solid var(--bd2);border-radius:10px;min-width:38px;height:36px;padding:0 6px;cursor:pointer}.dws b{min-width:64px;text-align:center;font-size:15px}
@@ -602,7 +603,7 @@ label{color:var(--mut);font-size:12.5px;letter-spacing:0}
 <div id="sheet" hidden></div>
 <div id="mo" hidden></div>
 <script>
-const APPV='tg-2026-10-23-221';
+const APPV='tg-2026-10-23-222';
 const K='tachoguard.v1',H=3600000,M=60000;
 let st={sessions:[],active:null,act:null,ad:0,as:null,ae:null,alerts:true,gps:false,tc:{c:'',u:''},arch:{},walks:[],wd:null};
 /* make a record safe to use: wrong types from a damaged backup or account record are dropped, so the app always opens */
@@ -1714,14 +1715,14 @@ function list(){
  const ks=Object.keys(D).map(Number).sort((a,b)=>b-a);
  if(!ks.length)$('list').innerHTML='<div class="g note">Nothing logged yet. Tap an activity on the Today tab, or add one above.</div>';
  else $('list').innerHTML=ks.slice(0,lim).map(w=>{const o=D[w],T=o.T,op=!!od[w],rows=op?rowsOf(o):'';let RV=[];try{RV=typeof tkDayRules==='function'?tkDayRules(w):[]}catch(e){}const pr=RV.reduce((q,v)=>q+v.R.probs,0);
-  return `<div class="g" style="margin-top:10px"><button class="dh" data-od="${w}" aria-expanded="${op}"><span><span class="lbl">${dd(w)}</span><span class="note">${fmt(T.d+T.w)} worked, ${fmt(T.d)} driving${o.m?', '+mi(o.m):''}</span>${RV.length?`<span class="lgv ${pr?'bad':'ok'}">${pr?`⚠ ${pr} rule problem${pr>1?'s':''}`:'✓ Breaks in the right places'}</span>`:''}</span><span class="chev">${op?'&#9650;':'&#9660;'}</span></button>${op?`<div class="note" style="margin:8px 0 6px">${fmt(T.d)} driving, ${fmt(T.w)} work, ${fmt(T.p)} POA, ${fmt(T.r)} break</div>${RV.map(({z,R})=>tkRulesHtml(R,`Breaks and limits · shift ${hm(z.s)}–${hm(z.e)}`)).join('')}${rows}<button class="del" data-add="${ymd(w)}" style="margin-top:6px">Add Entry</button> <button class="del" data-fill="${w}" style="margin-top:6px">🧭 Fill in or redo, drop by drop</button>`:''}</div>`}).join('')+(ks.length>lim?'<button class="tg" data-more="1" style="margin-top:10px">Show More Days</button>':'');}
+  return `<div class="g" style="margin-top:10px"><button class="dh" data-od="${w}" aria-expanded="${op}"><span><span class="lbl">${dd(w)}</span><span class="note">${fmt(T.d+T.w)} worked, ${fmt(T.d)} driving${o.m?', '+mi(o.m):''}</span>${RV.length?`<span class="lgv ${pr?'bad':'ok'}">${pr?`⚠ ${pr} rule problem${pr>1?'s':''}`:'✓ Breaks in the right places'}</span>`:''}</span><span class="chev">${op?'&#9650;':'&#9660;'}</span></button>${op?`<div class="note" style="margin:8px 0 6px">${fmt(T.d)} driving, ${fmt(T.w)} work, ${fmt(T.p)} POA, ${fmt(T.r)} break</div>${RV.map(({z,R})=>tkRulesHtml(R,`Breaks and limits · shift ${hm(z.s)}–${hm(z.e)}`,{day:sod(z.s)})).join('')}${rows}<button class="del" data-add="${ymd(w)}" style="margin-top:6px">Add Entry</button> <button class="del" data-fill="${w}" style="margin-top:6px">🧭 Fill in or redo, drop by drop</button>`:''}</div>`}).join('')+(ks.length>lim?'<button class="tg" data-more="1" style="margin-top:10px">Show More Days</button>':'');}
  dayPage()}
 function dayPage(){if(dayView==null)return;const o=buildD()[dayView]||emptyD(),T=o.T;
  $('dtitle').textContent=dd(dayView);
  $('dsum').innerHTML=`${fmt(T.d+T.w)} worked. ${fmt(T.d)} driving, ${fmt(T.w)} work, ${fmt(T.p)} POA, ${fmt(T.r)} break${o.m?', '+mi(o.m):''}`;
  $('dayc').innerHTML=rowsOf(o)||'<div class="g note">Nothing logged this day.</div>';
  /* breaks and limits for each shift that started this day (as saved, so riding as co-driver shows as itself) */
- const dr=$('drules');if(dr){try{dr.innerHTML=tkDayRules(dayView).map(({z,R})=>tkRulesHtml(R,`Breaks and limits · shift ${hm(z.s)}–${hm(z.e)}`)).join('')}catch(e){dr.innerHTML=''}}}
+ const dr=$('drules');if(dr){try{dr.innerHTML=tkDayRules(dayView).map(({z,R})=>tkRulesHtml(R,`Breaks and limits · shift ${hm(z.s)}–${hm(z.e)}`,{day:sod(z.s)})).join('')}catch(e){dr.innerHTML=''}}}
 let dayFrom='hours';function openDay(ts,from){dayFrom=from||'hours';dayView=ts;['today','check','log','hours','plan','tacho','signs','set'].forEach(x=>$('t-'+x).hidden=true);$('t-day').hidden=false;ed=null;dayPage();window.scrollTo(0,0)}
 const render=()=>{live();list();if(typeof jobsUi==='function'){jobsUi();rpUi()}setTimeout(chkLong,60)};
 /* Seven screens in four tabs: Today, Plan, Records (Hours, Log, Tacho) and More (Walkaround, Learn) */

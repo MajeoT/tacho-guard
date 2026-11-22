@@ -310,6 +310,7 @@ document.addEventListener('change',e=>{if(tcEv&&e.target.closest&&e.target.close
    Breaks go where the 4h 30m driving and 6 hour work limits need them (or spread out on a short day), and each can be moved.
    Saving replaces what is logged in that time. */
 let dwEv=null;
+let dwGo=null;
 function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act),run=actOn&&!pre,
  ss=run?shiftStart(all().filter(x=>x.t!=='r')):0,tc=pre&&pre.j?jobC(pre.j).tc!==false:isTc(),jb=pre&&pre.j||st.cj;
  const R={live:run,fin:run&&n0-ss>12*H,day:pre&&pre.day||td,sv:run?hm(ss):pre&&pre.s||'',ev:pre&&pre.e||'',dr:tc,wk:true,br:true,mm:tc&&run&&mmOn(),nd:2,L:null,B:null,P:{},log:false,
@@ -450,6 +451,7 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
    const cats=[['tD',R.dr||R.mm],['tW',R.wk],['tP',R.pa],['tB',R.br]].filter(c=>c[1]);
    if(R.tt&&cats.length&&cats.every(c=>R[c[0]]!==null)){const K=cats.reduce((q,c)=>q+R[c[0]],0),g=Math.round(T()-K);if(Math.abs(g)>=5){R.gq={g,K};page1();return}}R.gq=null;
    /* the time to replace on saving: what you asked for here, widened by any change on the next page */R.c0=from;R.c1=to;const f0=from;R.log=!R.tt&&fromLog();if(!R.log){from=f0;if(!R.tt&&!R.dr&&!R.mm){R.runs=[{n:0}];R.sep=[];syncR()}R.B=splitB()||wantB();mkLegs()}page2()}};
+  if(dwGo&&!R.go1){R.go1=true;R.focus=dwGo.at;dwGo=null;setTimeout(()=>{if(!$('mo').hidden)mcb.ok()},0)}
   dwEv=e=>{const b=e.target.closest('[data-dw]');const[k,a,v,w]=b.dataset.dw.split(':');keep();
    if(k==='l')R.live=a==='1';else if(k==='f')R.fin=a==='1';else if(k==='d')R.day=+a;else if(k==='y'){R[a]=v==='1';R.gq=null}
    else if(k==='a'){R[a]=v==='x'?null:R[a]===null?+w:Math.max(0,Math.min(20*60,R[a]+ +v));R.tt=true;R.gq=null}
@@ -501,6 +503,7 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
    if(t>Date.now()){er('That finish is later than now.');return}if(t-f>21*H){er('That is over 21 hours. Check the times.');return}if(t-f<30*M){er('That is under 30 minutes.');return}
    from=f;to=t;R.sv=a;R.ev=b;R.c0=Math.min(R.c0,f);R.c1=Math.max(R.c1,t);keepSc(page2)};['dw2s','dw2e'].forEach(id=>{if($(id))$(id).onchange=tch});
   mcb={no:moX,bk:page1,ok:()=>{const E2=build();if(E2)dwSave(E2)}};
+  if(R.focus!=null){R.focus=null;setTimeout(()=>{const el=MO.querySelector('.dwl.bad')||MO.querySelector('.fsum'),mb=MO.querySelector('.mb');if(el&&mb)mb.scrollTop+=el.getBoundingClientRect().top-mb.getBoundingClientRect().top-60},0)}
   dwEv=e=>{const b=e.target.closest('[data-dw]');const p=b.dataset.dw.split(':'),k=p[0];
    if(k==='m'){const x=R.L[+p[1]];x[p[2]]=Math.max(0,Math.min(16*60,(x[p[2]]||0)+ +p[3]))}
    else if(k==='w'){R.L[+p[1]].w=15}
@@ -525,6 +528,7 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
      const tot=D.reduce((q,x)=>q+x[fk(x)],0)||D.length;let rem=lf;D.forEach((x,j)=>{const f=fk(x),ch=j===D.length-1?rem:Math.round(lf*(tot===D.length&&!x[f]?1:x[f])/tot);const nm=Math.max(0,x[f]+ch);rem-=nm-x[f];x[f]=nm})}}
    keepSc(page2)}};
  page1()}
+document.addEventListener('click',e=>{const f=e.target.closest('[data-rfx]');if(f&&typeof tkFill==='function'){const[d,at]=f.dataset.rfx.split(':');dwGo={day:+d,at:+at};moX();tkFill(null,+d,()=>{moX();if(typeof dayPage==='function')dayPage()});return}});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-dw]');if(dwEv&&b&&!$('mo').hidden&&$('mo').contains(b)){dwTap=b.dataset.dw;try{dwEv(e)}catch(er){moStuck(er)}}});let dwTap=null;
 /* if something goes wrong while a pop-up is open, it must never be left stuck: say so and offer a way out */
 function moStuck(er){try{const mb=$('mo').querySelector('.mb');if(!mb||$('mo').hidden||mb.querySelector('.moerr'))return;mb.insertAdjacentHTML('afterbegin','<div class="moerr wn" role="alert" style="margin-bottom:8px">Something went wrong on this screen. <button type="button" class="tg" data-k="no">Close it</button></div>');mcb=Object.assign({},mcb,{no:moX});console.error(er)}catch(e){}}
@@ -565,5 +569,8 @@ function tkDayRules(day){const SS=st.sessions.concat(st.active&&st.act?[{s:st.ac
  W.forEach(x=>{const l=sh[sh.length-1];if(l&&x.s-l.e<9*H)l.e=Math.max(l.e,x.e);else sh.push({s:x.s,e:x.e})});
  return sh.filter(z=>z.s>=day&&z.s<nxd(day)).map(z=>({z,R:tkRules(SS.filter(x=>x.s>=z.s&&x.e<=z.e))}))}
 /* The rules box: the parts that have something to say, then the summary */
-function tkRulesHtml(R,head){if(!R||!R.G.length)return '';const rows=R.G.map((x,i)=>R.N[i]?`<div class="rln ${R.N[i].k}"><span class="rlt">${hm(x.s)}–${hm(x.e)} ${TKI[x.t]||''} ${x.t==='p'&&x.cd?'Riding as co-driver':TKN[x.t]||''}</span><span>${R.N[i].t}</span></div>`:'').join('');
- return `<div class="rlx">${head?`<div class="rlh">${head}</div>`:''}${R.sum.map(s=>`<div class="rls ${s.k}">${s.t}</div>`).join('')}${rows}</div>`}
+/* fx: how a problem can be fixed from here: {day} opens Fill in my day on that day at the red part, {ed:1} (Edit shift) sets up the break to add */
+function tkRulesHtml(R,head,fx){if(!R||!R.G.length)return '';fx=fx||{};
+ const fix=q=>q&&q.k==='bad'?(fx.ed&&q.at?`<button type="button" class="tg rfx" data-sk="rfb:${q.at}:${q.need||15}">+ Add the ${q.need||15} minute break here</button>`:fx.day!=null?`<button type="button" class="tg rfx" data-rfx="${fx.day}:${q.at||0}">Fix it</button>`:''):'';
+ const rows=R.G.map((x,i)=>R.N[i]?`<div class="rln ${R.N[i].k}"><span class="rlt">${hm(x.s)}–${hm(x.e)} ${TKI[x.t]||''} ${x.t==='p'&&x.cd?'Riding as co-driver':TKN[x.t]||''}</span><span>${R.N[i].t}</span>${fix(R.N[i])}</div>`:'').join('');
+ return `<div class="rlx">${head?`<div class="rlh">${head}</div>`:''}${R.sum.map(q=>`<div class="rls ${q.k}">${q.t}${q.k==='bad'&&fx.day!=null?' '+fix({k:'bad'}):''}</div>`).join('')}${rows}</div>`}
