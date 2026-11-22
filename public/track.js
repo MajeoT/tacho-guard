@@ -314,7 +314,11 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
  ss=run?shiftStart(all().filter(x=>x.t!=='r')):0,tc=pre&&pre.j?jobC(pre.j).tc!==false:isTc(),jb=pre&&pre.j||st.cj;
  const R={live:run,fin:run&&n0-ss>12*H,day:pre&&pre.day||td,sv:run?hm(ss):pre&&pre.s||'',ev:pre&&pre.e||'',dr:tc,wk:true,br:true,mm:tc&&run&&mmOn(),nd:2,L:null,B:null,P:{},log:false,
   /* rough amounts (minutes, null = not sure), POA yes/no, total break and how it was taken, vehicle swaps, reloads and what a reload was */
-  pa:tc&&run&&mmOn(),tD:null,tW:null,tP:null,tB:null,bh:'one',nv:0,nl:0,lh:'w',tt:false,gq:null};
+  pa:tc&&run&&mmOn(),tD:null,tW:null,tP:null,tB:null,bh:'one',nv:0,nl:0,lh:'w',tt:false,gq:null,
+  /* runs of drops, with what came between them (v a vehicle swap, l a reload), and how long one vehicle check takes */
+  runs:[{n:2}],sep:[],chk:st.vchk||15};
+ /* the counts follow the runs */
+ const syncR=()=>{R.nd=R.runs.reduce((q,r)=>q+r.n,0);R.nv=R.sep.filter(k=>k==='v').length;R.nl=R.sep.filter(k=>k==='l').length};
  let from=0,to=0;
  const T=()=>(to-from)/M,r5=m=>Math.max(0,Math.round(m/5)*5);
  /* how each drive was spent: d I drove, c my co-driver drove (POA as co-driver), p a passenger (POA), x driving on a job with no tacho */
@@ -333,15 +337,14 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
     or waiting when you were on POA), 15 at the end, and the rest of the work, and any waiting, across the drops. What you were
     not sure of takes the rest of the time. */
  const mkLegs=()=>{const nd=R.nd,B=R.B||splitB()||wantB(),bt=B.reduce((q,x)=>q+x,0),as=asDef(),av=Math.max(0,T()-bt),L=[];
-  const ev=[];for(let i=0;i<(R.nv||0);i++)ev.push('v');for(let i=0;i<(R.nl||0);i++)ev.push('l');
-  const at={};ev.forEach((k,j)=>{const a=nd?Math.max(1,Math.min(nd,Math.round((j+1)*nd/(ev.length+1)))):0;(at[a]=at[a]||[]).push(k)});
-  const SK=[].concat(at[0]||[]);for(let i=1;i<=nd;i++){SK.push('x');(at[i]||[]).forEach(k=>SK.push(k))}
+  /* the stops in order: each run's drops, with the vehicle swap or reload between runs */
+  const SK=[];R.runs.forEach((r,i)=>{if(i)SK.push(R.sep[i-1]);for(let j=0;j<r.n;j++)SK.push('x')});
   const on={D:SK.length>0||R.dr||R.mm,W:R.wk,P:R.pa},val={D:on.D?R.tD:0,W:on.W?R.tW:0,P:on.P?R.tP:0},wt={D:.55,W:.35,P:.1};
   let known=0,wsum=0;Object.keys(val).forEach(k=>{if(val[k]!==null)known+=val[k];else if(on[k])wsum+=wt[k]});const rest=Math.max(0,av-known);
   Object.keys(val).forEach(k=>{if(val[k]===null)val[k]=on[k]&&wsum?rest*wt[k]/wsum:0});
   if(!SK.length&&!R.dr&&!R.mm){L.push({k:'s',m:Math.max(0,val.W),w:Math.max(0,val.P)});L.push({k:'d',m:0,as});L.push({k:'e',m:0,w:0})}
   else{/* work: the fixed parts first, scaled down if there is not enough, then the drops share what is left */
-   const fx={s:30,e:15,v:15,l:R.lh==='u'?45:R.lh==='w'?30:0},F=fx.s+fx.e+SK.reduce((q,k)=>q+(k==='v'?fx.v:k==='l'?fx.l:0),0),sc=F>0?Math.min(1,val.W/F):0,wx=nd?Math.max(0,val.W-F*sc)/nd:0;
+   /* a vehicle check before each vehicle is used and after it: the start has the first one and loading, a swap has the after check on one and the before check on the next, the end has the last after check */const ck=R.chk||15,fx={s:ck+15,e:ck,v:2*ck,l:R.lh==='u'?45:R.lh==='w'?30:0},F=fx.s+fx.e+SK.reduce((q,k)=>q+(k==='v'?fx.v:k==='l'?fx.l:0),0),sc=F>0?Math.min(1,val.W/F):0,wx=nd?Math.max(0,val.W-F*sc)/nd:0;
    const pl=R.lh==='p'?30:0,PF=SK.filter(k=>k==='l').length*pl,psc=PF>0?Math.min(1,val.P/PF):0,px=nd?Math.max(0,val.P-PF*psc)/nd:0;
    const N=SK.length+1,dv=val.D/N;
    L.push({k:'s',m:r5(fx.s*sc),w:!nd&&!PF?r5(val.P):0});
@@ -365,16 +368,16 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
   L.forEach(x=>{if(x.k!=='d')x.w=x.w||0});
   /* a start before the first thing logged: that time is other work at the start */const g0=(W[0].s-from)/M;if(g0>=1){L.unshift(stop('s',g0));off++}else from=W[0].s;
   /* and a finish within a minute of the last thing logged is that finish */const le=Math.max(...W.map(x=>x.e));if(!(R.live&&!R.fin)&&to>le&&to-le<M)to=le;R.L=L;R.B=B;R.P={};P2.forEach((v,k)=>R.P[k]=Math.max(1,Math.min(L.length-1,v+off)));
-  R.nd=L.filter((x,i)=>x.k==='x'&&L[i-1].k!=='x').length;R.dr=L.some(x=>x.k==='d'&&x.as==='d');if(W.some(x=>x.mm||x.cd))R.mm=true;if(B.length)R.br=true;return true};
+  R.nd=L.filter((x,i)=>x.k==='x'&&L[i-1].k!=='x').length;R.runs=[{n:R.nd}];R.sep=[];R.nv=R.nl=0;R.dr=L.some(x=>x.k==='d'&&x.as==='d');if(W.some(x=>x.mm||x.cd))R.mm=true;if(B.length)R.br=true;return true};
  const legT=x=>x.m+(x.w||0),used=()=>R.L.reduce((q,x)=>q+legT(x),0)+(R.B||[]).reduce((q,x)=>q+x,0);
  /* names, from where each part sits: a drive goes to the next drop, or back to the depot */
  const lbl=i=>{const L=R.L,x=L[i],wt=y=>y.k!=='d'&&!y.m&&y.w>0,p=L[i-1],cont=p&&p.k===x.k&&wt(p)===wt(x)?' (carried on)':'';
   /* a drop split by a break or by waiting is still one drop */const dropNo=j=>L.slice(0,j+1).filter((y,q)=>y.k==='x'&&!(L[q-1]&&L[q-1].k==='x')).length;
-  if(x.k==='v')return (wt(x)?'Waiting (POA) at the vehicle swap':'Vehicle swap: checks')+cont;
+  if(x.k==='v')return (wt(x)?'Waiting (POA) at the vehicle swap':'Vehicle swap: checks on both vehicles')+cont;
   if(x.k==='l')return (wt(x)?'Reload: waiting (POA)':R.lh==='u'?'Reload: unloading and loading':'Reload: loading')+cont;
   if(x.k!=='d'){const at=x.k==='s'?(R.nd||L.some(y=>y.k==='d'&&y.m>0)?'at the depot':''):x.k==='e'?'back at the depot':'at drop '+dropNo(i);
    if(wt(x))return 'Waiting (POA)'+(at?' '+at:'')+cont;
-   return (x.k==='s'?(at?'At the depot: checks and loading':'Your day'):x.k==='e'?'Back at the depot: unloading, paperwork':'Drop '+dropNo(i))+cont}
+   return (x.k==='s'?(at?'At the depot: vehicle check and loading':'Your day'):x.k==='e'?'Back at the depot: vehicle check, paperwork':'Drop '+dropNo(i))+cont}
   let j=i+1;while(j<L.length&&L[j].k==='d')j++;const w=x.as==='d'||x.as==='x'||x.as==='w'?'Drive':'Travel',nx=j<L.length?L[j].k:'';
   return (nx==='x'?w+' to drop '+dropNo(j):nx==='v'?w+' to swap vehicles':nx==='l'?w+' back for a reload':w+' back to the depot')+cont};
  /* where each break goes: before part i. Where a limit would be passed, else spread through the day */
@@ -410,7 +413,11 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
  const cnt=(k,lab,mx)=>`<div class="dwq"><span>${lab}</span><span class="dws"><button type="button" data-dw="e:${k}:-1" aria-label="One fewer">−</button><b>${R[k]}</b><button type="button" data-dw="e:${k}:1" aria-label="One more">+</button></span></div>`;
  const chip=(on,dw,t)=>`<button type="button" class="fchip${on?' on':''}" data-dw="${dw}">${t}</button>`;
  const p1more=()=>`<div class="cs" style="margin-top:12px">Your day, roughly</div><p class="note" style="margin-top:0">All optional. Give what you know and it shares out the rest.</p><div class="acq">
-  ${cnt('nd','📦 Drops or collections')}${cnt('nv','🔄 Vehicle swaps')}${cnt('nl','📥 Reloads (back for more stock)')}
+  ${R.runs.map((r,i)=>{const vn=1+R.sep.slice(0,i).filter(k=>k==='v').length,ln=R.sep.slice(0,i).filter(k=>k==='l').length,many=R.runs.length>1;
+   return (i?`<div class="dwsep"><span>${R.sep[i-1]==='v'?'🔄 Then a vehicle swap':'📥 Then a reload'}</span><span class="dwmv"><button type="button" data-dw="rs:${i-1}" aria-label="Change to a ${R.sep[i-1]==='v'?'reload':'vehicle swap'}">${R.sep[i-1]==='v'?'Make it a reload':'Make it a swap'}</button><button type="button" data-dw="rx:${i-1}" aria-label="Remove">✕</button></span></div>`:'')
+    +`<div class="dwq"><span>📦 Drops${many?` on run ${i+1}`:' or collections'}${many&&R.sep.includes('v')?` <small>(vehicle ${vn}${ln?', after reload '+ln:''})</small>`:many&&ln?` <small>(after reload ${ln})</small>`:''}</span><span class="dws"><button type="button" data-dw="rn:${i}:-1" aria-label="One fewer drop">−</button><b>${r.n}</b><button type="button" data-dw="rn:${i}:1" aria-label="One more drop">+</button></span></div>`}).join('')}
+  <div class="fchips fsm" style="margin-top:6px"><button type="button" class="fchip" data-dw="ra:v">+ Vehicle swap</button><button type="button" class="fchip" data-dw="ra:l">+ Reload</button></div>
+  ${R.nv?`<div class="fsub">🔍 One vehicle check takes</div><div class="fchips fsm">${[10,15,20,30].map(m=>chip(R.chk===m,'ck:'+m,m+' min')).join('')}</div><p class="note" style="margin:2px 0 0">A check before and after each vehicle: with ${R.nv+1} vehicles that is ${tkF(2*(R.nv+1)*R.chk)} of checks.</p>`:''}
   ${R.nl?`<div class="fsub">At a reload you were mostly</div><div class="fchips fsm">${chip(R.lh==='w','lh:w','Loading (other work)')}${chip(R.lh==='u','lh:u','Emptying and loading')}${chip(R.lh==='p','lh:p','Waiting (POA)')}</div>`:''}
   ${R.dr?amt('tD','🚛 Driving',240):R.mm?amt('tD','👥 On the road, co-driver driving',240):''}
   ${R.wk?amt('tW','⚒ Other work',120):''}
@@ -442,11 +449,16 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
    /* every amount given (and some were): do they fill the shift? */
    const cats=[['tD',R.dr||R.mm],['tW',R.wk],['tP',R.pa],['tB',R.br]].filter(c=>c[1]);
    if(R.tt&&cats.length&&cats.every(c=>R[c[0]]!==null)){const K=cats.reduce((q,c)=>q+R[c[0]],0),g=Math.round(T()-K);if(Math.abs(g)>=5){R.gq={g,K};page1();return}}R.gq=null;
-   /* the time to replace on saving: what you asked for here, widened by any change on the next page */R.c0=from;R.c1=to;const f0=from;R.log=!R.tt&&fromLog();if(!R.log){from=f0;if(!R.tt&&!R.dr&&!R.mm)R.nd=0;R.B=splitB()||wantB();mkLegs()}page2()}};
+   /* the time to replace on saving: what you asked for here, widened by any change on the next page */R.c0=from;R.c1=to;const f0=from;R.log=!R.tt&&fromLog();if(!R.log){from=f0;if(!R.tt&&!R.dr&&!R.mm){R.runs=[{n:0}];R.sep=[];syncR()}R.B=splitB()||wantB();mkLegs()}page2()}};
   dwEv=e=>{const b=e.target.closest('[data-dw]');const[k,a,v,w]=b.dataset.dw.split(':');keep();
    if(k==='l')R.live=a==='1';else if(k==='f')R.fin=a==='1';else if(k==='d')R.day=+a;else if(k==='y'){R[a]=v==='1';R.gq=null}
    else if(k==='a'){R[a]=v==='x'?null:R[a]===null?+w:Math.max(0,Math.min(20*60,R[a]+ +v));R.tt=true;R.gq=null}
    else if(k==='e'){R[a]=Math.max(0,Math.min(a==='nd'?20:4,R[a]+ +v));R.tt=true}
+   else if(k==='rn'){const r=R.runs[+a];r.n=Math.max(R.runs.length>1?0:0,Math.min(20,r.n+ +v));syncR();R.tt=true}
+   else if(k==='ra'){if(R.runs.length<6){R.sep.push(a);R.runs.push({n:1});syncR();R.tt=true}}
+   else if(k==='rx'){const i=+a;R.runs[i].n+=R.runs[i+1].n;R.runs.splice(i+1,1);R.sep.splice(i,1);syncR();R.tt=true}
+   else if(k==='rs'){R.sep[+a]=R.sep[+a]==='v'?'l':'v';syncR();R.tt=true}
+   else if(k==='ck'){R.chk=+a;st.vchk=R.chk;R.tt=true}
    else if(k==='lh'){R.lh=a;R.tt=true}else if(k==='b1'){R.tB=a==='n'?null:+a;R.tt=true;R.gq=null}else if(k==='bh'){R.bh=a;R.tt=true}
    else if(k==='g'&&R.gq){const g=R.gq.g;if(a==='F'){R.ev=hm(from+R.gq.K*M)}else if(a==='S'){const cs=[['tD',R.dr||R.mm],['tW',R.wk],['tP',R.pa],['tB',R.br]].filter(c=>c[1]&&R[c[0]]),K=cs.reduce((q,c)=>q+R[c[0]],0);let left=g;cs.forEach((c,i)=>{const add=i===cs.length-1?left:Math.round(g*R[c[0]]/K/5)*5;R[c[0]]+=add;left-=add})}
     else{if(a==='tP'&&!R.pa){R.pa=true;R.tP=0}if(a==='tB'&&!R.br){R.br=true;R.tB=0}R[a]=(R[a]||0)+g}R.gq=null;page1();mcb.ok();return}
@@ -455,7 +467,11 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
  const page2=()=>{const tm=times(),B=R.B||[],P=autoPos(),u=used(),left=T()-u,E=left>-0.5?build():null,J=E?tkJudge(E,from,to,R.live&&!R.fin):null;
   const ico={s:'⚒',d:'🚛',x:'📦',e:'⚒',v:'🔄',l:'📥'},asN={d:'I drove',c:'My co-driver drove',p:'I was a passenger (POA)'};
   /* you drove, or you did not: then with two drivers your co-driver drove, else you were a passenger (both are POA for you) */const opts=['d',R.mm?'c':'p'];
-  const rows=R.L.map((x,i)=>{const bs=B.map((b,k)=>P[k]===i?`<div class="dwb"><span>🛏 <b>${Math.round(b)} minute break</b> · ${hm(tm.bk[k])}–${hm(tm.bk[k]+b*M)}</span><span class="dwmv"><button type="button" data-dw="bp:${k}:-1"${i<=1?' disabled':''} aria-label="Move this break earlier">▲ Earlier</button><button type="button" data-dw="bp:${k}:1"${i>=R.L.length-1?' disabled':''} aria-label="Move this break later">▼ Later</button></span></div>`:'').join('');
+  /* a break you moved that now leaves the driving or work uncovered: red, why, and where it would cover it */
+  const RR=E?tkRules(E):null,bad1=RR?RR.N.find(q=>q&&q.k==='bad'):null,wrong={};
+  /* compare with where the rules put every break: each one you moved away from there is marked, and one tap puts them all back, when that clears it */
+  let fixAll=false;if(bad1&&Object.keys(R.P).length){const P0=R.P;R.P={};const AP=autoPos(),E2=build();fixAll=!!E2&&!tkRules(E2).N.some(q=>q&&q.k==='bad');R.P=P0;B.forEach((b,k)=>{if(R.P[k]!==undefined&&AP[k]!==P[k])wrong[k]={ap:AP[k]}})}
+  const rows=R.L.map((x,i)=>{const bs=B.map((b,k)=>P[k]===i?`<div class="dwb${wrong[k]?' bad':''}"><span>🛏 <b>${Math.round(b)} minute break</b> · ${hm(tm.bk[k])}–${hm(tm.bk[k]+b*M)}</span><span class="dwmv"><button type="button" data-dw="bp:${k}:-1"${i<=1?' disabled':''} aria-label="Move this break earlier">▲ Earlier</button><button type="button" data-dw="bp:${k}:1"${i>=R.L.length-1?' disabled':''} aria-label="Move this break later">▼ Later</button></span></div>${wrong[k]?`<div class="dwbh" role="alert">⚠ Not in the right place. ${esc(bad1.t.replace(/^⚠\s*/,''))} It would cover it before ${esc(lbl(wrong[k].ap).toLowerCase())}.${fixAll?` <button type="button" class="tg" data-dw="bfix:all">Put the breaks there</button>`:' Even there it is not enough: it needs a longer break, or another one.'}</div>`:''}`:'').join('');
    const st0=tm[i],en=st0+legT(x)*M,stopW=x.k!=='d';
    const mvb=x.k==='v'||x.k==='l'?`<span class="dwmv" style="margin:0 0 6px"><button type="button" data-dw="mv:${i}:-1"${R.L[i-2]&&R.L[i-2].k!=='s'?'':' disabled'} aria-label="Move earlier">▲ Earlier</button><button type="button" data-dw="mv:${i}:1"${R.L[i+2]&&R.L[i+2].k!=='e'?'':' disabled'} aria-label="Move later">▼ Later</button></span>`:'';
    return bs+`<div class="dwl dw-${x.k==='v'||x.k==='l'?'x':x.k}"><div class="dwh"><span>${ico[x.k]} ${esc(lbl(i))}</span><small>${legT(x)?hm(st0)+'–'+hm(en):'none'}</small></div>${mvb}
@@ -486,8 +502,8 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
    if(k==='m'){const x=R.L[+p[1]];x[p[2]]=Math.max(0,Math.min(16*60,(x[p[2]]||0)+ +p[3]))}
    else if(k==='w'){R.L[+p[1]].w=15}
    else if(k==='c'){R.L[+p[1]].as=p[2]}
-   else if(k==='n'){const nd=Math.max(0,Math.min(20,R.nd+ +p[1]));if(nd!==R.nd){R.nd=nd;R.log=false;R.B=R.B||wantB();mkLegs()}}
-   else if(k==='nv'||k==='nl'){const v=Math.max(0,Math.min(4,R[k]+ +p[1]));if(v!==R[k]){R[k]=v;R.log=false;R.B=R.B||wantB();mkLegs()}}
+   else if(k==='n'){const r=R.runs[R.runs.length-1],v=Math.max(0,Math.min(20,r.n+ +p[1]));if(v!==r.n||R.log){r.n=v;syncR();R.log=false;R.B=R.B||wantB();mkLegs()}}
+   else if(k==='nv'||k==='nl'){const t=k==='nv'?'v':'l';if(+p[1]>0){if(R.runs.length<6){R.sep.push(t);R.runs.push({n:1})}}else{const i=R.sep.lastIndexOf(t);if(i>=0){R.runs[i].n+=R.runs[i+1].n;R.runs.splice(i+1,1);R.sep.splice(i,1)}}syncR();R.log=false;R.B=R.B||wantB();mkLegs()}
    else if(k==='lh'){R.lh=p[1];R.log=false;mkLegs()}
    else if(k==='mv'){/* a swap or reload moves past the next stop: the two stops change places, the drives stay */const i=+p[1],j=i+2*(+p[2]);if(R.L[j]&&R.L[j].k!=='d'&&R.L[j].k!=='s'&&R.L[j].k!=='e'){const t=R.L[i];R.L[i]=R.L[j];R.L[j]=t}}
    else if(k==='b'){R.B=p[1].split('+').map(Number);R.P={}}
@@ -496,6 +512,7 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
    else if(k==='gf'){/* fill what is left: shared over the drives, the drops' work or waiting, or as one more break the rules place */const lf=Math.floor(T()-used());if(lf>0){
     if(p[1]==='r'){R.B=(R.B||[]).concat([lf]);R.P={}}
     else{const D=p[1]==='d'?R.L.filter(x=>x.k==='d'):R.L.filter(x=>x.k==='x').length?R.L.filter(x=>x.k==='x'):R.L.filter(x=>x.k!=='d'),f=p[1]==='p'?'w':'m';let left=lf;D.forEach((x,j)=>{const add=j===D.length-1?left:Math.round(lf/D.length);x[f]=(x[f]||0)+add;left-=add})}}}
+   else if(k==='bfix'){R.P={}}
    else if(k==='fe'){to=from+Math.round(used())*M;R.ev=hm(to);R.c1=Math.max(R.c1,to)}
    else if(k==='fit'){/* share the difference over the drives and drops (then the depot parts), in proportion, until it adds up */const fk=x=>x.k!=='d'&&!x.m&&x.w?'w':'m';
     for(let pass=0;pass<6;pass++){const lf=T()-used();if(Math.abs(lf)<0.5)break;let D=R.L.filter(x=>(x.k==='d'||x.k==='x')&&(lf>0||x[fk(x)]>0));if(!D.length)D=R.L.filter(x=>lf>0||x[fk(x)]>0);if(!D.length)break;
