@@ -129,7 +129,7 @@ function seDraw(){const el=$('sed');if(!el||!SE)return;const S=seStarts(),E=seEn
  el.innerHTML=`<div class="sew">${top}${SE.pre?`<div class="note warn" style="margin-bottom:8px">${SE.pre}</div>`:''}
  <p class="note" style="margin:0 0 8px">Tap a time to move it. Tap an entry to change what it was, split it into pieces, or add something in it. Drag ≡ to reorder.</p>
  ${seBar(E)}<button type="button" class="tg big seadd" data-sk="pan:add">＋ Add something I forgot</button><div id="sel">${list}</div>${rest}${seRules(E)}
- <div class="sebtn"><button type="button" class="tg big fpri" data-sk="save">${SE.mode==='end'?'End shift at '+hm(end):'Save changes'}</button>${SE.mode!=='end'&&run?`<button type="button" class="tg big" data-sk="toend">End shift…</button>`:''}<button type="button" class="tg big" data-sk="close">Cancel</button>${SE.mode==='end'?'':`<button type="button" class="tg big bad" data-sk="clr">Clear this shift</button>`}</div></div>`}
+ <div class="sebtn"><button type="button" class="tg big fpri" data-sk="save">${SE.mode==='end'?'End shift at '+hm(end):'Save changes'}</button>${SE.mode!=='end'&&run?`<button type="button" class="tg big" data-sk="toend">End shift…</button>`:''}<button type="button" class="tg big" data-sk="close">Cancel</button>${SE.mode==='end'||seRun()?'':`<button type="button" class="tg big" data-sk="wiz">🧭 Redo it with Fill in my day</button>`}${SE.mode==='end'?'':`<button type="button" class="tg big bad" data-sk="clr">Clear this shift</button>`}</div></div>`}
 
 function seClick(e){const b=e.target.closest('[data-sk]');if(!b||!SE)return;SE.redraw=false;const[k,a,v]=b.dataset.sk.split(':'),i=+a,P=SE.pan;
  if(k==='close'){if(SE.dirty){mo(`<h3>Leave Without Saving?</h3><p>Your changes to this shift will be lost.</p><button class="tg big bad" data-k="ok">Leave without saving</button><button class="tg big" data-k="no">Keep editing</button>`);mcb={no:moX,ok:()=>{moX();seClose()}};return}seClose();return}
@@ -146,6 +146,7 @@ function seClick(e){const b=e.target.closest('[data-sk]');if(!b||!SE)return;SE.r
  else if(P&&k==='pt')P.P[i].t=v;else if(P&&k==='pl')P.P[i].len=Math.max(1,P.P[i].len+(+v));else if(P&&k==='pr')P.P.splice(i,1);
  else if(P&&k==='pp'){if(a==='add')P.P.splice(P.P.length-1,0,{t:'r',len:15});else{if(a==='go'){const C=seSplitCalc(P);if(!C)return;const R=seFromList(C.L);SE.S=R.S;SE.B=R.B;SE.dirty=true;SE.open=null}SE.pan=null}}
  else if(k==='toend'){seToEnd();SE.dirty=true}
+ else if(k==='wiz'){const d=sod(SE.S);if(SE.dirty){mo(`<h3>Leave Without Saving?</h3><p>Your changes here will be lost.</p><button class="tg big bad" data-k="ok">Leave and open Fill in my day</button><button class="tg big" data-k="no">Keep editing</button>`);mcb={no:moX,ok:()=>{moX();seClose();tkFill(null,d)}};return}seClose();tkFill(null,d);return}
  else if(k==='save'){seSave();return}else if(k==='clr'){const ss=SE.S;seClose();clearShift(ss,all());return}
  seDraw();if(k==='sp2'||k==='pan'||k==='addin'||(P&&(k==='pa'||(k==='pp'&&a!=='add')))){const el=$('sed');if(el)el.scrollTop=0}}
 
