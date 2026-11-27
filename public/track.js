@@ -317,7 +317,8 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
   /* rough amounts (minutes, null = not sure), POA yes/no, total break and how it was taken, vehicle swaps, reloads and what a reload was */
   pa:tc&&run&&mmOn(),tD:null,tW:null,tP:null,tB:null,bh:'one',nv:0,nl:0,lh:'w',tt:false,gq:null,
   /* runs of drops, with what came between them (v a vehicle swap, l a reload), and how long one vehicle check takes */
-  runs:[{n:2}],sep:[],chk:st.vchk||15};
+  runs:[{n:2}],sep:[],chk:st.vchk||15,
+  /* the breaks in the order they were taken (null = not sure, the rules put them in) */bl:null};
  /* the counts follow the runs */
  const syncR=()=>{R.nd=R.runs.reduce((q,r)=>q+r.n,0);R.nv=R.sep.filter(k=>k==='v').length;R.nl=R.sep.filter(k=>k==='l').length};
  let from=0,to=0;
@@ -328,7 +329,7 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
  const wantB=()=>{if(!R.br)return [];const w=T(),need=w>9*60+45?45:w>6*60+30?(R.dr?45:30):15,stops=Math.max(1,Math.ceil((w-need)/360)-1);
   if(stops<=1&&w<=9*60+45)return [need];const B=[15,30];while(B.length<stops)B.push(15);return B};
  /* breaks from the total you gave and how you took it: in one go, 15 first then the rest, or in 15s */
- const splitB=()=>{const t=R.tB;if(!R.br||!t)return null;if(R.bh==='15'&&t>=30)return [15,t-15];if(R.bh==='15s'&&t>=30){const B=[];let r=t;while(r>0&&B.length<6){const x=B.length===5?r:Math.min(15,r);B.push(x);r-=x}return B}return [t]};
+ const splitB=()=>R.br&&R.bl&&R.bl.length?R.bl.slice():null;
  /* a stop's time: other work if you did any, else waiting (POA) */
  const stop=(k,m)=>R.wk?{k,m,w:0}:{k,m:0,w:m};
  /* the parts of the day for nd drops; durations fill the time, drives a bit longer than drops */
@@ -413,6 +414,14 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
  const amt=(k,lab,start)=>{const v=R[k];return `<div class="dwq"><span>${lab}</span><span class="dws"><button type="button" data-dw="a:${k}:-30:${start}" aria-label="30 minutes less">−30</button><b>${v===null?'Not sure':tkF(v)}</b><button type="button" data-dw="a:${k}:30:${start}" aria-label="30 minutes more">+30</button>${v!==null?`<button type="button" data-dw="a:${k}:x:0" aria-label="Not sure">✕</button>`:''}</span></div>`};
  const cnt=(k,lab,mx)=>`<div class="dwq"><span>${lab}</span><span class="dws"><button type="button" data-dw="e:${k}:-1" aria-label="One fewer">−</button><b>${R[k]}</b><button type="button" data-dw="e:${k}:1" aria-label="One more">+</button></span></div>`;
  const chip=(on,dw,t)=>`<button type="button" class="fchip${on?' on':''}" data-dw="${dw}">${t}</button>`;
+ /* the shift's length from what is typed so far (minutes), for the gauge */
+ const p1span=()=>{try{const n=Date.now();if(R.live&&!R.fin){if(!R.sv)return null;let f=nearT(R.sv,n);if(f>=n)f-=864e5;return Math.round((n-f)/M)}
+   const d=R.live?sod(nearT(R.sv,n)):R.day;if(!R.sv||!R.ev)return null;const f=plAt(d,R.sv);let t=plAt(d,R.ev);if(t<=f)t=plAt(nxd(d),R.ev);return Math.round((t-f)/M)}catch(e){return null}};
+ const gauge=()=>{const sp=p1span();if(!sp)return '';const v={d:(R.dr||R.mm)&&R.tD||0,w:R.wk&&R.tW||0,p:R.pa&&R.tP||0,r:R.br&&R.bl?R.bl.reduce((q,x)=>q+x,0):0},u=v.d+v.w+v.p+v.r,rem=sp-u;
+  const seg=(k,m)=>m>0?`<i class="k-${k}" style="flex:${m} 0 0"></i>`:'';
+  return `<div class="dwg"><div class="tkb" aria-hidden="true">${seg('d',v.d)}${seg('w',v.w)}${seg('p',v.p)}${seg('r',v.r)}${rem>0?`<i class="dwge" style="flex:${rem} 0 0"></i>`:''}</div>
+   <div class="dwgt">${rem>=0?`Your ${tkF(sp)} shift: <b>${tkF(u)}</b> filled, <b>${tkF(rem)}</b> left to fill.`:`<span class="bad">That is ${tkF(-rem)} more than your ${tkF(sp)} shift.</span>`}</div>
+   ${rem>=5?`<div class="fchips fsm"><span class="note" style="align-self:center">Fill the rest with:</span>${R.wk?chip(false,'fl:tW','⚒ Other work'):''}${chip(false,'fl:tB','🛏 A break')}${chip(false,'fl:tP','◪ POA')}${R.dr||R.mm?chip(false,'fl:tD',R.dr?'🚛 Driving':'On the road'):''}</div>`:''}</div>`};
  const p1more=()=>`<div class="cs" style="margin-top:12px">Your day, roughly</div><p class="note" style="margin-top:0">All optional. Give what you know and it shares out the rest.</p><div class="acq">
   ${R.runs.map((r,i)=>{const vn=1+R.sep.slice(0,i).filter(k=>k==='v').length,ln=R.sep.slice(0,i).filter(k=>k==='l').length,many=R.runs.length>1;
    return (i?`<div class="dwsep"><span>${R.sep[i-1]==='v'?'🔄 Then a vehicle swap':'📥 Then a reload'}</span><span class="dwmv"><button type="button" data-dw="rs:${i-1}" aria-label="Change to a ${R.sep[i-1]==='v'?'reload':'vehicle swap'}">${R.sep[i-1]==='v'?'Make it a reload':'Make it a swap'}</button><button type="button" data-dw="rx:${i-1}" aria-label="Remove">✕</button></span></div>`:'')
@@ -420,10 +429,14 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
   <div class="fchips fsm" style="margin-top:6px"><button type="button" class="fchip" data-dw="ra:v">+ Vehicle swap</button><button type="button" class="fchip" data-dw="ra:l">+ Reload</button></div>
   ${R.nv?`<div class="fsub">🔍 One vehicle check takes</div><div class="fchips fsm">${[10,15,20,30].map(m=>chip(R.chk===m,'ck:'+m,m+' min')).join('')}</div><p class="note" style="margin:2px 0 0">A check before and after each vehicle: with ${R.nv+1} vehicles that is ${tkF(2*(R.nv+1)*R.chk)} of checks.</p>`:''}
   ${R.nl?`<div class="fsub">At a reload you were mostly</div><div class="fchips fsm">${chip(R.lh==='w','lh:w','Loading (other work)')}${chip(R.lh==='u','lh:u','Emptying and loading')}${chip(R.lh==='p','lh:p','Waiting (POA)')}</div>`:''}
+  ${gauge()}
   ${R.dr?amt('tD','🚛 Driving',240):R.mm?amt('tD','👥 On the road, co-driver driving',240):''}
   ${R.wk?amt('tW','⚒ Other work',120):''}
   ${yn('pa','⏳ Any POA (waiting, or riding as co-driver)?',R.pa)}${R.pa?amt('tP','⏳ POA',60):''}
-  ${R.br?`<div class="fsub">🛏 Breaks in all</div><div class="fchips fsm">${chip(R.tB===null,'b1:n','Not sure')}${[15,30,45,60,75,90].map(m=>chip(R.tB===m,'b1:'+m,m+' min')).join('')}</div>${R.tB>=30?`<div class="fsub">How did you take it?</div><div class="fchips fsm">${chip(R.bh==='one','bh:one','In one go')}${chip(R.bh==='15','bh:15','15 first, then '+(R.tB-15))}${chip(R.bh==='15s','bh:15s','In 15s')}</div>`:''}`:''}
+  ${R.br?`<div class="fsub">🛏 Your breaks, in the order you took them</div><div class="dwbl">${R.bl&&R.bl.length?R.bl.map((m,i)=>`<span class="dwbp">${m} min<button type="button" data-dw="bx:${i}" aria-label="Remove this ${m} minute break">✕</button></span>`).join('<span class="dwbs">then</span>'):'<span class="note">Not sure: the breaks the rules need are put in for you.</span>'}</div>
+  <div class="fchips fsm">${[15,30,45,60].map(m=>chip(false,'bpa:'+m,'+ '+m+' min')).join('')}</div>
+  <div class="fchips fsm"><span class="note" style="align-self:center">Or:</span>${[[45],[15,30],[15,30,15,30],[45,45]].map(q=>chip(!!R.bl&&R.bl.join('+')===q.join('+'),'bps:'+q.join('-'),q.join(' + '))).join('')}${R.bl?chip(false,'bps:n','Not sure'):''}</div>
+  ${R.bl&&R.bl.length?`<p class="note" style="margin:2px 0 0">${R.bl.reduce((q,x)=>q+x,0)} minutes of breaks in all. Each one is put where it covers your driving and work.</p>`:''}`:''}
   </div>`;
  /* the amounts you gave do not fill the shift: ask what the rest was (or, when they are more, offer to move the finish) */
  const gapBox=()=>{const q=R.gq,g=q.g;return g>0?`<div class="wn" style="margin-top:10px"><b>Your amounts add up to ${tkF(q.K)}, but ${hm(from)} to ${R.live&&!R.fin?'now':hm(to)} is ${tkF(T())}.</b> What was the other ${tkF(g)}?<div class="fchips fsm" style="margin-top:6px">${(R.dr||R.mm?[['tD',R.dr?'Driving':'On the road']]:[]).concat(R.wk?[['tW','Other work']]:[],[['tP','POA'],['tB','Break']]).map(([k,t])=>chip(false,'g:'+k,t)).join('')}${chip(false,'g:S','Share it out')}</div></div>`
@@ -439,7 +452,7 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
   ${R.gq?gapBox():''}
   <div class="note bad" id="dwerr"></div><button class="tg big fpri" data-k="ok">Next</button>${pre&&pre.back?'<button class="tg big" data-k="bk">← Back</button>':''}<button class="tg big" data-k="no">Cancel</button>`);
   const keep=()=>{const a=$('dws'),b=$('dwe');if(a)R.sv=a.value;if(b)R.ev=b.value};if($('dwd'))$('dwd').onchange=e=>{keep();if(e.target.value){R.day=pdt(e.target.value);page1()}};
-  ['dws','dwe'].forEach(id=>{if($(id))$(id).onchange=keep});
+  ['dws','dwe'].forEach(id=>{if($(id))$(id).onchange=()=>{keep();keepSc(page1)}});
   mcb={no:moX,bk:pre&&pre.back,ok:()=>{keep();const er=m=>{$('dwerr').textContent=m},n=Date.now();if(!R.sv||((!R.live||R.fin)&&!R.ev)){er(R.live&&!R.fin?'Enter when your shift started.':'Enter when it started and finished.');return}
    if(R.live){to=n;from=nearT(R.sv,n);if(from>=n)from-=864e5;if(n-from>21*H&&!R.fin){er('That is over 21 hours ago. Check the time.');return}
     if(R.fin){to=plAt(sod(from),R.ev);if(to<=from)to=plAt(nxd(sod(from)),R.ev);if(to>n){er('That is later than now. If you are still working, pick No, still working.');return}if(to-from>21*H){er('That is over 21 hours. Check the times.');return}}}
@@ -461,9 +474,11 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
    else if(k==='rx'){const i=+a;R.runs[i].n+=R.runs[i+1].n;R.runs.splice(i+1,1);R.sep.splice(i,1);syncR();R.tt=true}
    else if(k==='rs'){R.sep[+a]=R.sep[+a]==='v'?'l':'v';syncR();R.tt=true}
    else if(k==='ck'){R.chk=+a;st.vchk=R.chk;R.tt=true}
-   else if(k==='lh'){R.lh=a;R.tt=true}else if(k==='b1'){R.tB=a==='n'?null:+a;R.tt=true;R.gq=null}else if(k==='bh'){R.bh=a;R.tt=true}
-   else if(k==='g'&&R.gq){const g=R.gq.g;if(a==='F'){R.ev=hm(from+R.gq.K*M)}else if(a==='S'){const cs=[['tD',R.dr||R.mm],['tW',R.wk],['tP',R.pa],['tB',R.br]].filter(c=>c[1]&&R[c[0]]),K=cs.reduce((q,c)=>q+R[c[0]],0);let left=g;cs.forEach((c,i)=>{const add=i===cs.length-1?left:Math.round(g*R[c[0]]/K/5)*5;R[c[0]]+=add;left-=add})}
-    else{if(a==='tP'&&!R.pa){R.pa=true;R.tP=0}if(a==='tB'&&!R.br){R.br=true;R.tB=0}R[a]=(R[a]||0)+g}R.gq=null;page1();mcb.ok();return}
+   else if(k==='lh'){R.lh=a;R.tt=true}else if(k==='bpa'||k==='bx'||k==='bps'){if(k==='bpa')R.bl=(R.bl||[]).concat([+a]);else if(k==='bx'){R.bl.splice(+a,1);if(!R.bl.length)R.bl=null}else R.bl=a==='n'?null:a.split('-').map(Number);R.tB=R.bl?R.bl.reduce((q,x)=>q+x,0):null;R.tt=true;R.gq=null}
+   else if(k==='fl'){const sp=p1span();if(sp){const used=((R.dr||R.mm)&&R.tD||0)+(R.wk&&R.tW||0)+(R.pa&&R.tP||0)+(R.br&&R.bl?R.bl.reduce((q,x)=>q+x,0):0),rem=Math.round((sp-used)/5)*5;
+    if(rem>0){if(a==='tB'){R.br=true;R.bl=(R.bl||[]).concat([rem]);R.tB=R.bl.reduce((q,x)=>q+x,0)}else{if(a==='tP')R.pa=true;if(a==='tW')R.wk=true;R[a]=(R[a]||0)+rem}R.tt=true;R.gq=null}}}
+   else if(k==='g'&&R.gq){const g=R.gq.g;if(a==='F'){R.ev=hm(from+R.gq.K*M)}else if(a==='S'){const cs=[['tD',R.dr||R.mm],['tW',R.wk],['tP',R.pa]].filter(c=>c[1]&&R[c[0]]),K=cs.reduce((q,c)=>q+R[c[0]],0);let left=g;cs.forEach((c,i)=>{const add=i===cs.length-1?left:Math.round(g*R[c[0]]/K/5)*5;R[c[0]]+=add;left-=add})}
+    else if(a==='tB'){R.br=true;R.bl=(R.bl||[]).concat([g]);R.tB=R.bl.reduce((q,x)=>q+x,0)}else{if(a==='tP'&&!R.pa){R.pa=true;R.tP=0}R[a]=(R[a]||0)+g}R.gq=null;page1();mcb.ok();return}
    /* redraw where you are, not back at the top */keepSc(page1)}};
  const stp=(i,f,m,lab)=>`<span class="dws"><button type="button" data-dw="m:${i}:${f}:-15" aria-label="15 minutes less">−15</button><button type="button" data-dw="m:${i}:${f}:-5" aria-label="5 minutes less">−5</button><b aria-label="${esc(lab)}">${tkF(m)}</b><button type="button" data-dw="m:${i}:${f}:5" aria-label="5 minutes more">+5</button><button type="button" data-dw="m:${i}:${f}:15" aria-label="15 minutes more">+15</button></span>`;
  const page2=()=>{const tm=times(),B=R.B||[],P=autoPos(),u=used(),left=T()-u,E=left>-0.5?build():null,J=E?tkJudge(E,from,to,R.live&&!R.fin):null;
@@ -490,7 +505,7 @@ function tkDrops(pre){const n0=Date.now(),td=sod(n0),actOn=!!(st.active&&st.act)
   <div class="dwq"><span>📥 Reloads</span><span class="dws"><button type="button" data-dw="nl:-1" aria-label="One fewer reload">−</button><b>${R.nl}</b><button type="button" data-dw="nl:1" aria-label="One more reload">+</button></span></div>
   ${R.nl?`<div class="fchips fsm" style="margin-top:4px">${[['w','Reload: loading'],['u','Emptying and loading'],['p','Waiting (POA)']].map(([k,t])=>`<button type="button" class="fchip${R.lh===k?' on':''}" data-dw="lh:${k}">${t}</button>`).join('')}</div>`:''}
   ${R.log?'<p class="note" style="margin:2px 0 0">Changing the number of drops starts the parts again with rough times.</p>':''}
-  ${R.br?`<div class="fsub">Your breaks</div><div class="fchips fsm">${[[15],[30],[45],[15,30],[15,15],[60]].map(b=>`<button type="button" class="fchip${B.join('+')===b.join('+')?' on':''}" data-dw="b:${b.join('+')}">${b.map(x=>x+' min').join(' + ')}</button>`).join('')}</div>`:''}
+  ${R.br?`<div class="fsub">Your breaks</div><div class="fchips fsm">${[[15],[30],[45],[15,30],[15,15],[60],[15,30,15,30]].concat(B.length&&![[15],[30],[45],[15,30],[15,15],[60],[15,30,15,30]].some(q=>q.join('+')===B.join('+'))?[B]:[]).map(b=>`<button type="button" class="fchip${B.join('+')===b.join('+')?' on':''}" data-dw="b:${b.join('+')}">${b.map(x=>x+' min').join(' + ')}</button>`).join('')}</div>`:''}
   <div class="dwlist">${rows}</div>
   <div class="fsum">${left<=-0.5?`<span class="bad">That is ${tkF(-left)} more than your ${hm(from)} to ${R.live&&!R.fin?'now':hm(to)}. ${R.live&&!R.fin?'Take some off, or fit it to the time so far.':'Forgot something? Move your finish. Or take some off.'}</span>`:left>=1?`Adds up to ${tkF(u)}. What was the other <b>${tkF(left)}</b>? <span class="fchips fsm" style="display:flex;margin-top:6px">${[['d',R.dr?'Driving':'On the road'],['w','Other work'],['p','POA'],['r','A break']].map(([k,t])=>`<button type="button" class="fchip" data-dw="gf:${k}">${t}</button>`).join('')}</span>If you leave it, it goes on the end as other work.`:`Adds up to your ${tkF(T())}.`}${Math.abs(left)>=1&&!(R.live&&!R.fin)&&from+u*M<=Date.now()&&u<=21*60?` <button type="button" class="tg" data-dw="fe:1" style="margin-left:4px">Finish at ${hm(from+Math.round(u)*M)} instead</button>`:''}${Math.abs(left)>=0.5?' <button type="button" class="tg" data-dw="fit:1" style="margin-left:4px">Fit to my times</button>':''}</div>
   ${E?tkLogView(E,from,to):''}
